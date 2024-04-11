@@ -29,6 +29,7 @@
 #   principal_type     = "GROUP"
 # }
 
+
 # locals {
 #   managed_policies = flatten([
 #     for permission in var.permissions_list : [

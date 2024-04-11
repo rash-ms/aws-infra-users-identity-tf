@@ -6,81 +6,66 @@ provider "random" {
 }
 
 locals {
-  all_people = merge(merge(jsondecode(var.PEOPLE_PROD), jsondecode(var.PEOPLE_STG)), jsondecode(var.PEOPLE_DEV))
-}
-
-resource "aws_ssoadmin_instance" "example" {
-  for_each = { username, user_detail in local.all_people.people : username => user_detail }
-
-  instance_name = "example_instance_${each.key}"
-  tags          = var.sso_admin_role_tags
-}
-
-resource "aws_ssoadmin_permission_set" "example" {
-  for_each = { username, user_detail in local.all_people.people : username => user_detail }
-
-  name               = "example_permission_set_${each.key}"
-  description        = "Example permission set for ${each.key}"
-  instance_arn       = aws_ssoadmin_instance.example[each.key].arn
-  session_duration   = "PT1H"
-}
-
-resource "aws_iam_user" "sso_users" {
-  for_each = { username, user_detail in local.all_people.people : username => user_detail }
-
-  name = username  # Set the name attribute to the username
-}
-
-resource "aws_iam_user_policy_attachment" "sso_user_policy_attachment" {
-  for_each = {
-    for username, user_detail in local.all_people.people :
-      for group in user_detail.sso_groups :
-      "${username}-${group.group_name}" => {
-        username = username
-        group    = group
-      }
-  }
-
-  user       = aws_iam_user.sso_users[each.value.username].name
-  policy_arn = each.value.group.managed_policy_arn
-}
-
-resource "aws_ssoadmin_account_assignment" "user_assignment" {
-  for_each = {
-    for username, user_detail in local.all_people.people :
-      for group in user_detail.sso_groups :
-      "${username}-${group.group_name}" => {
-        username = username
-        group    = group
-      }
-  }
-
-  instance_arn      = aws_ssoadmin_instance.example[each.value.username].arn
-  target_id         = aws_iam_user.sso_users[each.value.username].id
-  target_type       = "USER"
-  permission_set_arn = aws_ssoadmin_permission_set.example[each.value.username].arn
-
-  principal_id   = aws_iam_user.sso_users[each.value.username].name
-  principal_type = "USER"
+  users = merge(merge(jsondecode(var.PEOPLE_PROD), jsondecode(var.PEOPLE_STG)), jsondecode(var.PEOPLE_DEV))
 }
 
 
-resource "null_resource" "update_user_details" {
-  for_each = {
-    for username, user_detail in local.all_people.people :
-      for group in user_detail.sso_groups :
-      "${username}-${group.group_name}" => {
-        username = username
-        group    = group
-      }
-  }
-
-  depends_on = [aws_ssoadmin_account_assignment.user_assignment]
-
-  provisioner "local-exec" {
-    command = <<-EOT
-      jq '.[].is_added = true' ${each.value} > ${each.value}_updated.json
-      mv ${each.value}_updated.json ${each.value}
-    EOT
-  }
+# Create IAM users
+resource "aws_iam_user" "users" {
+  for_each = { for user in local.users.people : user.sso_users[0].username => user.sso_users[0] }
+  name     = each.value.username
 }
+
+# Create IAM groups
+resource "aws_iam_group" "groups" {
+  for_each = { for user in local.users.people : user.sso_groups[0].group_name => user.sso_groups[0] }
+  name     = each.value.group_name
+}
+
+# # Add users to groups
+# resource "aws_iam_group_membership" "group_memberships" {
+#   for_each = { for user in local.users.people : user.sso_users[0].username => user.sso_users[0] }
+
+#   name  = each.key
+#   users = [aws_iam_user.users[each.key].name]
+#   group = aws_iam_group.groups[each.value.sso_groups[0].group_name].name
+# }
+
+# # Define policies (you may need to adjust this part based on your policy requirements)
+# data "aws_iam_policy_document" "administrator_access_policy" {
+#   statement {
+#     actions   = ["*"]
+#     resources = ["*"]
+#   }
+# }
+
+# data "aws_iam_policy_document" "readonly_access_policy" {
+#   statement {
+#     actions   = ["s3:Get*", "s3:List*"]
+#     resources = ["*"]
+#   }
+# }
+
+# resource "aws_iam_policy" "administrator_access" {
+#   for_each = { for user in local.users.people : user.sso_users[0].username => user.sso_users[0] }
+
+#   name        = "${each.value.username}-AdministratorAccessPolicy"
+#   description = "Allows full access to AWS services and resources for ${each.value.username}."
+#   policy      = data.aws_iam_policy_document.administrator_access_policy.json
+# }
+
+# resource "aws_iam_policy" "readonly_access" {
+#   for_each = { for user in local.users.people : user.sso_users[0].username => user.sso_users[0] }
+
+#   name        = "${each.value.username}-ReadOnlyAccessPolicy"
+#   description = "Allows read-only access to AWS S3 for ${each.value.username}."
+#   policy      = data.aws_iam_policy_document.readonly_access_policy.json
+# }
+
+# # Attach policies to users
+# resource "aws_iam_user_policy_attachment" "user_policy_attachments" {
+#   for_each = { for user in local.users.people : user.sso_users[0].username => user.sso_users[0] }
+
+#   user       = aws_iam_user.users[each.key].name
+#   policy_arn = aws_iam_policy.administrator_access[each.key].arn
+# }
