@@ -38,5 +38,5 @@ tf_lint_without_write_aws_sso:
 
 install_python_deps:
 	${python_exec} -m pip install --upgrade pip
-	pip install -r ./scripts/temp_setup_scripts/requirements.txt
+	pip install -r ./scripts/temp_install_sh/requirements.txt
 
