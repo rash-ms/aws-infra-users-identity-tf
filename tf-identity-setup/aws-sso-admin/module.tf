@@ -1,5 +1,5 @@
 module "aws_sso_admin" {
-  source = "./tf-identity-setup/aws-sso-admin"  
+  source = "tf-identity-setup/aws-sso-admin"  
   sso_admin_role_tags = {  
     RoleWorkspace-0 = "stg"
     RoleWorkspace-1 = "dev"
