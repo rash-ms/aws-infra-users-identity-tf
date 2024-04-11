@@ -1,5 +1,5 @@
 module "aws-sso-admin" {
-  source = "./tf-identity-setup/aws-sso-admin"  
+  source = ".././tf-identity-setup/aws-sso-admin"  
   sso_admin_role_tags = {  
     RoleWorkspace-0 = "stg"
     RoleWorkspace-1 = "dev"
@@ -14,3 +14,4 @@ module "aws-sso-admin" {
     aws = aws.aws-us-east-1
   }
 }
+
