@@ -1,5 +1,5 @@
-module "_aws_sso_admin" {
-  source = "./aws-sso-admin.tf"  
+module "aws_sso_admin" {
+  source = "./aws-sso-admin"  
   sso_admin_role_tags = {  
     RoleWorkspace-0 = "stg"
     RoleWorkspace-1 = "dev"
