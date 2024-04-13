@@ -37,13 +37,8 @@ jobs:
           role-session-name: Github_to_AWS_Via_FederatedOIDC
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Check if AWS Authentication failed
-        if: steps.configure_aws_credentials.outcome == 'failure'
-        run: |
-          echo "AWS OPENIDC Authentication failed. Using secrets for authentication instead."
-      
       - name: Configure AWS credentials with secrets
-        if: steps.configure_aws_credentials.outcome == 'failure'
+        if: ${{ failure() && steps.configure_aws_credentials.outcome == 'failure' }}
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
