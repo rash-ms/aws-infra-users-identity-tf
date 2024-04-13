@@ -1,0 +1,59 @@
+{
+    "people": [
+      {
+        "sso_users": [
+          {
+            "username": "adekhola-ms",
+            "email": "adenijimujeeb@gmail.com",
+            "first_name": "Adekola",
+            "last_name": "Adeniji"
+          }
+        ],
+        "sso_groups": [
+          {
+            "group_name": "admins-us-dev",
+            "managed_policy_arn": "arn:aws:iam::aws:policy/AdministratorAccess",
+            "session_duration": "PT1H",
+            "is_added": false
+          }
+        ]
+      },
+      {
+        "sso_users": [
+          {        
+            "username": "john-ms",
+            "email": "john.doe@example.com",
+            "first_name": "John",
+            "last_name": "Doe"
+          }
+        ],
+        "sso_groups": [
+          {
+            "group_name": "data-eng-us-dev",
+            "managed_policy_arn": "arn:aws:iam::aws:policy/ReadOnlyAccess",
+            "session_duration": "PT1H",
+            "is_added": false
+          }
+        ]
+      },
+      {
+        "sso_users": [
+          {
+            "username": "jane-ms",
+            "email": "jane.smith@example.com",
+            "first_name": "Jane",
+            "last_name": "Smith"
+          }
+        ],
+        "sso_groups": [
+          {
+            "group_name": "marketing-us-dev",
+            "managed_policy_arn": "arn:aws:iam::aws:policy/Billing",
+            "session_duration": "PT1H",
+            "is_added": false
+          }
+        ]
+      }
+    ]
+  }
+  
