@@ -11,24 +11,23 @@ on:
     - '.github/workflows/cicd_add_user_us.yaml'
 
 env:
-    AWS_REGION: us-east-1
+  AWS_REGION: us-east-1
 
 permissions:
-    id-token: write
-    contents: read
+  id-token: write
+  contents: read
 
 jobs:
   build:
     if: "!contains(github.event.head_commit.message, 'skip ci')"
     runs-on: ubuntu-latest
+
     steps:
       - name: Git clone the repository
         uses: actions/checkout@v3
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v1.3.2
-        with:
-          terraform_version: 1.0.7
 
       - name: Configure AWS OPENIDC Authentication
         id: configure_aws_credentials
@@ -37,9 +36,11 @@ jobs:
           role-to-assume: arn:aws:iam::637423205666:role/GitHubAction-AssumeRole
           role-session-name: Github_to_AWS_Via_FederatedOIDC
           aws-region: ${{ env.AWS_REGION }}
+        continue-on-error: true  # Allows the workflow to continue if this step fails
 
       - name: Configure AWS credentials with secrets
-        if: ${{ failure() && steps.configure_aws_credentials.outcome == 'failure' }}
+        if: steps.configure_aws_credentials.outcome != 'success'
+        id: configure_aws_secrets
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -47,19 +48,31 @@ jobs:
           aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
           aws-region: us-east-1
 
+      - name: Set authentication success flag
+        id: set_auth_flag
+        run: |
+          if [[ "${{ steps.configure_aws_credentials.outcome }}" == "success" ]] || [[ "${{ steps.configure_aws_secrets.outcome }}" == "success" ]]; then
+            echo "AUTH_SUCCESS=true" >> $GITHUB_ENV
+          else
+            echo "AUTH_SUCCESS=false" >> $GITHUB_ENV
+          fi
+
       - name: Install CI Dependencies
+        if: env.AUTH_SUCCESS == 'true'
         run: |
           sudo apt-get update
           sudo apt-get install build-essential
           make install_python_deps
-        
+
       - name: Read JSON files and export as environment variables
+        if: env.AUTH_SUCCESS == 'true'
         run: |
           export PEOPLE_PROD=$(cat users-identity/users-identity-us/people-prod.json)
           export PEOPLE_STG=$(cat users-identity/users-identity-us/people-stg.json)
           export PEOPLE_DEV=$(cat users-identity/users-identity-us/people-dev.json)
 
       - name: AWS STS GetCallerIdentity and Init, Apply Terraform
+        if: env.AUTH_SUCCESS == 'true'
         run: |
           aws sts get-caller-identity
           make init
