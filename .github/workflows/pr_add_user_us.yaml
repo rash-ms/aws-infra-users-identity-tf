@@ -21,7 +21,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     outputs:
-      authentication_success: ${{ steps.auth_checker.outputs.authenticated }}
+      authentication_success: ${{ steps.auth_status.outputs.authenticated }}
     steps:
       - name: Git clone the repository
         uses: actions/checkout@v3
@@ -36,13 +36,9 @@ jobs:
           role-to-assume: arn:aws:iam::637423205666:role/GitHubAction-AssumeRole
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Set success status if OIDC auth succeeds
-        if: success()
-        run: echo "OIDC Authentication Succeeded"
-        id: oidc_success
-
       - name: Configure AWS credentials with secrets
-        if: steps.oidc_success.outcome != 'success'
+        if: failure()  # This step only runs if the previous authentication step fails
+        id: configure_aws_secrets
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -50,28 +46,28 @@ jobs:
           aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
           aws-region: us-east-1
 
-      - name: Check overall authentication success
-        id: auth_checker
+      - name: Set authentication success status
+        id: auth_status
         run: |
-          if [ "${{ steps.configure_aws_credentials.outcome }}" == "success" ] || [ "${{ steps.oidc_success.outcome }}" == "success" ]; then
+          if [ "${{ steps.configure_aws_credentials.outcome }}" == "success" ] || [ "${{ steps.configure_aws_secrets.outcome }}" == "success" ]; then
             echo "::set-output name=authenticated::true"
           else
             echo "::set-output name=authenticated::false"
           fi
 
       - name: Install CI Dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install build-essential
-          make install_python_deps
-        
+        if: steps.auth_status.outputs.authenticated == 'true'
+        run: sudo apt-get update && sudo apt-get install build-essential && make install_python_deps
+
       - name: Read JSON files and export as environment variables
+        if: steps.auth_status.outputs.authenticated == 'true'
         run: |
           export PEOPLE_PROD=$(cat users-identity/users-identity-us/people-prod.json)
           export PEOPLE_STG=$(cat users-identity/users-identity-us/people-stg.json)
           export PEOPLE_DEV=$(cat users-identity/users-identity-us/people-dev.json)
 
       - name: AWS STS GetCallerIdentity and Init, Apply Terraform
+        if: steps.auth_status.outputs.authenticated == 'true'
         run: |
           aws sts get-caller-identity
           make init
