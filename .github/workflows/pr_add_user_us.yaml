@@ -1,75 +1,75 @@
-# name: pr_add_user_us
+name: pr_add_user_us
 
-# on:
-#   pull_request:
-#     branches: [ main ]
-#     path:
-#     - 'users-identity/users-identity-us/people-prod.json'
-#     - 'users-identity/users-identity-us/people-stg.json'
-#     - 'users-identity/users-identity-us/people-dev.json'
-#     - 'tf-identity-setup/**'
-#     - '.github/workflows/pr_add_user_us.yaml'
+on:
+  pull_request:
+    branches: [ main ]
+    path:
+    - 'users-identity/users-identity-us/people-prod.json'
+    - 'users-identity/users-identity-us/people-stg.json'
+    - 'users-identity/users-identity-us/people-dev.json'
+    - 'tf-identity-setup/**'
+    - '.github/workflows/pr_add_user_us.yaml'
 
-# env:
-#     AWS_REGION: us-east-1
+env:
+    AWS_REGION: us-east-1
 
-# permissions:
-#     id-token: write
-#     contents: read
-# jobs:
-#   build:
-#     if: "!contains(github.event.head_commit.message, 'skip ci')"
-#     runs-on: ubuntu-latest
-#     steps:
-#       - name: Git clone the repository
-#         uses: actions/checkout@v3
+permissions:
+    id-token: write
+    contents: read
+jobs:
+  build:
+    if: "!contains(github.event.head_commit.message, 'skip ci')"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Git clone the repository
+        uses: actions/checkout@v3
 
-#       - name: Setup Terraform
-#         uses: hashicorp/setup-terraform@v1.3.2
-#         with:
-#           terraform_version: 1.0.7
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v1.3.2
+        with:
+          terraform_version: 1.0.7
 
-#       - name: Configure AWS OPENIDC Authentication
-#         id: configure_aws_credentials
-#         uses: aws-actions/configure-aws-credentials@v1.7.0
-#         with:
-#           role-to-assume: arn:aws:iam::637423205666:role/GitHubAction-AssumeRole
-#           role-session-name: Github_to_AWS_Via_FederatedOIDC
-#           aws-region: ${{ env.AWS_REGION }}
+      - name: Configure AWS OPENIDC Authentication
+        id: configure_aws_credentials
+        uses: aws-actions/configure-aws-credentials@v1.7.0
+        with:
+          role-to-assume: arn:aws:iam::637423205666:role/GitHubAction-AssumeRole
+          role-session-name: Github_to_AWS_Via_FederatedOIDC
+          aws-region: ${{ env.AWS_REGION }}
 
-#       - name: Check if AWS Authentication failed
-#         if: steps.configure_aws_credentials.outcome == 'failure'
-#         run: |
-#           echo "AWS OPENIDC Authentication failed. Using secrets for authentication instead."
+      - name: Check if AWS Authentication failed
+        if: steps.configure_aws_credentials.outcome == 'failure'
+        run: |
+          echo "AWS OPENIDC Authentication failed. Using secrets for authentication instead."
       
-#       - name: Configure AWS credentials with secrets
-#         if: steps.configure_aws_credentials.outcome == 'failure'
-#         uses: aws-actions/configure-aws-credentials@v2
-#         with:
-#           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-#           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-#           aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
-#           aws-region: us-east-1
+      - name: Configure AWS credentials with secrets
+        if: steps.configure_aws_credentials.outcome == 'failure'
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: us-east-1
 
-#       - name: Install CI Dependencies
-#         run: |
-#           sudo apt-get update
-#           sudo apt-get install build-essential
-#           make install_python_deps
+      - name: Install CI Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install build-essential
+          make install_python_deps
         
-#       - name: Read JSON files and export as environment variables
-#         run: |
-#           export PEOPLE_PROD=$(cat users-identity/users-identity-us/people-prod.json)
-#           export PEOPLE_STG=$(cat users-identity/users-identity-us/people-stg.json)
-#           export PEOPLE_DEV=$(cat users-identity/users-identity-us/people-dev.json)
+      - name: Read JSON files and export as environment variables
+        run: |
+          export PEOPLE_PROD=$(cat users-identity/users-identity-us/people-prod.json)
+          export PEOPLE_STG=$(cat users-identity/users-identity-us/people-stg.json)
+          export PEOPLE_DEV=$(cat users-identity/users-identity-us/people-dev.json)
 
-#       - name: AWS STS GetCallerIdentity and Init, Apply Terraform
-#         run: |
-#           aws sts get-caller-identity
-#           make init
-#           echo "Running linter, if the job fails here, all you have to do is run make tf_lint_with_write commit and push"
-#           echo "========"
-#           make tf_lint_without_write
-#           echo "========"
-#           make plan
-#           echo "========"
+      - name: AWS STS GetCallerIdentity and Init, Apply Terraform
+        run: |
+          aws sts get-caller-identity
+          make init
+          echo "Running linter, if the job fails here, all you have to do is run make tf_lint_with_write commit and push"
+          echo "========"
+          make tf_lint_without_write
+          echo "========"
+          make plan
+          echo "========"
