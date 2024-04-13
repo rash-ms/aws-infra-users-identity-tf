@@ -1,0 +1,12 @@
+{
+    "data-eng-prod": "data-eng-prod@example.com",
+    "data-eng-stg": "data-eng-stg@example.com",
+    "data-eng-dev": "data-eng-dev@example.com",
+    "data-analyst-prod": "data-analyst-prod@example.com",
+    "data-analyst-stg": "data-analyst-stg@example.com",
+    "data-analyst-dev": "data-analyst-dev@example.com",
+    "data-science-prod": "data-science-prod@example.com",
+    "data-science-stg": "data-science-stg@example.com",
+    "data-science-dev": "data-science-dev@example.com"
+  }
+  
