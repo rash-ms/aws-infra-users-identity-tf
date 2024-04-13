@@ -21,7 +21,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     outputs:
-      authentication_success: ${{ steps.auth_outcome.outputs.authenticated }}
+      authentication_success: ${{ steps.auth_checker.outputs.authenticated }}
     steps:
       - name: Git clone the repository
         uses: actions/checkout@v3
@@ -35,24 +35,29 @@ jobs:
         with:
           role-to-assume: arn:aws:iam::637423205666:role/GitHubAction-AssumeRole
           aws-region: ${{ env.AWS_REGION }}
-      
-      - name: Check AWS OPENIDC Authentication success
-        id: auth_outcome
+
+      - name: Set success status if OIDC auth succeeds
         if: success()
-        run: echo "::set-output name=authenticated::true"
+        run: echo "OIDC Authentication Succeeded"
+        id: oidc_success
 
       - name: Configure AWS credentials with secrets
-        if: steps.configure_aws_credentials.outcome != 'success'
+        if: steps.oidc_success.outcome != 'success'
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
           aws-region: us-east-1
-      
-      - name: Check secret key authentication success
-        if: success() && steps.auth_outcome.outputs.authenticated != 'true'
-        run: echo "::set-output name=authenticated::true"
+
+      - name: Check overall authentication success
+        id: auth_checker
+        run: |
+          if [ "${{ steps.configure_aws_credentials.outcome }}" == "success" ] || [ "${{ steps.oidc_success.outcome }}" == "success" ]; then
+            echo "::set-output name=authenticated::true"
+          else
+            echo "::set-output name=authenticated::false"
+          fi
 
       - name: Install CI Dependencies
         run: |
