@@ -1,5 +1,5 @@
 module "aws-organization" {
-  source     = "../../aws-organization-unit"
+  source     = "././aws-organization-unit"
   role_tags  = var.role_tags
 
   providers = {
