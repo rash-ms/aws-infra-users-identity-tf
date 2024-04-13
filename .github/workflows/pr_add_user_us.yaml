@@ -51,10 +51,11 @@ jobs:
       - name: Set authentication success flag
         id: set_auth_flag
         run: |
-          if [ "${{ steps.configure_aws_credentials.outcome }}" == "success" ] || [ "${{ steps.configure_aws_secrets.outcome }}" == "success" ]; then
+          if [[ "${{ steps.configure_aws_credentials.outcome }}" == "success" ]] || [[ "${{ steps.configure_aws_secrets.outcome }}" == "success" ]]; then
             echo "AUTH_SUCCESS=true" >> $GITHUB_ENV
           else
             echo "AUTH_SUCCESS=false" >> $GITHUB_ENV
+          fi
 
       - name: Install CI Dependencies
         if: env.AUTH_SUCCESS == 'true'
