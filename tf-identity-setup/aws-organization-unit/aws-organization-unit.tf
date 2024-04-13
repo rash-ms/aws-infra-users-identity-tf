@@ -66,7 +66,6 @@ data "external" "team_account_emails" {
   program = ["bash", "-c", "cat ${path.module}/team_account_emails.json"]
 }
 
-# Define the teams and their respective accounts
 variable "teams_and_accounts" {
   type = list(object({
     name     = string
