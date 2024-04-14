@@ -1,29 +1,5 @@
 data "aws_organizations_organization" "existing" {}
 
-variable "teams" {
-  description = "Map of teams to their environments and sub-environments."
-  type = map(object({
-    prod_sub_ous = list(string)
-    non_prod_sub_ous = list(string)
-  }))
-
-  default = {
-    "data-team" = {
-      prod_sub_ous = [],
-      non_prod_sub_ous = ["dev", "stg"]
-    },
-    "security-team" = {
-      prod_sub_ous = [],
-      non_prod_sub_ous = ["dev", "stg"]
-    },
-    "marketing-team" = {
-      prod_sub_ous = [],
-      non_prod_sub_ous = ["dev", "stg"]
-    },
-  }
-}
-
-# Create OUs for each team
 resource "aws_organizations_organizational_unit" "team" {
   for_each = var.teams
 
@@ -31,7 +7,6 @@ resource "aws_organizations_organizational_unit" "team" {
   parent_id = data.aws_organizations_organization.existing.roots[0].id
 }
 
-# Create Prod OUs for each team
 resource "aws_organizations_organizational_unit" "prod" {
   for_each = var.teams
 
@@ -39,7 +14,6 @@ resource "aws_organizations_organizational_unit" "prod" {
   parent_id = aws_organizations_organizational_unit.team[each.key].id
 }
 
-# Create Non-Prod OUs for each team
 resource "aws_organizations_organizational_unit" "non_prod" {
   for_each = var.teams
 
@@ -47,7 +21,6 @@ resource "aws_organizations_organizational_unit" "non_prod" {
   parent_id = aws_organizations_organizational_unit.team[each.key].id
 }
 
-# Create sub-ous for Prod environment for each team (if any)
 resource "aws_organizations_organizational_unit" "prod_sub_ous" {
   for_each = toset(flatten([
     for team, detail in var.teams : [
