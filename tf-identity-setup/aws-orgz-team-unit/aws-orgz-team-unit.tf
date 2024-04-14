@@ -1,8 +1,9 @@
-resource "aws_organizations_organization" "organization" {}
+
+data "aws_organizations_organization" "existing" {}
 
 resource "aws_organizations_organizational_unit" "data_team" {
   name      = "data-team"
-  parent_id = aws_organizations_organization.organization.id
+  parent_id = data.aws_organizations_organization.existing.roots[0].id
 }
 
 resource "aws_organizations_organizational_unit" "prod" {
@@ -24,6 +25,34 @@ resource "aws_organizations_organizational_unit" "dev" {
   name      = "dev"
   parent_id = aws_organizations_organizational_unit.non_prod.id
 }
+
+
+# resource "aws_organizations_organization" "organization" {}
+
+# resource "aws_organizations_organizational_unit" "data_team" {
+#   name      = "data-team"
+#   parent_id = aws_organizations_organization.organization.id
+# }
+
+# resource "aws_organizations_organizational_unit" "prod" {
+#   name      = "Prod"
+#   parent_id = aws_organizations_organizational_unit.data_team.id
+# }
+
+# resource "aws_organizations_organizational_unit" "non_prod" {
+#   name      = "Non-prod"
+#   parent_id = aws_organizations_organizational_unit.data_team.id
+# }
+
+# resource "aws_organizations_organizational_unit" "stg" {
+#   name      = "stg"
+#   parent_id = aws_organizations_organizational_unit.non_prod.id
+# }
+
+# resource "aws_organizations_organizational_unit" "dev" {
+#   name      = "dev"
+#   parent_id = aws_organizations_organizational_unit.non_prod.id
+# }
 
 # locals {
 #   all_teams = { for team in var.teams : team.name => team }
