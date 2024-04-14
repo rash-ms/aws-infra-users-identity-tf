@@ -14,9 +14,9 @@
 
 module "aws-team-organization" {
   source              = "../aws-orgz-team-unit"
-  teams               = ["data-team", "security-team", "marketing-team"]
-  common_environments = ["Prod", "Non-prod"]
-  sub_environments    = ["dev", "stg"]
+  teams               = var.teams 
+  common_environments = var.common_environments
+  sub_environments    = var.sub_environments
 
   providers = {
     aws = aws.aws-us-east-1
