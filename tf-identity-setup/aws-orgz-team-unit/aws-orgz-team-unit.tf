@@ -1,7 +1,5 @@
 data "aws_organizations_organization" "existing" {}
 
-
-
 locals {
   common_environments = ["Prod", "Non-prod"]
   sub_environments    = ["dev", "stg"]
