@@ -1,7 +1,6 @@
 data "aws_organizations_organization" "existing" {}
 
 locals {
-
   # Create a list of maps for each team-environment pair
   team_env_pairs = flatten([
     for team in var.teams : [
@@ -25,7 +24,7 @@ locals {
   
   # Convert the list of maps into a map for for_each for the environments
   team_env_map = {
-    for pair in locals.team_env_pairs :
+    for pair in team_env_pairs :  # Removed 'locals.' prefix
     "${pair.team}-${pair.environment}" => {
       team        = pair.team,
       environment = pair.environment
@@ -34,7 +33,7 @@ locals {
   
   # Convert the list of maps into a map for for_each for the sub-environments
   team_sub_env_map = {
-    for pair in locals.team_sub_env_pairs :
+    for pair in team_sub_env_pairs :  # Removed 'locals.' prefix
     "${pair.team}-${pair.environment}-${pair.sub_environment}" => {
       team           = pair.team,
       environment    = pair.environment,
@@ -42,6 +41,7 @@ locals {
     }
   }
 }
+
 
 resource "aws_organizations_organizational_unit" "team" {
   for_each = toset(var.teams)

@@ -13,8 +13,8 @@
 
 
 module "aws-team-organization" {
-  source = "../aws-orgz-team-unit"
-  teams              = ["data-team", "security-team", "marketing-team"]
+  source              = "../aws-orgz-team-unit"
+  teams               = ["data-team", "security-team", "marketing-team"]
   common_environments = ["Prod", "Non-prod"]
   sub_environments    = ["dev", "stg"]
 
