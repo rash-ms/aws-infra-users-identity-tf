@@ -25,7 +25,7 @@ locals {
   
   # Convert the list of maps into a map for for_each for the environments
   team_env_map = {
-    for pair in team_env_pairs :  # Removed 'locals.' prefix
+    for pair in locals.team_env_pairs :  # Removed 'locals.' prefix
     "${pair.team}-${pair.environment}" => {
       team        = pair.team,
       environment = pair.environment
@@ -34,7 +34,7 @@ locals {
   
   # Convert the list of maps into a map for for_each for the sub-environments
   team_sub_env_map = {
-    for pair in team_sub_env_pairs :  # Removed 'locals.' prefix
+    for pair in locals.team_sub_env_pairs :  # Removed 'locals.' prefix
     "${pair.team}-${pair.environment}-${pair.sub_environment}" => {
       team           = pair.team,
       environment    = pair.environment,
