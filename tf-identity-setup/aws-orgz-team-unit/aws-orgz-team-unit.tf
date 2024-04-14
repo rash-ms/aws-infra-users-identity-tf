@@ -1,9 +1,6 @@
 data "aws_organizations_organization" "existing" {}
 
-variable "teams" {
-  type    = list(string)
-  default = ["data-team", "security-team", "marketing-team"]
-}
+
 
 locals {
   common_environments = ["Prod", "Non-prod"]
