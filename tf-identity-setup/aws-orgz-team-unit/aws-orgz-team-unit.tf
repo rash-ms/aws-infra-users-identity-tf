@@ -1,15 +1,16 @@
 data "aws_organizations_organization" "existing" {}
 
+
 locals {
   common_environments = ["Prod", "Non-prod"]
   sub_environments    = ["dev", "stg"]
 
-  # Flatten into a list of maps
+  # Create a list of maps for each team-environment pair
   team_env_pairs = flatten([
     for team in var.teams : [
-      for env in locals.common_environments : {
-        "team"        = team,
-        "environment" = env
+      for env in local.common_environments : {
+        team        = team,
+        environment = env
       }
     ]
   ])
