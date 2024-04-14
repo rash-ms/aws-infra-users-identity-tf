@@ -1,13 +1,11 @@
 data "aws_organizations_organization" "existing" {}
 
 locals {
-  common_environments = ["Prod", "Non-prod"]
-  sub_environments    = ["dev", "stg"]
 
   # Create a list of maps for each team-environment pair
   team_env_pairs = flatten([
     for team in var.teams : [
-      for env in locals.common_environments : {
+      for env in var.common_environments : {
         team        = team,
         environment = env
       }
@@ -17,7 +15,7 @@ locals {
   # Create a list of maps for each team-environment-sub_environment trio where the environment is Non-prod
   team_sub_env_pairs = flatten([
     for team in var.teams : [
-      for sub_env in locals.sub_environments : {
+      for sub_env in var.sub_environments : {
         team           = team,
         environment    = "Non-prod",
         sub_environment = sub_env

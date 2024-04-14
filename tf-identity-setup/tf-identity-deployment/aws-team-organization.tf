@@ -14,7 +14,6 @@
 
 module "aws-team-organization" {
   source = "../aws-orgz-team-unit"
-  teams  = ["data-team", "security-team", "marketing-team"]
 
   providers = {
     aws = aws.aws-us-east-1
