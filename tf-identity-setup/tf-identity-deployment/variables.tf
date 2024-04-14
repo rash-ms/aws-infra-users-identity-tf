@@ -1,5 +1,5 @@
 variable "teams" {
-  description = "List of teams with their unit and accounts"
+  description = "List of teams with their unit and organizational details"
   type = list(object({
     name     = string
     unit     = string
@@ -7,8 +7,16 @@ variable "teams" {
   }))
 }
 
+variable "team_accounts" {
+  description = "Map of team accounts with names and email addresses"
+  type = map(object({
+    name  = string
+    email = string
+  }))
+}
+
 variable "teams_and_accounts" {
-  description = "List of teams with unit and account details"
+  description = "List of teams and their account details"
   type = list(object({
     name     = string
     unit     = string
@@ -17,7 +25,7 @@ variable "teams_and_accounts" {
 }
 
 variable "role_tags" {
-  description = "Role tags for different environments"
-  type = list(string)
-  default = ["stg", "dev", "prod"]
+  description = "List of role tags used for differentiating environment roles"
+  type        = list(string)
+  default     = ["stg", "dev", "prod"]
 }
