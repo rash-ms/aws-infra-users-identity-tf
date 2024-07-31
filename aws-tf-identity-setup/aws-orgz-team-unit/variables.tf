@@ -1,16 +1,17 @@
 variable "teams" {
+  description = "List of team name"
   type    = list(string)
-  default = ["data-team", "security-team", "marketing-team"]
+  default = ["data-eng-solution", "infra-team", "marketing-team"]
 }
 
-variable "common_environments" {
-  description = "List of common environments for each team."
+variable "workspace" {
+  description = "List of workspace for each team."
   type        = list(string)
   default     = ["Prod", "Non-prod"]
 }
 
-variable "sub_environments" {
-  description = "List of sub-environments under the Non-prod environment."
+variable "environment" {
+  description = "List of environment under the Non-prod."
   type        = list(string)
   default     = ["dev", "stg"]
 }

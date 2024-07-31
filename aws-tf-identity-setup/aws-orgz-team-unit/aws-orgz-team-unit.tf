@@ -2,43 +2,43 @@ data "aws_organizations_organization" "existing" {}
 
 locals {
 
-  # Create a list of maps for each team-environment pair
+  # Create a list of maps for each team workspace
   team_env_pairs = flatten([
     for team in var.teams : [
-      for env in var.common_environments : {
+      for wrkspc in var.workspace : {
         team        = team,
-        environment = env
+        workspace   = wrkspc
       }
     ]
   ])
 
-  # Create a list of maps for each team-environment-sub_environment 
-  team_sub_env_pairs = flatten([
+  # Create a list of maps for each team workspace environment 
+  team_wrkspc_pairs = flatten([
     for team in var.teams : [
-      for sub_env in var.sub_environments: {
-        team           = team,
-        environment    = "Non-prod",
-        sub_environment = sub_env
+      for env in var.environment: {
+        team            = team,
+        workspace       = "Non-prod",
+        environment     = env
       }
     ]
   ])
   
   # Convert the list of maps into a map for for_each for the environments
-  team_env_map = {
+  team_wrkspc_map = {
     for pair in local.team_env_pairs :  
-    "${pair.team}-${pair.environment}" => {
+    "${pair.team}-${pair.workspace}" => {
       team        = pair.team,
-      environment = pair.environment
+      workspace   = pair.workspace
     }
   }
   
   # Convert the list of maps into a map for for_each for the sub-environments
-  team_sub_env_map = {
-    for pair in local.team_sub_env_pairs : 
-    "${pair.team}-${pair.environment}-${pair.sub_environment}" => {
+  team_env_map = {
+    for pair in local.team_wrkspc_pairs : 
+    "${pair.team}-${pair.workspace}-${pair.environment}" => {
       team           = pair.team,
-      environment    = pair.environment,
-      sub_environment = pair.sub_environment
+      workspace      = pair.workspace,
+      environment    = pair.environment
     }
   }
 }
@@ -51,18 +51,18 @@ resource "aws_organizations_organizational_unit" "team" {
   parent_id = data.aws_organizations_organization.existing.roots[0].id
 }
 
+resource "aws_organizations_organizational_unit" "workspace" {
+  for_each = local.team_wrkspc_map
+
+  name      = each.value.workspace
+  parent_id = aws_organizations_organizational_unit.team[each.value.team].id
+}
+
 resource "aws_organizations_organizational_unit" "environment" {
   for_each = local.team_env_map
 
   name      = each.value.environment
-  parent_id = aws_organizations_organizational_unit.team[each.value.team].id
-}
-
-resource "aws_organizations_organizational_unit" "sub_environment" {
-  for_each = local.team_sub_env_map
-
-  name      = each.value.sub_environment
-  parent_id = aws_organizations_organizational_unit.environment["${each.value.team}-Non-prod"].id
+  parent_id = aws_organizations_organizational_unit.workspace["${each.value.team}-Non-prod"].id
 }
 
 

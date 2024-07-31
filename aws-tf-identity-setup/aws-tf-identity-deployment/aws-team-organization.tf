@@ -1,8 +1,8 @@
 module "aws-team-organization" {
   source              = "../aws-orgz-team-unit"
   teams               = var.teams 
-  common_environments = var.common_environments
-  sub_environments    = var.sub_environments
+  workspace           = var.workspace
+  environment         = var.environment
 
   #   teams              = var.teams
 
