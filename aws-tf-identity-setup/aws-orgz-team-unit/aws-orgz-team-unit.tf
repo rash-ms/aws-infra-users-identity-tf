@@ -5,9 +5,9 @@ locals {
   # Create a list of maps for each team workspace
   team_env_pairs = flatten([
     for team in var.teams : [
-      for wrk in var.workspace : {
+      for wrkspc in var.workspace : {
         team        = team,
-        workspace   = wrk
+        workspace   = wrkspc
       }
     ]
   ])
