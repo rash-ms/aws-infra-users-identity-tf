@@ -18,7 +18,7 @@ locals {
       for env in var.environment: {
         team            = team,
         workspace       = "Non-prod",
-        sub_environment = env
+        environment     = env
       }
     ]
   ])
