@@ -10,13 +10,6 @@ variable "workspace" {
   default     = ["Prod", "Non-prod"]
 }
 
-variable "environment" {
-  description = "List of environment under the Non-prod."
-  type        = list(string)
-  default     = ["dev", "stg"]
-}
-
-
 # variable "teams" {
 #   description = "List of teams with their unit and organizational details"
 #   type = list(object({
