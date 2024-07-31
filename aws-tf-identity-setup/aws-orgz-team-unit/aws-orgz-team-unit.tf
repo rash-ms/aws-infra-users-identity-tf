@@ -12,33 +12,12 @@ locals {
     ]
   ])
 
-  # Create a list of maps for each team workspace environment 
-  team_wrkspc_pairs = flatten([
-    for team in var.teams : [
-      for env in var.environment: {
-        team            = team,
-        workspace       = "Non-prod",
-        environment     = env
-      }
-    ]
-  ])
-  
   # Convert the list of maps into a map for for_each for the environments
   team_wrkspc_map = {
     for pair in local.team_env_pairs :  
     "${pair.team}-${pair.workspace}" => {
       team        = pair.team,
       workspace   = pair.workspace
-    }
-  }
-  
-  # Convert the list of maps into a map for for_each for the sub-environments
-  team_env_map = {
-    for pair in local.team_wrkspc_pairs : 
-    "${pair.team}-${pair.workspace}-${pair.environment}" => {
-      team           = pair.team,
-      workspace      = pair.workspace,
-      environment    = pair.environment
     }
   }
 }
@@ -57,15 +36,6 @@ resource "aws_organizations_organizational_unit" "workspace" {
   name      = each.value.workspace
   parent_id = aws_organizations_organizational_unit.team[each.value.team].id
 }
-
-resource "aws_organizations_organizational_unit" "environment" {
-  for_each = local.team_env_map
-
-  name      = each.value.environment
-  parent_id = aws_organizations_organizational_unit.workspace["${each.value.team}-Non-prod"].id
-}
-
-
 
 # locals {
 #   all_teams = { for team in var.teams : team.name => team }
