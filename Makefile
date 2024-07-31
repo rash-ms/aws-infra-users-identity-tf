@@ -40,10 +40,10 @@ destroy:
 		cd ./aws-tf-identity-setup/aws-tf-identity-deployment && terraform destroy
 
 tf_lint_with_write:		
-		terraform fmt -recursive -diff=true -write=true ./tf-identity-setup
+		terraform fmt -recursive -diff=true -write=true ./aws-tf-identity-setup
 
 tf_lint_without_write:
-		terraform fmt -recursive -diff=true -write=false ./tf-identity-setup
+		terraform fmt -recursive -diff=true -write=false ./aws-tf-identity-setup
 
 install_python_deps:
 		${python_exec} -m pip install --upgrade pip
