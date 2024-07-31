@@ -7,7 +7,7 @@ on:
     - 'users-identity/users-identity-us/people-prod.json'
     - 'users-identity/users-identity-us/people-stg.json'
     - 'users-identity/users-identity-us/people-dev.json'
-    - 'tf-identity-setup/**'
+    - 'aws-tf-identity-setup/**'
     - '.github/workflows/cicd_add_user_us.yaml'
 
 env:
