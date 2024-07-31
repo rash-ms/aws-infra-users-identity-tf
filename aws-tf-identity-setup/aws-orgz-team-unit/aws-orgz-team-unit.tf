@@ -12,7 +12,7 @@ locals {
     ]
   ])
 
-  # Convert the list of maps into a map for for_each for the environments
+  # create a list of for_each workspace
   team_wrkspc_map = {
     for pair in local.team_env_pairs :  
     "${pair.team}-${pair.workspace}" => {
