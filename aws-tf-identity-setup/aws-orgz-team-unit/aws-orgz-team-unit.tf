@@ -4,17 +4,32 @@
 
 locals {
   team_account_emails = jsondecode(file("${path.module}/team_emails.json"))
-  teams_with_envs = {
-    for team in var.teams : team => [
-      for env in var.workspace : "${team}-${env}"
-    ]
-  }
-  account_map = {
-    for team_env in flatten([for team, envs in local.teams_with_envs : [
-      for env in envs : "${team}-${env}"
-    ]]) : team_env => team_env
-  }
-}
+  team_env_pairs = flatten([
+      for team in var.teams : [
+        for env in var.workspace : {
+          team = team,
+          env  = env
+        }
+      ]
+    ])
+
+    account_map = {
+      for pair in local.team_env_pairs : 
+      "${pair.team}-${pair.env}" => pair
+    }
+ 
+  # teams_with_envs = {
+  #   for team in var.teams : team => [
+  #     for env in var.workspace : "${team}-${env}"
+  #   ]
+  # }
+  # account_map = {
+  #   for team_env in flatten([for team, envs in local.teams_with_envs : [
+  #     for env in envs : "${team}-${env}"
+  #   ]]) : team_env => team_env
+  # }
+ }
+
 
 resource "aws_organizations_organization" "org" {
   aws_service_access_principals = [
@@ -33,7 +48,7 @@ resource "aws_organizations_organizational_unit" "team" {
   parent_id = aws_organizations_organization.org.roots[0].id
 
   tags = {
-    Name = "BDT - Data Org - Evergreen Platform - ${each.value}"
+    Name = "BDT - ${each.value}"
   }
 }
 
@@ -43,19 +58,19 @@ resource "aws_organizations_organizational_unit" "team_env" {
   parent_id = aws_organizations_organizational_unit.team[split("-", each.value)[0]].id
 
   tags = {
-    Name = "BDT - Data Org - Evergreen Platform - ${split("-", each.value)[0]} - ${split("-", each.value)[1]}"
+    Name = "BDT -${split("-", each.value)[0]} - ${split("-", each.value)[1]}"
   }
 }
 
 resource "aws_organizations_account" "team_env_account" {
   for_each = local.account_map
-  name      = "BDT - Data Org - Evergreen Platform - ${each.value}"
+  name      = "BDT - ${each.value}"
   email     = local.team_account_emails.team_account_emails[each.value]
   parent_id = aws_organizations_organizational_unit.team_env[each.value].id
   role_name = "OrganizationAccountAccessRole"
 
   tags = {
-    Name = "BDT - Data Org - Evergreen Platform - ${each.value}",
+    Name = "BDT - ${each.value}",
     Team = split("-", each.value)[0],
     Environment = split("-", each.value)[1]
   }
