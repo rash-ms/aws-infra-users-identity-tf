@@ -16,7 +16,7 @@ variable "teams" {
   default     = ["data-eng", "marketing_team"]
 }
 
-variable "environments" {
+variable "workspace" {
   description = "List of environments"
   type        = list(string)
   default     = ["Prod", "NonProd"]

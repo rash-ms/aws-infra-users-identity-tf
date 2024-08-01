@@ -6,7 +6,7 @@ locals {
   team_account_emails = jsondecode(file("${path.module}/team_emails.json"))
   teams_with_envs = {
     for team in var.teams : team => [
-      for env in var.environments : "${team}-${env}"
+      for env in var.workspace : "${team}-${env}"
     ]
   }
   account_map = {
@@ -75,7 +75,7 @@ resource "aws_organizations_account" "team_env_account" {
 # resource "aws_organizations_organizational_unit" "team_env" {
 #   for_each = {
 #     for team in var.teams : team => [
-#       for env in var.environments : "${team}-${env}"
+#       for env in var.workspace : "${team}-${env}"
 #     ]
 #   }
 #   name      = split("-", each.value)[1]
@@ -89,7 +89,7 @@ resource "aws_organizations_account" "team_env_account" {
 # resource "aws_organizations_account" "team_env_account" {
 #   for_each = {
 #     for team in var.teams : [
-#       for env in var.environments : "${team}-${env}"
+#       for env in var.workspace : "${team}-${env}"
 #     ]
 #   }
 #   name      = "BDT - Data Org - Evergreen Platform - ${each.value}"
