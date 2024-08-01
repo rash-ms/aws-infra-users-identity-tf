@@ -29,8 +29,8 @@
             }
         ]
     },
-    "team_account_ids": {
-    "data-eng-Prod": "0458b418-b0e1-70a8-20b5-d07f65b0293f",
-    "data-eng-NonProd": "5488e4b8-a081-70ec-2052-6f1b28254f03"
+    "groups": {
+    "data-eng-Prod": "748854e8-20e1-7026-85e6-bfa789253ff8",
+    "data-eng-NonProd": "94a8d408-e001-702f-fedb-f18e624f7caa"
   }
 }
