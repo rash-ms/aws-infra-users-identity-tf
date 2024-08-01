@@ -70,13 +70,13 @@ resource "aws_organizations_organizational_unit" "team_env" {
 
 resource "aws_organizations_account" "team_env_account" {
   for_each = local.account_map
-  name      = "BDT - ${each.key}"
-  email     = local.team_account_emails.team_account_emails[each.key]
-  parent_id = aws_organizations_organizational_unit.team_env[each.key].id
+  name      = "BDT - ${each.value}"
+  email     = local.team_account_emails.team_account_emails[each.value]
+  parent_id = aws_organizations_organizational_unit.team_env[each.value].id
   role_name = "OrganizationAccountAccessRole"
 
   tags = {
-    Name = "BDT -  ${each.key}",
+    Name = "BDT -  ${each.value}",
     Team = each.value.team,
     Environment = each.value.env
   }
