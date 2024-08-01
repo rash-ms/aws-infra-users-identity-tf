@@ -30,7 +30,7 @@
         ]
     },
     "groups": {
-        "data-eng-dev": "8498f4e8-e031-707d-cbb7-67eeb1fcfc5d",
-        "data-eng-prod": "0408e448-1091-70db-baf4-b67ce1338f8d"
+        "data-eng-dev": "0408e448-1091-70db-baf4-b67ce1338f8d",
+        "data-eng-prod": "8498f4e8-e031-707d-cbb7-67eeb1fcfc5d"
   }
 }
