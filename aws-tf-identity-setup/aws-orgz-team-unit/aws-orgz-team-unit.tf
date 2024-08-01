@@ -1,9 +1,4 @@
-# locals {
-#   team_account_emails = jsondecode(file("${path.module}/team_emails.json"))
-# }
-
 locals {
-  # team_account_emails = jsondecode(file("${path.module}/team_emails.json"))
   team_account_emails = jsondecode(file("${path.module}/team_emails.json")).team_account_emails
   team_env_pairs = flatten([
       for team in var.teams : [
@@ -18,35 +13,27 @@ locals {
       for pair in local.team_env_pairs : 
       "${pair.team}-${pair.env}" => pair
     }
- 
-  # teams_with_envs = {
-  #   for team in var.teams : team => [
-  #     for env in var.workspace : "${team}-${env}"
-  #   ]
-  # }
-  # account_map = {
-  #   for team_env in flatten([for team, envs in local.teams_with_envs : [
-  #     for env in envs : "${team}-${env}"
-  #   ]]) : team_env => team_env
-  # }
  }
 
 
-resource "aws_organizations_organization" "org" {
-  aws_service_access_principals = [
-    "cloudtrail.amazonaws.com",
-    "config.amazonaws.com",
-  ]
+data "aws_organizations_organization" "existing" {}
 
-  enabled_policy_types = [
-    "SERVICE_CONTROL_POLICY"
-  ]
-}
+# resource "aws_organizations_organization" "org" {
+#   aws_service_access_principals = [
+#     "cloudtrail.amazonaws.com",
+#     "config.amazonaws.com",
+#   ]
+
+#   enabled_policy_types = [
+#     "SERVICE_CONTROL_POLICY"
+#   ]
+# }
 
 resource "aws_organizations_organizational_unit" "team" {
   for_each = toset(var.teams)
   name     = each.value
-  parent_id = aws_organizations_organization.org.roots[0].id
+  # parent_id = aws_organizations_organization.org.roots[0].id
+  parent_id = data.aws_organizations_organization.existing.roots[0].id
 
   tags = {
     Name = "BDT - ${each.value}"
@@ -61,12 +48,6 @@ resource "aws_organizations_organizational_unit" "team_env" {
   tags = {
     Name = "BDT - ${each.value.team} - ${each.value.env}"
   }
-  # name      = split("-", each.value)[1]
-  # parent_id = aws_organizations_organizational_unit.team[split("-", each.value)[0]].id
-
-  # tags = {
-  #   Name = "BDT -${split("-", each.value)[0]} - ${split("-", each.value)[1]}"
-  # }
 }
 
 resource "aws_organizations_account" "team_env_account" {
@@ -81,65 +62,9 @@ resource "aws_organizations_account" "team_env_account" {
     Team = each.value.team,
     Environment = each.value.env
   }
-
-# resource "aws_organizations_account" "team_env_account" {
-#   for_each = local.account_map
-#   name      = "BDT - ${each.value}"
-#   email     = local.team_account_emails.team_account_emails[each.value]
-#   parent_id = aws_organizations_organizational_unit.team_env[each.value].id
-#   role_name = "OrganizationAccountAccessRole"
-
-#   tags = {
-#     Name = "BDT - ${each.value}",
-#     Team = split("-", each.value)[0],
-#     Environment = split("-", each.value)[1]
-#   }
 }
 
 
-# resource "aws_organizations_organizational_unit" "team" {
-#   for_each = toset(var.teams)
-#   name     = each.value
-#   parent_id = aws_organizations_organization.org.roots[0].id
-
-#   tags = {
-#     Name = "BDT - Data Org - Evergreen Platform - ${each.value}"
-#   }
-# }
-
-# resource "aws_organizations_organizational_unit" "team_env" {
-#   for_each = {
-#     for team in var.teams : team => [
-#       for env in var.workspace : "${team}-${env}"
-#     ]
-#   }
-#   name      = split("-", each.value)[1]
-#   parent_id = aws_organizations_organizational_unit.team[split("-", each.value)[0]].id
-
-#   tags = {
-#     Name = "BDT - Data Org - Evergreen Platform - ${split("-", each.value)[0]} - ${split("-", each.value)[1]}"
-#   }
-# }
-
-# resource "aws_organizations_account" "team_env_account" {
-#   for_each = {
-#     for team in var.teams : [
-#       for env in var.workspace : "${team}-${env}"
-#     ]
-#   }
-#   name      = "BDT - Data Org - Evergreen Platform - ${each.value}"
-#   email     = local.team_account_emails.team_account_emails[each.value]
-#   parent_id = aws_organizations_organizational_unit.team_env[each.value].id
-#   role_name = "OrganizationAccountAccessRole"
-
-#   tags = {
-#     Name = "BDT - Data Org - Evergreen Platform - ${each.value}",
-#     Team = split("-", each.value)[0],
-#     Environment = split("-", each.value)[1]
-#   }
-# }
-
-# data "aws_organizations_organization" "existing" {}
 
 # locals {
 
