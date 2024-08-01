@@ -29,7 +29,7 @@ locals {
 
   full_access_permission_sets = {
     for group, name in local.groups : group => {
-      name   = "byt-${group}"
+      name   = "byt-${group}-readonly"
       # policy = local.policies.full_access_policy
       policy = jsonencode(local.policies.full_access_policy)
     }
