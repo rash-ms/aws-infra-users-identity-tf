@@ -70,16 +70,29 @@ resource "aws_organizations_organizational_unit" "team_env" {
 
 resource "aws_organizations_account" "team_env_account" {
   for_each = local.account_map
-  name      = "BDT - ${each.value}"
-  email     = local.team_account_emails.team_account_emails[each.value]
-  parent_id = aws_organizations_organizational_unit.team_env[each.value].id
+  name      = "BDT - ${each.key}"
+  email     = local.team_account_emails.team_account_emails[each.key]
+  parent_id = aws_organizations_organizational_unit.team_env[each.key].id
   role_name = "OrganizationAccountAccessRole"
 
   tags = {
-    Name = "BDT - ${each.value}",
-    Team = split("-", each.value)[0],
-    Environment = split("-", each.value)[1]
+    Name = "BDT -  ${each.key}",
+    Team = each.value.team,
+    Environment = each.value.env
   }
+
+# resource "aws_organizations_account" "team_env_account" {
+#   for_each = local.account_map
+#   name      = "BDT - ${each.value}"
+#   email     = local.team_account_emails.team_account_emails[each.value]
+#   parent_id = aws_organizations_organizational_unit.team_env[each.value].id
+#   role_name = "OrganizationAccountAccessRole"
+
+#   tags = {
+#     Name = "BDT - ${each.value}",
+#     Team = split("-", each.value)[0],
+#     Environment = split("-", each.value)[1]
+#   }
 }
 
 
