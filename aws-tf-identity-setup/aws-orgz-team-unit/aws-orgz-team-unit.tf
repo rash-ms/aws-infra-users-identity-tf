@@ -32,16 +32,16 @@ locals {
  }
 
 
-resource "aws_organizations_organization" "org" {
-  aws_service_access_principals = [
-    "cloudtrail.amazonaws.com",
-    "config.amazonaws.com",
-  ]
+# resource "aws_organizations_organization" "org" {
+#   aws_service_access_principals = [
+#     "cloudtrail.amazonaws.com",
+#     "config.amazonaws.com",
+#   ]
 
-  enabled_policy_types = [
-    "SERVICE_CONTROL_POLICY"
-  ]
-}
+#   enabled_policy_types = [
+#     "SERVICE_CONTROL_POLICY"
+#   ]
+# }
 
 resource "aws_organizations_organizational_unit" "team" {
   for_each = toset(var.teams)
