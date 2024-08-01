@@ -28,5 +28,9 @@
                 "Resource": "*"
             }
         ]
-    }
+    },
+    "team_account_ids": {
+    "data-eng-Prod": "0458b418-b0e1-70a8-20b5-d07f65b0293f",
+    "data-eng-NonProd": "5488e4b8-a081-70ec-2052-6f1b28254f03"
+  }
 }

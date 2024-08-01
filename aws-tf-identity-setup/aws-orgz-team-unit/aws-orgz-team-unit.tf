@@ -3,6 +3,7 @@ locals {
   team_account_emails = jsondecode(file("${path.module}/team_emails.json")).team_account_emails
 
   policies = jsondecode(file("${path.module}/policies.json"))
+  team_account_ids = local.policies.team_account_ids
 
   team_env_pairs = flatten([
       for team in var.teams : [
@@ -103,7 +104,6 @@ resource "aws_ssoadmin_permission_set_inline_policy" "readonly_inline_policy" {
   for_each             = aws_ssoadmin_permission_set.readonly_permission_set
   instance_arn         = data.aws_ssoadmin_instances.main.arns[0]
   permission_set_arn   = each.value.arn
-  # inline_policy        = jsonencode(local.readonly_permission_sets[each.key].policy)
   inline_policy        = local.readonly_permission_sets[each.key].policy
 }
 
@@ -125,7 +125,6 @@ resource "aws_ssoadmin_permission_set_inline_policy" "full_access_inline_policy"
   instance_arn         = data.aws_ssoadmin_instances.main.arns[0]
   permission_set_arn   = each.value.arn
   inline_policy        = local.full_access_permission_sets[each.key].policy
-  # inline_policy        = jsonencode(local.full_access_permission_sets[each.key].policy)
 }
 
 # Assign permission sets to users based on environment
@@ -135,7 +134,7 @@ resource "aws_ssoadmin_account_assignment" "readonly_assignment" {
   }
   instance_arn = data.aws_ssoadmin_instances.main.arns[0]
   permission_set_arn = aws_ssoadmin_permission_set.readonly_permission_set[each.key].arn
-  principal_id = local.team_account_emails[each.key]  # Email address of the user
+  principal_id = local.team_account_ids[each.key]  # Principal ID of the user
   principal_type = "USER"
   target_id = aws_organizations_account.team_env_account[each.key].id
   target_type = "AWS_ACCOUNT"
@@ -147,7 +146,8 @@ resource "aws_ssoadmin_account_assignment" "full_access_assignment" {
   }
   instance_arn = data.aws_ssoadmin_instances.main.arns[0]
   permission_set_arn = aws_ssoadmin_permission_set.full_access_permission_set[each.key].arn
-  principal_id = local.team_account_emails[each.key]  # Email address of the user
+  # principal_id = local.team_account_emails[each.key]  # Email address of the user
+  principal_id = local.team_account_ids[each.key]  # Principal ID of the user
   principal_type = "USER"
   target_id = aws_organizations_account.team_env_account[each.key].id
   target_type = "AWS_ACCOUNT"
