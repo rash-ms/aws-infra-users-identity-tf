@@ -13,11 +13,11 @@
 variable "teams" {
   description = "List of teams"
   type        = list(string)
-  default     = ["data-eng", "marketing_team"]
+  default     = ["data-eng"]
 }
 
 variable "workspace" {
-  description = "List of environments"
+  description = "List of workspaces"
   type        = list(string)
   default     = ["Prod", "NonProd"]
 }
