@@ -3,7 +3,7 @@ locals {
   team_account_emails = jsondecode(file("${path.module}/team_emails.json")).team_account_emails
 
   policies = jsondecode(file("${path.module}/policies.json"))
-  
+
   team_env_pairs = flatten([
       for team in var.teams : [
         for env in var.workspace : {
@@ -126,7 +126,7 @@ resource "aws_iam_user_group_membership" "env_user_group_membership" {
   user     = each.value.name
 
   groups = [
-    each.value.environment == "Prod" ? aws_iam_group.readonly_group.name : aws_iam_group.full_access_group.name
+    each.value.workspace == "Prod" ? aws_iam_group.readonly_group.name : aws_iam_group.full_access_group.name
   ]
 }
 
