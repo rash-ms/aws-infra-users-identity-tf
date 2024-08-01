@@ -22,14 +22,16 @@ locals {
   readonly_permission_sets = {
     for group, name in local.groups : group => {
       name   = "byt-${group}-readonly"
-      policy = local.policies.readonly_policy
+      # policy = local.policies.readonly_policy
+      policy = jsonencode(local.policies.readonly_policy)
     }
   }
 
   full_access_permission_sets = {
     for group, name in local.groups : group => {
       name   = "byt-${group}-full-access"
-      policy = local.policies.full_access_policy
+      # policy = local.policies.full_access_policy
+      policy = jsonencode(local.policies.full_access_policy)
     }
   }
  }
@@ -103,8 +105,8 @@ resource "aws_ssoadmin_permission_set_inline_policy" "readonly_inline_policy" {
   for_each             = aws_ssoadmin_permission_set.readonly_permission_set
   instance_arn         = data.aws_ssoadmin_instances.main.arns[0]
   permission_set_arn   = each.value.arn
-  # inline_policy        = each.value.policy
-  inline_policy        = local.readonly_permission_sets[each.key].policy
+  inline_policy        = each.value.policy
+  # inline_policy        = local.readonly_permission_sets[each.key].policy
 }
 
 resource "aws_ssoadmin_permission_set" "full_access_permission_set" {
@@ -124,7 +126,8 @@ resource "aws_ssoadmin_permission_set_inline_policy" "full_access_inline_policy"
   for_each             = aws_ssoadmin_permission_set.full_access_permission_set
   instance_arn         = data.aws_ssoadmin_instances.main.arns[0]
   permission_set_arn   = each.value.arn
-  inline_policy        = local.full_access_permission_sets[each.key].policy
+  inline_policy        = each.value.policy
+  # inline_policy        = local.full_access_permission_sets[each.key].policy
 }
 
 # Assign permission sets to users based on environment
