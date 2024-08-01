@@ -3,6 +3,7 @@ locals {
   team_account_emails = jsondecode(file("${path.module}/team_emails.json")).team_account_emails
 
   policies = jsondecode(file("${path.module}/policies.json"))
+  groups = local.policies.groups
 
   team_env_pairs = flatten([
       for team in var.teams : [
@@ -13,10 +14,26 @@ locals {
       ]
     ])
 
-    account_map = {
+  account_map = {
       for pair in local.team_env_pairs : 
       "${pair.team}-${pair.env}" => pair
     }
+
+  readonly_permission_sets = {
+    for group, name in local.groups : group => {
+      name   = "byt-${group}-readonly"
+      # policy = local.policies.readonly_policy
+      policy = jsonencode(local.policies.readonly_policy)
+    }
+  }
+
+  full_access_permission_sets = {
+    for group, name in local.groups : group => {
+      name   = "byt-${group}-full-access"
+      # policy = local.policies.full_access_policy
+      policy = jsonencode(local.policies.full_access_policy)
+    }
+  }
  }
 
 
@@ -68,67 +85,139 @@ resource "aws_organizations_account" "team_env_account" {
   }
 }
 
-# READ-ONLY POLICY
-resource "aws_iam_policy" "readonly_policy" {
-  name   = "readonly_policy"
-  path   = "/"
-  policy = jsonencode(local.policies.readonly_policy)
-}
+data "aws_ssoadmin_instances" "main" {}
 
-# FULL-ACCESS POLICY
-resource "aws_iam_policy" "full_access_policy" {
-  name   = "full_access_policy"
-  path   = "/"
-  policy = jsonencode(local.policies.full_access_policy)
-}
-
-# Create IAM groups and attach policies
-resource "aws_iam_group" "readonly_group" {
-  name = "readonly_group"
-
-  # tags = {
-  #   Name = "readonly_group"
-  # }
-}
-
-resource "aws_iam_group_policy_attachment" "readonly_group_policy_attachment" {
-  group      = aws_iam_group.readonly_group.name
-  policy_arn = aws_iam_policy.readonly_policy.arn
-}
-
-resource "aws_iam_group" "full_access_group" {
-  name = "full_access_group"
-
-  # tags = {
-  #   Name = "full_access_group"
-  # }
-}
-
-resource "aws_iam_group_policy_attachment" "full_access_group_policy_attachment" {
-  group      = aws_iam_group.full_access_group.name
-  policy_arn = aws_iam_policy.full_access_policy.arn
-}
-
-# Create IAM users and add them to the appropriate group based on environment
-resource "aws_iam_user" "env_user" {
-  for_each = local.account_map
-  name     = "env-${each.value.team}-${each.value.env}"
+# Create permission sets for readonly access
+resource "aws_ssoadmin_permission_set" "readonly_permission_set" {
+  for_each     = local.readonly_permission_sets
+  instance_arn = data.aws_ssoadmin_instances.main.arns[0]
+  name         = each.value.name
+  description  = "Read-only access to AWS resources for ${each.key}"
+  session_duration = "PT1H"
+  relay_state = "https://console.aws.amazon.com/"
 
   tags = {
-    Name        = "env-${each.value.team}-${each.value.env}"
-    Team        = each.value.team
-    Environment = each.value.env
+    Name = each.value.name
   }
 }
 
-resource "aws_iam_user_group_membership" "env_user_group_membership" {
-  for_each = aws_iam_user.env_user
-  user     = each.value.name
-
-  groups = [
-    each.value.tags.Environment == "Prod" ? aws_iam_group.readonly_group.name : aws_iam_group.full_access_group.name
-  ]
+resource "aws_ssoadmin_permission_set_inline_policy" "readonly_inline_policy" {
+  for_each             = aws_ssoadmin_permission_set.readonly_permission_set
+  instance_arn         = data.aws_ssoadmin_instances.main.arns[0]
+  permission_set_arn   = each.value.arn
+  # inline_policy        = each.value.policy
+  inline_policy        = local.readonly_permission_sets[each.key].policy
 }
+
+resource "aws_ssoadmin_permission_set" "full_access_permission_set" {
+  for_each     = local.full_access_permission_sets
+  instance_arn = data.aws_ssoadmin_instances.main.arns[0]
+  name         = each.value.name
+  description  = "Full access to AWS resources for ${each.key}"
+  session_duration = "PT1H"
+  relay_state = "https://console.aws.amazon.com/"
+
+  tags = {
+    Name = each.value.name
+  }
+}
+
+resource "aws_ssoadmin_permission_set_inline_policy" "full_access_inline_policy" {
+  for_each             = aws_ssoadmin_permission_set.full_access_permission_set
+  instance_arn         = data.aws_ssoadmin_instances.main.arns[0]
+  permission_set_arn   = each.value.arn
+  # inline_policy        = each.value.policy
+  inline_policy        = local.full_access_permission_sets[each.key].policy
+}
+
+# Assign permission sets to users based on environment
+resource "aws_ssoadmin_account_assignment" "readonly_assignment" {
+  for_each = {
+    for k, v in local.account_map : k => v if v.env == "Prod"
+  }
+  instance_arn = data.aws_ssoadmin_instances.main.arns[0]
+  permission_set_arn = aws_ssoadmin_permission_set.readonly_permission_set[each.key].arn
+  principal_id = local.groups[each.key]  # Principal ID of the user
+  principal_type = "GROUP"
+  target_id = aws_organizations_account.team_env_account[each.key].id
+  target_type = "AWS_ACCOUNT"
+}
+
+resource "aws_ssoadmin_account_assignment" "full_access_assignment" {
+  for_each = {
+    for k, v in local.account_map : k => v if v.env == "NonProd"
+  }
+  instance_arn = data.aws_ssoadmin_instances.main.arns[0]
+  permission_set_arn = aws_ssoadmin_permission_set.full_access_permission_set[each.key].arn
+  principal_id = local.groups[each.key]  # Principal ID of the user
+  # principal_id = local.team_account_ids[each.key]  # Principal ID of the user
+  principal_type = "GROUP"
+  target_id = aws_organizations_account.team_env_account[each.key].id
+  target_type = "AWS_ACCOUNT"
+}
+
+
+# READ-ONLY POLICY
+# resource "aws_iam_policy" "readonly_policy" {
+#   name   = "readonly_policy"
+#   path   = "/"
+#   policy = jsonencode(local.policies.readonly_policy)
+# }
+
+# # FULL-ACCESS POLICY
+# resource "aws_iam_policy" "full_access_policy" {
+#   name   = "full_access_policy"
+#   path   = "/"
+#   policy = jsonencode(local.policies.full_access_policy)
+# }
+
+# # Create IAM groups and attach policies
+# resource "aws_iam_group" "readonly_group" {
+#   name = "readonly_group"
+
+#   # tags = {
+#   #   Name = "readonly_group"
+#   # }
+# }
+
+# resource "aws_iam_group_policy_attachment" "readonly_group_policy_attachment" {
+#   group      = aws_iam_group.readonly_group.name
+#   policy_arn = aws_iam_policy.readonly_policy.arn
+# }
+
+# resource "aws_iam_group" "full_access_group" {
+#   name = "full_access_group"
+
+#   # tags = {
+#   #   Name = "full_access_group"
+#   # }
+# }
+
+# resource "aws_iam_group_policy_attachment" "full_access_group_policy_attachment" {
+#   group      = aws_iam_group.full_access_group.name
+#   policy_arn = aws_iam_policy.full_access_policy.arn
+# }
+
+# Create IAM users and add them to the appropriate group based on environment
+# resource "aws_iam_user" "env_user" {
+#   for_each = local.account_map
+#   name     = "env-${each.value.team}-${each.value.env}"
+
+#   tags = {
+#     Name        = "env-${each.value.team}-${each.value.env}"
+#     Team        = each.value.team
+#     Environment = each.value.env
+#   }
+# }
+
+# resource "aws_iam_user_group_membership" "env_user_group_membership" {
+#   for_each = aws_iam_user.env_user
+#   user     = each.value.name
+
+#   groups = [
+#     each.value.tags.Environment == "Prod" ? aws_iam_group.readonly_group.name : aws_iam_group.full_access_group.name
+#   ]
+# }
 
 
 # Create IAM users and add them to the appropriate group based on environment
