@@ -55,7 +55,7 @@ resource "aws_organizations_organizational_unit" "team" {
   parent_id = data.aws_organizations_organization.existing.roots[0].id
 
   tags = {
-    Name = "BDT - ${each.value}"
+    Name = "BDT-${each.value}"
   }
 }
 
@@ -65,19 +65,19 @@ resource "aws_organizations_organizational_unit" "team_env" {
   parent_id = aws_organizations_organizational_unit.team[each.value.team].id
 
   tags = {
-    Name = "BDT - ${each.value.team} - ${each.value.env}"
+    Name = "BDT-${each.value.team} - ${each.value.env}"
   }
 }
 
 resource "aws_organizations_account" "team_env_account" {
   for_each  = local.account_map
-  name      = "BDT - ${each.key}"
+  name      = "BDT-${each.key}"
   email     = local.team_account_emails[each.key]
   parent_id = aws_organizations_organizational_unit.team_env[each.key].id
   role_name = "OrganizationAccountAccessRole"
 
   tags = {
-    Name = "BDT -  ${each.key}",
+    Name = "BDT-${each.key}",
     Team = each.value.team,
     Environment = each.value.env
   }
@@ -106,6 +106,19 @@ resource "aws_ssoadmin_permission_set_inline_policy" "readonly_inline_policy" {
   inline_policy        = local.readonly_permission_sets[each.key].policy
 }
 
+# Assign permission sets to users based on environment
+resource "aws_ssoadmin_account_assignment" "readonly_assignment" {
+  for_each = {
+    for k, v in local.account_map : k => v if v.env == "PROD"
+  }
+  instance_arn = data.aws_ssoadmin_instances.main.arns[0]
+  permission_set_arn = aws_ssoadmin_permission_set.readonly_permission_set[each.key].arn
+  principal_id = local.groups[each.key]  # Principal ID of the user
+  principal_type = "GROUP"
+  target_id = aws_organizations_account.team_env_account[each.key].id
+  target_type = "AWS_ACCOUNT"
+}
+
 resource "aws_ssoadmin_permission_set" "full_access_permission_set" {
   for_each     = local.full_access_permission_sets
   instance_arn = data.aws_ssoadmin_instances.main.arns[0]
@@ -126,22 +139,9 @@ resource "aws_ssoadmin_permission_set_inline_policy" "full_access_inline_policy"
   inline_policy        = local.full_access_permission_sets[each.key].policy
 }
 
-# Assign permission sets to users based on environment
-resource "aws_ssoadmin_account_assignment" "readonly_assignment" {
-  for_each = {
-    for k, v in local.account_map : k => v if v.env == "Prod"
-  }
-  instance_arn = data.aws_ssoadmin_instances.main.arns[0]
-  permission_set_arn = aws_ssoadmin_permission_set.readonly_permission_set[each.key].arn
-  principal_id = local.groups[each.key]  # Principal ID of the user
-  principal_type = "GROUP"
-  target_id = aws_organizations_account.team_env_account[each.key].id
-  target_type = "AWS_ACCOUNT"
-}
-
 resource "aws_ssoadmin_account_assignment" "full_access_assignment" {
   for_each = {
-    for k, v in local.account_map : k => v if v.env == "NonProd"
+    for k, v in local.account_map : k => v if v.env == "DEV"
   }
   instance_arn = data.aws_ssoadmin_instances.main.arns[0]
   permission_set_arn = aws_ssoadmin_permission_set.full_access_permission_set[each.key].arn
