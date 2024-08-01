@@ -112,10 +112,10 @@ resource "aws_iam_group_policy_attachment" "full_access_group_policy_attachment"
 # Create IAM users and add them to the appropriate group based on environment
 resource "aws_iam_user" "env_user" {
   for_each = local.account_map
-  name     = "env-${each.key}"
+  name     = "env-${each.value.team}-${each.value.env}"
 
   tags = {
-    Name        = "env-${each.key}"
+    Name        = "env-${each.value.team}-${each.value.env}"
     Team        = each.value.team
     Environment = each.value.env
   }
@@ -125,13 +125,35 @@ resource "aws_iam_user_group_membership" "env_user_group_membership" {
   for_each = aws_iam_user.env_user
   user     = each.value.name
 
-  # groups = [
-  #   each.value.env == "Prod" ? aws_iam_group.readonly_group.name : aws_iam_group.full_access_group.name
-  # ]
   groups = [
-    each.value["env"] == "Prod" ? aws_iam_group.readonly_group.name : aws_iam_group.full_access_group.name
+    each.value.tags.Environment == "Prod" ? aws_iam_group.readonly_group.name : aws_iam_group.full_access_group.name
   ]
 }
+
+
+# Create IAM users and add them to the appropriate group based on environment
+# resource "aws_iam_user" "env_user" {
+#   for_each = local.account_map
+#   name     = "env-${each.key}"
+
+#   tags = {
+#     Name        = "env-${each.key}"
+#     Team        = each.value.team
+#     Environment = each.value.env
+#   }
+# }
+
+# resource "aws_iam_user_group_membership" "env_user_group_membership" {
+#   for_each = aws_iam_user.env_user
+#   user     = each.value.name
+
+#   # groups = [
+#   #   each.value.env == "Prod" ? aws_iam_group.readonly_group.name : aws_iam_group.full_access_group.name
+#   # ]
+#   groups = [
+#     each.value["env"] == "Prod" ? aws_iam_group.readonly_group.name : aws_iam_group.full_access_group.name
+#   ]
+# }
 
 # CREATE IAM USERS AND ATTACH POLICY BASED ON ENVIRONMENT
 # resource "aws_iam_user" "env_user" {
