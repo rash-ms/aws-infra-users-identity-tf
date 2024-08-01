@@ -1,43 +1,32 @@
-variable "teams" {
-  description = "List of team name"
-  type    = list(string)
-  default = ["data-eng-solution", "infra-team", "marketing-team"]
-}
-
-variable "workspace" {
-  description = "List of workspace for each team."
-  type        = list(string)
-  default     = ["Prod", "Non-prod"]
-}
-
 # variable "teams" {
-#   description = "List of teams with their unit and organizational details"
-#   type = list(object({
-#     name     = string
-#     unit     = string
-#     accounts = list(string)
-#   }))
+#   description = "List of team name"
+#   type    = list(string)
+#   default = ["data-eng-solution", "infra-team", "marketing-team"]
 # }
 
-# variable "team_accounts" {
-#   description = "Map of team accounts with names and email addresses"
-#   type = map(object({
-#     name  = string
-#     email = string
-#   }))
-# }
-
-# variable "teams_and_accounts" {
-#   description = "List of teams and their account details"
-#   type = list(object({
-#     name     = string
-#     unit     = string
-#     accounts = list(string)
-#   }))
-# }
-
-# variable "role_tags" {
-#   description = "List of role tags used for differentiating environment roles"
+# variable "workspace" {
+#   description = "List of workspace for each team."
 #   type        = list(string)
-#   default     = ["stg", "dev", "prod"]
+#   default     = ["Prod", "Non-prod"]
+# }
+
+variable "teams" {
+  description = "List of teams"
+  type        = list(string)
+  default     = ["data-eng", "marketing_team"]
+}
+
+variable "environments" {
+  description = "List of environments"
+  type        = list(string)
+  default     = ["Prod", "NonProd"]
+}
+
+# variable "team_account_emails" {
+#   description = "Map of team and environment to account email"
+#   type        = map(string)
+#   default = {
+#     "dataorg-Prod" = "aws-bdt-dataorg-prod@bagitek.com"
+#     "dataorg-NonProd" = "aws-bdt-dataorg-nonprod@bagitek.com"
+#   }
 # }
