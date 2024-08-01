@@ -54,12 +54,18 @@ resource "aws_organizations_organizational_unit" "team" {
 
 resource "aws_organizations_organizational_unit" "team_env" {
   for_each = local.account_map
-  name      = split("-", each.value)[1]
-  parent_id = aws_organizations_organizational_unit.team[split("-", each.value)[0]].id
+  name      = each.value.env
+  parent_id = aws_organizations_organizational_unit.team[each.value.team].id
 
   tags = {
-    Name = "BDT -${split("-", each.value)[0]} - ${split("-", each.value)[1]}"
+    Name = "BDT - ${each.value.team} - ${each.value.env}"
   }
+  # name      = split("-", each.value)[1]
+  # parent_id = aws_organizations_organizational_unit.team[split("-", each.value)[0]].id
+
+  # tags = {
+  #   Name = "BDT -${split("-", each.value)[0]} - ${split("-", each.value)[1]}"
+  # }
 }
 
 resource "aws_organizations_account" "team_env_account" {
