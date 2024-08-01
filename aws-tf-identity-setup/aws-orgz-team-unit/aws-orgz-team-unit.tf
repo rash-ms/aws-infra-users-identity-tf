@@ -1,6 +1,9 @@
 # CREATE AWS ORGANIZATION UNIT
 locals {
   team_account_emails = jsondecode(file("${path.module}/team_emails.json")).team_account_emails
+
+  policies = jsondecode(file("${path.module}/policies.json"))
+  
   team_env_pairs = flatten([
       for team in var.teams : [
         for env in var.workspace : {
