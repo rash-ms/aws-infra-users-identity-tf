@@ -1,0 +1,32 @@
+{
+    "readonly_policy": {
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Effect": "Allow",
+                "Action": [
+                    "ec2:Describe*",
+                    "s3:Get*",
+                    "s3:List*",
+                    "rds:Describe*",
+                    "iam:Get*",
+                    "iam:List*",
+                    "cloudwatch:Get*",
+                    "cloudwatch:List*",
+                    "cloudwatch:Describe*"
+                ],
+                "Resource": "*"
+            }
+        ]
+    },
+    "full_access_policy": {
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Effect": "Allow",
+                "Action": "*",
+                "Resource": "*"
+            }
+        ]
+    }
+}
