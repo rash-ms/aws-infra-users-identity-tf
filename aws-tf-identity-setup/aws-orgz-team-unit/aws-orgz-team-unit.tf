@@ -125,8 +125,11 @@ resource "aws_iam_user_group_membership" "env_user_group_membership" {
   for_each = aws_iam_user.env_user
   user     = each.value.name
 
+  # groups = [
+  #   each.value.env == "Prod" ? aws_iam_group.readonly_group.name : aws_iam_group.full_access_group.name
+  # ]
   groups = [
-    each.value.env == "Prod" ? aws_iam_group.readonly_group.name : aws_iam_group.full_access_group.name
+    each.value["env"] == "Prod" ? aws_iam_group.readonly_group.name : aws_iam_group.full_access_group.name
   ]
 }
 
