@@ -1,5 +1,5 @@
 module "aws-team-organization" {
-  source              = "../aws-orgz-team-unit"
+  source              = "../aws-identity-setup-tf/aws-orgz-team-unit"
   teams               = var.teams 
   workspace           = var.workspace
 

@@ -1,5 +1,5 @@
 module "github-aws-Idp" {
-  source             = "../github-aws-OIDC-Idp"
+  source             = "../aws-identity-setup-tf/aws-github-OIDC-auth"
   github-action-name = "GitHubAction-AssumeRole"
   github-action-role-tags = {
     RoleWorkspace-0 = "stg"
@@ -10,3 +10,4 @@ module "github-aws-Idp" {
     aws = aws.aws-us-east-1
   }
 }
+

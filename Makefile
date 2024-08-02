@@ -16,13 +16,13 @@ set_env:
 		@echo execute eval $(saml2aws script)
 
 init:
-		cd ./aws-tf-identity-setup/aws-tf-identity-deployment && terraform init -upgrade
+		cd ./aws-identity-deployment-tf && terraform init -upgrade
 
 plan:
-		cd ./aws-tf-identity-setup/aws-tf-identity-deployment && terraform plan
+		cd ./aws-identity-deployment-tf && terraform plan
 
 apply:
-		cd ./aws-tf-identity-setup/aws-tf-identity-deployment && terraform apply -auto-approve
+		cd ./aws-identity-deployment-tf && terraform apply -auto-approve
 
 # init_aws_sso_admin:
 # 		cd ./tf-identity-setup/tf-identity-deployment/aws-sso-admin && terraform init -upgrade -var "PEOPLE_DEV=${PEOPLE_DEV}" -var "PEOPLE_STG=${PEOPLE_STG}" -var "PEOPLE_PROD=${PEOPLE_PROD}"
@@ -34,16 +34,16 @@ apply:
 # 		cd ./tf-identity-setup/tf-identity-deployment/aws-sso-admin && terraform apply -var "PEOPLE_DEV=${PEOPLE_DEV}" -var "PEOPLE_STG=${PEOPLE_STG}" -var "PEOPLE_PROD=${PEOPLE_PROD}"
 
 init_remove:
-		cd ./aws-tf-identity-setup/aws-tf-identity-deployment && rm -dfr ./.terraform
+		cd ./aws-identity-deployment-tf && rm -dfr ./.terraform
 
 destroy:
-		cd ./aws-tf-identity-setup/aws-tf-identity-deployment && terraform destroy
+		cd ./aws-identity-deployment-tf && terraform destroy
 
 tf_lint_with_write:		
-		terraform fmt -recursive -diff=true -write=true ./aws-tf-identity-setup
+		terraform fmt -recursive -diff=true -write=true ./aws-identity-setup-tf
 
 tf_lint_without_write:
-		terraform fmt -recursive -diff=true -write=false ./aws-tf-identity-setup
+		terraform fmt -recursive -diff=true -write=false ./aws-identity-setup-tf
 
 install_python_deps:
 		${python_exec} -m pip install --upgrade pip
