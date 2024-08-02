@@ -38,7 +38,6 @@ jobs:
           aws-region: us-east-1
 
       - name: Install CI Dependencies
-        # if: env.AUTH_SUCCESS == 'true'
         run: |
           sudo apt-get update
           sudo apt-get install build-essential
