@@ -49,7 +49,7 @@ resource "aws_iam_openid_connect_provider" "github" {
 
 locals {
 
-  policies = jsondecode(file("${path.module}/aws-orgz-team-unit/policies.json"))
+  policies = jsondecode(file("${path.module}/../aws-orgz-team-unit/policies.json"))
   groups = local.policies.groups
 
   readonly_permission_sets = {
