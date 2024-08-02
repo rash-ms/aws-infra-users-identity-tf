@@ -52,13 +52,11 @@ locals {
   }
 }
 
-resource "aws_iam_openid_connect_provider" "github_oidc" {
-  for_each = local.account_ids
 
-  client_id_list = ["sts.amazonaws.com"]
-  url = "https://token.actions.githubusercontent.com"
+resource "aws_iam_openid_connect_provider" "github_oidc" {
+  client_id_list  = ["sts.amazonaws.com"]
+  url             = "https://token.actions.githubusercontent.com"
   thumbprint_list = ["1b511abead59c6ce207077c0bf0e0043b1382612"]
-  
 }
 
 resource "aws_iam_role" "roles" {
@@ -71,13 +69,13 @@ resource "aws_iam_role" "roles" {
     Statement = [{
       Effect = "Allow",
       Principal = {
-        Federated = aws_iam_openid_connect_provider.github_oidc[each.key == "data-eng-DEV" ? "data-eng-DEV" : "data-eng-PROD"].arn
+        Federated = aws_iam_openid_connect_provider.github_oidc.arn
       },
       Action = "sts:AssumeRoleWithWebIdentity",
       Condition = {
         StringEquals = {
           "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com",
-          "token.actions.githubusercontent.com:sub" = "repo:rash-ms/*" 
+          "token.actions.githubusercontent.com:sub" = "repo:rash-ms/*"
         }
       }
     }]
@@ -89,13 +87,12 @@ resource "aws_iam_policy" "policies" {
 
   name        = "${each.key}-policy"
   description = "Policy for ${each.key}"
-  policy      = each.key == "data-eng-DEV" ? jsonencode(each.value.full_access_policy) : jsonencode(each.value.readonly_policy)
+  policy      = jsonencode(each.value[each.key == "data-eng-DEV" ? "full_access_policy" : "readonly_policy"])
 }
 
 resource "aws_iam_role_policy_attachment" "policy_attachment" {
   for_each = local.groups
 
   role       = aws_iam_role.roles[each.key].name
-  policy_arn = local.policies[each.key].arn
+  policy_arn = aws_iam_policy.policies[each.key].arn
 }
-
