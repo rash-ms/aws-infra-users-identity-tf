@@ -89,13 +89,13 @@ resource "aws_iam_policy" "policies" {
 
   name        = "${each.key}-policy"
   description = "Policy for ${each.key}"
-  policy      = jsonencode(each.value[values(each.value)[0]])
+  policy      = each.key == "data-eng-DEV" ? jsonencode(each.value.full_access_policy) : jsonencode(each.value.readonly_policy)
 }
 
 resource "aws_iam_role_policy_attachment" "policy_attachment" {
   for_each = local.groups
 
   role       = aws_iam_role.roles[each.key].name
-  policy_arn = local.policies[each.key]
+  policy_arn = local.policies[each.key].arn
 }
 
