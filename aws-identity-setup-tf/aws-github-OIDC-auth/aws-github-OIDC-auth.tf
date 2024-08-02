@@ -96,6 +96,6 @@ resource "aws_iam_role_policy_attachment" "policy_attachment" {
   for_each = local.groups
 
   role       = aws_iam_role.roles[each.key].name
-  policy_arn = local.policies[each.key].arn
+  policy_arn = local.policies[each.key]
 }
 
