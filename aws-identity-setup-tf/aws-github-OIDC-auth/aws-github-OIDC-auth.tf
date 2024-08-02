@@ -40,7 +40,7 @@
 
 #######################################################
 
-resource "aws_iam_openid_connect_provider" "github" {
+resource "aws_iam_openid_connect_provider" "github_oidc" {
   client_id_list = ["sts.amazonaws.com"]
   url = "https://token.actions.githubusercontent.com"
   thumbprint_list = ["1b511abead59c6ce207077c0bf0e0043b1382612"]
@@ -54,14 +54,14 @@ locals {
 
   readonly_permission_sets = {
     for group, name in local.groups : group => {
-      name   = "byt-${group}"
+      name   = "byt-${group}-readonly"
       policy = jsonencode(local.policies.readonly_policy)
     }
   }
 
   full_access_permission_sets = {
     for group, name in local.groups : group => {
-      name   = "byt-${group}-readonly"
+      name   = "byt-${group}-fullAccess"
       policy = jsonencode(local.policies.full_access_policy)
     }
   }
@@ -78,7 +78,7 @@ resource "aws_iam_role" "roles" {
     Statement = [{
       Effect = "Allow",
       Principal = {
-        Federated = aws_iam_openid_connect_provider.github.arn
+        Federated = aws_iam_openid_connect_provider.github_oidc.arn
       },
       Action = "sts:AssumeRoleWithWebIdentity",
       Condition = {
@@ -90,6 +90,7 @@ resource "aws_iam_role" "roles" {
     }]
   })
 }
+
 
 resource "aws_iam_policy" "readonly_policy" {
   for_each = local.readonly_permission_sets
@@ -107,16 +108,40 @@ resource "aws_iam_policy" "full_access_policy" {
   policy      = each.value.policy
 }
 
-resource "aws_iam_role_policy_attachment" "readonly_attachment" {
+resource "aws_iam_role_policy_attachment" "policy_attachment" {
   for_each = local.groups
 
   role       = aws_iam_role.roles[each.key].name
-  policy_arn = aws_iam_policy.readonly_policy[each.key].arn
+  policy_arn = each.key == "PROD" ? aws_iam_policy.readonly_policy[each.key].arn : aws_iam_policy.full_access_policy[each.key].arn
 }
 
-resource "aws_iam_role_policy_attachment" "full_access_attachment" {
-  for_each = local.groups
 
-  role       = aws_iam_role.roles[each.key].name
-  policy_arn = aws_iam_policy.full_access_policy[each.key].arn
-}
+# resource "aws_iam_policy" "readonly_policy" {
+#   for_each = local.readonly_permission_sets
+
+#   name        = each.value.name
+#   description = "Readonly access policy"
+#   policy      = each.value.policy
+# }
+
+# resource "aws_iam_policy" "full_access_policy" {
+#   for_each = local.full_access_permission_sets
+
+#   name        = each.value.name
+#   description = "Full access policy"
+#   policy      = each.value.policy
+# }
+
+# resource "aws_iam_role_policy_attachment" "readonly_attachment" {
+#   for_each = local.groups
+
+#   role       = aws_iam_role.roles[each.key].name
+#   policy_arn = aws_iam_policy.readonly_policy[each.key].arn
+# }
+
+# resource "aws_iam_role_policy_attachment" "full_access_attachment" {
+#   for_each = local.groups
+
+#   role       = aws_iam_role.roles[each.key].name
+#   policy_arn = aws_iam_policy.full_access_policy[each.key].arn
+# }
