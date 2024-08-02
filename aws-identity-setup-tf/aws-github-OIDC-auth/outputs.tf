@@ -1,7 +1,7 @@
-output "iam_roles" {
-  value = aws_iam_role.roles
+output "iam_roles_dev" {
+  value = aws_iam_role.roles_dev
 }
 
-output "iam_policies" {
-  value = aws_iam_role_policy_attachment.policy_attachment
+output "iam_roles_prod" {
+  value = aws_iam_role.roles_prod
 }
