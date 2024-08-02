@@ -40,18 +40,6 @@
 
 #######################################################
 
-# provider "aws" {
-#   alias  = "dev_account"
-#   region = "us-east-1"
-#   profile = "BDT-data-org-DEV" 
-# }
-
-# provider "aws" {
-#   alias  = "prod_account"
-#   region = "us-east-1"
-#   profile = "BDT-data-org-PROD" 
-# }
-
 locals {
 
   policies_data = jsondecode(file("${path.module}/../aws-orgz-team-unit/policies.json"))
@@ -66,7 +54,6 @@ locals {
 
 resource "aws_iam_openid_connect_provider" "github_oidc" {
   for_each = local.account_ids
-  # provider = each.key == "BDT-data-org-DEV" ? aws.dev_account : aws.prod_account
 
   client_id_list = ["sts.amazonaws.com"]
   url = "https://token.actions.githubusercontent.com"
@@ -76,7 +63,6 @@ resource "aws_iam_openid_connect_provider" "github_oidc" {
 
 resource "aws_iam_role" "roles" {
   for_each = local.groups
-  # provider = each.key == "BDT-data-org-DEV" ? aws.dev_account : aws.prod_account
 
   name = "${each.key}_role"
   
@@ -85,7 +71,7 @@ resource "aws_iam_role" "roles" {
     Statement = [{
       Effect = "Allow",
       Principal = {
-        Federated = aws_iam_openid_connect_provider.github_oidc.arn
+        Federated = aws_iam_openid_connect_provider.github_oidc[each.key == "data-eng-DEV" ? "data-eng-DEV" : "data-eng-PROD"].arn
       },
       Action = "sts:AssumeRoleWithWebIdentity",
       Condition = {
@@ -101,8 +87,6 @@ resource "aws_iam_role" "roles" {
 resource "aws_iam_policy" "policies" {
   for_each = local.policies
 
-  # provider = each.key == "BDT-data-org-DEV" ? aws.dev_account : aws.prod_account
-
   name        = each.value.name
   description = each.value.description
   policy      = jsonencode(each.value.policy)
@@ -110,8 +94,6 @@ resource "aws_iam_policy" "policies" {
 
 resource "aws_iam_role_policy_attachment" "policy_attachment" {
   for_each = local.groups
-
-  # provider = each.key == "BDT-data-org-DEV" ? aws.dev_account : aws.prod_account
 
   role       = aws_iam_role.roles[each.key].name
   policy_arn = local.policies[each.key]
