@@ -42,7 +42,10 @@
 
 locals {
 
-  groups = jsondecode(file("${path.module}/../aws-orgz-team-unit/policies.json")).groups
+  # groups = jsondecode(file("${path.module}/../aws-orgz-team-unit/policies.json")).groups
+  policies_data = jsondecode(file("${path.module}/../aws-orgz-team-unit/policies.json"))
+  policies      = { for k, v in local.policies_data.policies : k => v }
+  groups        = local.policies_data.groups
 }
 
 resource "aws_iam_openid_connect_provider" "github_oidc" {
@@ -75,23 +78,39 @@ resource "aws_iam_role" "roles" {
   })
 }
 
-data "aws_iam_policy" "readonly_policy" {
-  for_each = local.groups
-  arn      = "arn:aws:iam::637423205666:policy/byt-${each.key}-readonly"
-}
+resource "aws_iam_policy" "policies" {
+  for_each = { for k, v in local.policies : k => v }
 
-data "aws_iam_policy" "full_access_policy" {
-  for_each = local.groups
-  arn      = "arn:aws:iam::637423205666:policy/byt-${each.key}-fullAccess"
+  name        = "${each.key}_policy"
+  path        = "/"
+  description = "Policy for ${each.key}"
+  policy      = jsonencode(each.value)
 }
 
 resource "aws_iam_role_policy_attachment" "policy_attachment" {
   for_each = local.groups
 
   role       = aws_iam_role.roles[each.key].name
-  policy_arn = length(regexall(".*-PROD$", each.key)) > 0 ? data.aws_iam_policy.readonly_policy[each.key].arn : data.aws_iam_policy.full_access_policy[each.key].arn
-  # policy_arn = each.key == "prod" ? data.aws_iam_policy.readonly_policy[each.key].arn : data.aws_iam_policy.full_access_policy[each.key].arn
+  policy_arn = contains(keys(local.policies[each.key]), "readonly_policy") ? aws_iam_policy.policies["${each.key}_readonly_policy"].arn : aws_iam_policy.policies["${each.key}_full_access_policy"].arn
 }
+
+# data "aws_iam_policy" "readonly_policy" {
+#   for_each = local.groups
+#   arn      = "arn:aws:iam::637423205666:policy/byt-${each.key}-readonly"
+# }
+
+# data "aws_iam_policy" "full_access_policy" {
+#   for_each = local.groups
+#   arn      = "arn:aws:iam::637423205666:policy/byt-${each.key}-fullAccess"
+# }
+
+# resource "aws_iam_role_policy_attachment" "policy_attachment" {
+#   for_each = local.groups
+
+#   role       = aws_iam_role.roles[each.key].name
+#   policy_arn = length(regexall(".*-PROD$", each.key)) > 0 ? data.aws_iam_policy.readonly_policy[each.key].arn : data.aws_iam_policy.full_access_policy[each.key].arn
+#   # policy_arn = each.key == "prod" ? data.aws_iam_policy.readonly_policy[each.key].arn : data.aws_iam_policy.full_access_policy[each.key].arn
+# }
 
 
 # resource "aws_iam_policy" "readonly_policy" {
