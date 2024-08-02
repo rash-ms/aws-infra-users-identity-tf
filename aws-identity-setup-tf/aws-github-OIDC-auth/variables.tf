@@ -1,10 +1,15 @@
-output "iam_roles" {
-  value = aws_iam_role.roles
+variable "github_action_name" {
+  description = "The name for the GitHub Actions IAM role"
+  type        = string
+  default     = "GitHubAction-AssumeRole"
 }
 
-output "iam_policies" {
-  value = {
-    readonly = data.aws_iam_policy.readonly_policy
-    full_access = data.aws_iam_policy.full_access_policy
+variable "github_action_role_tags" {
+  description = "A map of tags to assign to the role"
+  type        = map(string)
+  default     = {
+    RoleWorkspace-0 = "stg"
+    RoleWorkspace-1 = "dev"
+    RoleWorkspace-2 = "prod"
   }
 }
