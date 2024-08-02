@@ -42,7 +42,7 @@
 
 locals {
 
-  policies_data = jsondecode(file("${path.module}/policies.json"))
+  policies_data = jsondecode(file("${path.module}/../aws-orgz-team-unit/policies.json"))
   policies      = local.policies_data.policies
   groups        = local.policies_data.groups
 }
