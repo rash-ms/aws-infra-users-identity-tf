@@ -1,9 +1,10 @@
-variable "github-action-name" {
-  description = "The name for the GitHub Actions IAM role"
-  type        = string
+output "iam_roles" {
+  value = aws_iam_role.roles
 }
 
-variable "github-action-role-tags" {
-  description = "A map of tags to assign to the role"
-  type        = map(string)
+output "iam_policies" {
+  value = {
+    readonly = data.aws_iam_policy.readonly_policy
+    full_access = data.aws_iam_policy.full_access_policy
+  }
 }
