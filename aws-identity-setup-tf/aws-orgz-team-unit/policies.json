@@ -1,36 +1,42 @@
 {
-    "readonly_policy": {
-        "Version": "2012-10-17",
-        "Statement": [
-            {
-                "Effect": "Allow",
-                "Action": [
-                    "ec2:Describe*",
-                    "s3:Get*",
-                    "s3:List*",
-                    "rds:Describe*",
-                    "iam:Get*",
-                    "iam:List*",
-                    "cloudwatch:Get*",
-                    "cloudwatch:List*",
-                    "cloudwatch:Describe*"
-                ],
-                "Resource": "*"
+    "policies": {
+        "data-eng-DEV": {
+            "full_access_policy": {
+                "Version": "2012-10-17",
+                "Statement": [
+                    {
+                        "Effect": "Allow",
+                        "Action": "*",
+                        "Resource": "*"
+                    }
+                ]
             }
-        ]
-    },
-    "full_access_policy": {
-        "Version": "2012-10-17",
-        "Statement": [
-            {
-                "Effect": "Allow",
-                "Action": "*",
-                "Resource": "*"
+        },
+        "data-eng-PROD": {
+            "readonly_policy": {
+                "Version": "2012-10-17",
+                "Statement": [
+                    {
+                        "Effect": "Allow",
+                        "Action": [
+                            "ec2:Describe*",
+                            "s3:Get*",
+                            "s3:List*",
+                            "rds:Describe*",
+                            "iam:Get*",
+                            "iam:List*",
+                            "cloudwatch:Get*",
+                            "cloudwatch:List*",
+                            "cloudwatch:Describe*"
+                        ],
+                        "Resource": "*"
+                    }
+                ]
             }
-        ]
+        }
     },
     "groups": {
         "data-eng-DEV": "0408e448-1091-70db-baf4-b67ce1338f8d",
         "data-eng-PROD": "8498f4e8-e031-707d-cbb7-67eeb1fcfc5d"
-  }
+    }
 }
