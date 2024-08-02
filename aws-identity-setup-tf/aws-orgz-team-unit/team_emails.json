@@ -1,6 +1,6 @@
 {
   "team_account_emails": {
-    "data-eng-PROD": "aws-bdt-dataorg-prod@bagitek.com",
-    "data-eng-DEV": "aws-bdt-dataorg-nonprod@bagitek.com"
+    "data-org-PROD": "aws-bdt-dataorg-prod@bagitek.com",
+    "data-org-DEV": "aws-bdt-dataorg-nonprod@bagitek.com"
   }
 }
