@@ -40,17 +40,17 @@
 
 #######################################################
 
-provider "aws" {
-  alias  = "dev_account"
-  region = "us-east-1"
-  profile = "BDT-data-org-DEV" 
-}
+# provider "aws" {
+#   alias  = "dev_account"
+#   region = "us-east-1"
+#   profile = "BDT-data-org-DEV" 
+# }
 
-provider "aws" {
-  alias  = "prod_account"
-  region = "us-east-1"
-  profile = "BDT-data-org-PROD" 
-}
+# provider "aws" {
+#   alias  = "prod_account"
+#   region = "us-east-1"
+#   profile = "BDT-data-org-PROD" 
+# }
 
 locals {
 
@@ -66,7 +66,7 @@ locals {
 
 resource "aws_iam_openid_connect_provider" "github_oidc" {
   for_each = local.account_ids
-  provider = each.key == "BDT-data-org-DEV" ? aws.dev_account : aws.prod_account
+  # provider = each.key == "BDT-data-org-DEV" ? aws.dev_account : aws.prod_account
 
   client_id_list = ["sts.amazonaws.com"]
   url = "https://token.actions.githubusercontent.com"
@@ -76,7 +76,7 @@ resource "aws_iam_openid_connect_provider" "github_oidc" {
 
 resource "aws_iam_role" "roles" {
   for_each = local.groups
-  provider = each.key == "BDT-data-org-DEV" ? aws.dev_account : aws.prod_account
+  # provider = each.key == "BDT-data-org-DEV" ? aws.dev_account : aws.prod_account
 
   name = "${each.key}_role"
   
@@ -101,7 +101,7 @@ resource "aws_iam_role" "roles" {
 resource "aws_iam_policy" "policies" {
   for_each = local.policies
 
-  provider = each.key == "BDT-data-org-DEV" ? aws.dev_account : aws.prod_account
+  # provider = each.key == "BDT-data-org-DEV" ? aws.dev_account : aws.prod_account
 
   name        = each.value.name
   description = each.value.description
@@ -111,7 +111,7 @@ resource "aws_iam_policy" "policies" {
 resource "aws_iam_role_policy_attachment" "policy_attachment" {
   for_each = local.groups
 
-  provider = each.key == "BDT-data-org-DEV" ? aws.dev_account : aws.prod_account
+  # provider = each.key == "BDT-data-org-DEV" ? aws.dev_account : aws.prod_account
 
   role       = aws_iam_role.roles[each.key].name
   policy_arn = local.policies[each.key]
