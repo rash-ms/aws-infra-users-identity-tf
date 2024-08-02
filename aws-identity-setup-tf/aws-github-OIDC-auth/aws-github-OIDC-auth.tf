@@ -1,54 +1,11 @@
-# resource "aws_iam_openid_connect_provider" "github_oidc" {
-#     client_id_list  =   ["sts.amazonaws.com"]
-#     thumbprint_list =   ["1b511abead59c6ce207077c0bf0e0043b1382612"]
-#     url             =   "https://token.actions.githubusercontent.com"
-# }
-
-# resource "aws_iam_role" "github_actions" {
-#   name               = var.github-action-name
-#   assume_role_policy = data.aws_iam_policy_document.assume_role_policy.json
-#   tags               = var.github-action-role-tags
-# }
-
-# resource "aws_iam_role_policy_attachment" "github_actions_admin_access_attach" {
-#   role       = aws_iam_role.github_actions.name
-#   policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
-# }
-
-# data "aws_iam_policy_document" "assume_role_policy" {
-#     statement {
-#       actions = ["sts:AssumeRoleWithWebIdentity"]
-#       effect  = "Allow"
-#       principals {
-#         type        =  "Federated"
-#         identifiers = [aws_iam_openid_connect_provider.github_oidc.arn]
-#       }
-#       condition {
-#         test     = "StringEquals"
-#         variable = "token.actions.githubusercontent.com:aud"
-#         values   = ["sts.amazonaws.com"]
-#       }
-#       condition {
-#         test     = "StringLike"
-#         variable = "token.actions.githubusercontent.com:sub"
-#         values   = ["repo:rash-ms/*"]
-
-#       }
-#     }
-# }
-
-
-#######################################################
-
 locals {
 
   policies_data = jsondecode(file("${path.module}/../aws-orgz-team-unit/policies.json"))
-  # policies      = local.policies_data.policies
   groups        = local.policies_data.groups
 
   policies = {
-    "data-eng-DEV"  = "arn:aws:iam::637423205666:policy/data-eng-DEV-fullAccess",
-    "data-eng-PROD" = "arn:aws:iam::637423205666:policy/data-eng-PROD-readonly"
+    "data-eng-DEV"  = "arn:aws:iam::021891586814:policy/data-eng-DEV-fullAccess",
+    "data-eng-PROD" = "arn:aws:iam::021891586728:policy/data-eng-PROD-readonly"
   }
 }
 

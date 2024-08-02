@@ -3,5 +3,5 @@ output "iam_roles" {
 }
 
 output "iam_policies" {
-  value = aws_iam_policy.policies
+  value = aws_iam_role_policy_attachment.policy_attachment
 }
