@@ -87,15 +87,15 @@ resource "aws_iam_role" "roles" {
 resource "aws_iam_policy" "policies" {
   for_each = local.policies
 
-  name        = each.value.name
-  description = each.value.description
-  policy      = jsonencode(each.value.policy)
+  name        = "${each.key}-policy"
+  description = "Policy for ${each.key}"
+  policy      = jsonencode(each.value[values(each.value)[0]])
 }
 
 resource "aws_iam_role_policy_attachment" "policy_attachment" {
   for_each = local.groups
 
   role       = aws_iam_role.roles[each.key].name
-  policy_arn = local.policies[each.key]
+  policy_arn = local.policies[each.key].arn
 }
 
