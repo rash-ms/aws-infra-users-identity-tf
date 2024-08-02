@@ -1,4 +1,4 @@
-# module "github-aws-Idp" {
+# module "aws-github-OIDC-auth" {
 #   source             = "../aws-identity-setup-tf/aws-github-OIDC-auth"
 #   github-action-name = "GitHubAction-AssumeRole"
 #   github-action-role-tags = {
