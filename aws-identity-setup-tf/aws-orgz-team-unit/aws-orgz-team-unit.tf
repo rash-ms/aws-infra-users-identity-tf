@@ -21,14 +21,14 @@ locals {
 
   readonly_permission_sets = {
     for group, name in local.groups : group => {
-      name   = "byt-${group}"
+      name   = "byt-${group}-readonly"
       policy = jsonencode(local.policies.readonly_policy)
     }
   }
 
   full_access_permission_sets = {
     for group, name in local.groups : group => {
-      name   = "byt-${group}-readonly"
+      name   = "byt-${group}-fullAccess"
       policy = jsonencode(local.policies.full_access_policy)
     }
   }
