@@ -47,8 +47,8 @@ locals {
   groups        = local.policies_data.groups
 
   policies = {
-    "data-eng-DEV"  = "arn:aws:iam::123456789012:policy/data-eng-DEV-fullAccess",
-    "data-eng-PROD" = "arn:aws:iam::123456789012:policy/data-eng-PROD-readonly"
+    "data-eng-DEV"  = "arn:aws:iam::637423205666:policy/data-eng-DEV-fullAccess",
+    "data-eng-PROD" = "arn:aws:iam::637423205666:policy/data-eng-PROD-readonly"
   }
 }
 
