@@ -77,12 +77,28 @@ resource "aws_iam_role" "roles" {
   })
 }
 
-resource "aws_iam_role_policy_attachment" "policy_attachment" {
-  for_each = local.groups
+data "aws_iam_policy" "readonly_policy" {
+  for_each = { for k, v in local.groups : k => v if contains(k, "PROD") }
+  arn      = "arn:aws:iam::637423205666:policy/${each.key}-readonly"
+}
+
+data "aws_iam_policy" "full_access_policy" {
+  for_each = { for k, v in local.groups : k => v if contains(k, "DEV") }
+  arn      = "arn:aws:iam::637423205666:policy/${each.key}-fullAccess"
+}
+
+resource "aws_iam_role_policy_attachment" "readonly_policy_attachment" {
+  for_each = data.aws_iam_policy.readonly_policy
 
   role       = aws_iam_role.roles[each.key].name
+  policy_arn = each.value.arn
+}
 
-  policy_arn = lookup(local.policies[each.key], "readonly_policy_arn", lookup(local.policies[each.key], "full_access_policy_arn"))
+resource "aws_iam_role_policy_attachment" "full_access_policy_attachment" {
+  for_each = data.aws_iam_policy.full_access_policy
+
+  role       = aws_iam_role.roles[each.key].name
+  policy_arn = each.value.arn
 }
 
 # resource "aws_iam_role_policy_attachment" "policy_attachment" {
