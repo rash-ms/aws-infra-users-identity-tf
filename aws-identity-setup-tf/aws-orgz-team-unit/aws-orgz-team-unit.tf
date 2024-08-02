@@ -69,7 +69,7 @@ resource "aws_organizations_organizational_unit" "team_env" {
   parent_id = aws_organizations_organizational_unit.team[each.value.team].id
 
   tags = {
-    Name = "BDT-${each.value.team} - ${each.value.env}"
+    Name = "BDT-${each.value.team}-${each.value.env}"
   }
 }
 
