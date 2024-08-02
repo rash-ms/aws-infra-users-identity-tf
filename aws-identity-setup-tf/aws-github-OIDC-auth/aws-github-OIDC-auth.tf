@@ -44,7 +44,7 @@ provider "aws" {
   alias  = "data_eng_dev"
   region = "us-east-1"
   assume_role {
-    role_arn = "arn:aws:iam::021891586814:role/OrganizationAccountAccessRole"
+    role_arn = "arn:aws:iam::021891586814:user/admin"
   }
 }
 
@@ -52,7 +52,7 @@ provider "aws" {
   alias  = "data_eng_prod"
   region = "us-east-1"
   assume_role {
-    role_arn = "arn:aws:iam::021891586728:role/OrganizationAccountAccessRole"
+    role_arn = "arn:aws:iam::021891586728:user/admin-prod"
   }
 }
 
