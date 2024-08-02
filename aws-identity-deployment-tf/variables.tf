@@ -1,7 +1,7 @@
 variable "teams" {
   description = "List of teams"
   type        = list(string)
-  default     = ["data-eng"]
+  default     = ["data-org"]
 }
 
 variable "workspace" {
