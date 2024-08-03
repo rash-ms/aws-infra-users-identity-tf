@@ -16,7 +16,7 @@
 
 
 resource "aws_iam_openid_connect_provider" "github_oidc_dev" {
-  provider = aws.data_eng_dev
+#   provider = aws.data_eng_dev
 
   client_id_list  = ["sts.amazonaws.com"]
   url             = "https://token.actions.githubusercontent.com"
