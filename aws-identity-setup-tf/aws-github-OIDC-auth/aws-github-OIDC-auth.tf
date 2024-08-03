@@ -14,6 +14,7 @@ provider "aws" {
   }
 }
 
+
 resource "aws_iam_openid_connect_provider" "github_oidc_dev" {
   provider = aws.data_eng_dev
 
