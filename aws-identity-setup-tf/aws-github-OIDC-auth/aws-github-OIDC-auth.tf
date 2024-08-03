@@ -2,7 +2,8 @@ provider "aws" {
   alias  = "bdt-data_eng_dev"
   region = "us-east-1"
   assume_role {
-    role_arn = "arn:aws:iam::021891586814:role/OrganizationAccountAccessRole"
+    # role_arn = "arn:aws:iam::021891586814:role/OrganizationAccountAccessRole"
+    role_arn ="arn:aws:iam::021891586728:role/bdt-data-org-dev-role"
   }
 }
 
@@ -10,7 +11,8 @@ provider "aws" {
   alias  = "bdt-data_eng_prod"
   region = "us-east-1"
   assume_role {
-    role_arn = "arn:aws:iam::021891586728:role/OrganizationAccountAccessRole"
+    # role_arn = "arn:aws:iam::021891586728:role/OrganizationAccountAccessRole"
+    role_arn ="arn:aws:iam::021891586728:role/bdt-data-org-prod-role"
   }
 }
 
