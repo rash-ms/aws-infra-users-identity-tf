@@ -31,7 +31,7 @@ resource "aws_iam_openid_connect_provider" "github_oidc_byt_prod" {
   thumbprint_list = ["1b511abead59c6ce207077c0bf0e0043b1382612"]
 }
 
-resource "aws_iam_role" "roles_dev" {
+resource "aws_iam_role" "roles_byt_dev" {
   provider = aws.bdt-data_eng_dev
 
   name = "dev-role"
@@ -54,7 +54,7 @@ resource "aws_iam_role" "roles_dev" {
   })
 }
 
-resource "aws_iam_role" "roles_prod" {
+resource "aws_iam_role" "roles_byt_prod" {
   provider = aws.bdt-data_eng_prod
 
   name = "prod-role"
@@ -77,18 +77,18 @@ resource "aws_iam_role" "roles_prod" {
   })
 }
 
-resource "aws_iam_role_policy_attachment" "policy_attachment_dev" {
+resource "aws_iam_role_policy_attachment" "policy_attachment_byt_dev" {
   provider = aws.bdt-data_eng_dev
 
-  role       = aws_iam_role.roles_dev.name
+  role       = aws_iam_role.roles_byt_dev.name
 #   policy_arn = "arn:aws:iam::0219475372814:policy/dev-policy"
   policy_arn = "arn:aws:iam::021891586814:policy/bdt-data-org-dev-role-policy"
 }
 
-resource "aws_iam_role_policy_attachment" "policy_attachment_prod" {
+resource "aws_iam_role_policy_attachment" "policy_attachment_byt_prod" {
   provider = aws.bdt-data_eng_prod
 
-  role       = aws_iam_role.roles_prod.name
+  role       = aws_iam_role.roles_byt_prod.name
 #   policy_arn = "arn:aws:iam::021464739328:policy/prod-policy"
   policy_arn = "arn:aws:iam::021891586728:policy/bdt-data-org-prod-role-policy"
 }
