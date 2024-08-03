@@ -1,10 +1,10 @@
-provider "aws" {
-  alias  = "data_eng_dev"
-  region = "us-east-1"
-  assume_role {
-    role_arn = "arn:aws:iam::021891586814:role/bdt-data-org-dev-role"
-  }
-}
+# provider "aws" {
+#   alias  = "data_eng_dev"
+#   region = "us-east-1"
+#   assume_role {
+#     role_arn = "arn:aws:iam::021891586814:role/bdt-data-org-dev-role"
+#   }
+# }
 
 provider "aws" {
   alias  = "data_eng_prod"
@@ -15,13 +15,13 @@ provider "aws" {
 }
 
 
-resource "aws_iam_openid_connect_provider" "github_oidc_dev" {
-  provider = aws.data_eng_dev
+# resource "aws_iam_openid_connect_provider" "github_oidc_dev" {
+#   provider = aws.data_eng_dev
 
-  client_id_list  = ["sts.amazonaws.com"]
-  url             = "https://token.actions.githubusercontent.com"
-  thumbprint_list = ["1b511abead59c6ce207077c0bf0e0043b1382612"]
-}
+#   client_id_list  = ["sts.amazonaws.com"]
+#   url             = "https://token.actions.githubusercontent.com"
+#   thumbprint_list = ["1b511abead59c6ce207077c0bf0e0043b1382612"]
+# }
 
 resource "aws_iam_openid_connect_provider" "github_oidc_prod" {
   provider = aws.data_eng_prod
@@ -31,28 +31,28 @@ resource "aws_iam_openid_connect_provider" "github_oidc_prod" {
   thumbprint_list = ["1b511abead59c6ce207077c0bf0e0043b1382612"]
 }
 
-resource "aws_iam_role" "roles_dev" {
-  provider = aws.data_eng_dev
+# resource "aws_iam_role" "roles_dev" {
+#   provider = aws.data_eng_dev
 
-  name = "dev-role"
+#   name = "dev-role"
 
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [{
-      Effect = "Allow",
-      Principal = {
-        Federated = aws_iam_openid_connect_provider.github_oidc_dev.arn
-      },
-      Action = "sts:AssumeRoleWithWebIdentity",
-      Condition = {
-        StringEquals = {
-          "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com",
-          "token.actions.githubusercontent.com:sub" = "repo:rash-ms/*"
-        }
-      }
-    }]
-  })
-}
+#   assume_role_policy = jsonencode({
+#     Version = "2012-10-17",
+#     Statement = [{
+#       Effect = "Allow",
+#       Principal = {
+#         Federated = aws_iam_openid_connect_provider.github_oidc_dev.arn
+#       },
+#       Action = "sts:AssumeRoleWithWebIdentity",
+#       Condition = {
+#         StringEquals = {
+#           "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com",
+#           "token.actions.githubusercontent.com:sub" = "repo:rash-ms/*"
+#         }
+#       }
+#     }]
+#   })
+# }
 
 resource "aws_iam_role" "roles_prod" {
   provider = aws.data_eng_prod
@@ -77,13 +77,13 @@ resource "aws_iam_role" "roles_prod" {
   })
 }
 
-resource "aws_iam_role_policy_attachment" "policy_attachment_dev" {
-  provider = aws.data_eng_dev
+# resource "aws_iam_role_policy_attachment" "policy_attachment_dev" {
+#   provider = aws.data_eng_dev
 
-  role       = aws_iam_role.roles_dev.name
-#   policy_arn = "arn:aws:iam::0219475372814:policy/dev-policy"
-  policy_arn = "arn:aws:iam::021891586814:policy/bdt-data-org-dev-role-policy"
-}
+#   role       = aws_iam_role.roles_dev.name
+# #   policy_arn = "arn:aws:iam::0219475372814:policy/dev-policy"
+#   policy_arn = "arn:aws:iam::021891586814:policy/bdt-data-org-dev-role-policy"
+# }
 
 resource "aws_iam_role_policy_attachment" "policy_attachment_prod" {
   provider = aws.data_eng_prod
