@@ -1,11 +1,11 @@
-terraform {
-  required_version = ">=v0.14.7"
-  backend "s3" {
-    bucket         = "bdt-infra-resources-backend"
-    key            = "terraform/complete-state"
-    region         = "us-east-1"                
-  }
-}
+# terraform {
+#   required_version = ">=v0.14.7"
+#   backend "s3" {
+#     bucket         = "bdt-infra-resources-backend"
+#     key            = "terraform/complete-state"
+#     region         = "us-east-1"                
+#   }
+# }
 
 module "aws-github-OIDC-auth" {
   source             = "../aws-identity-setup-tf/aws-github-OIDC-auth"
