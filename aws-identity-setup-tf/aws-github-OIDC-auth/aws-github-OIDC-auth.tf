@@ -40,6 +40,23 @@
 
 #######################################################
 
+provider "aws" {
+  alias  = "data_eng_dev"
+  region = "us-east-1"
+  assume_role {
+    role_arn = "arn:aws:iam::021891586814:user/admin"
+  }
+}
+
+provider "aws" {
+  alias  = "data_eng_prod"
+  region = "us-east-1"
+  assume_role {
+    role_arn = "arn:aws:iam::021891586728:user/admin-prod"
+  }
+}
+
+
 locals {
 
   policies_data = jsondecode(file("${path.module}/../aws-orgz-team-unit/policies.json"))
@@ -52,24 +69,35 @@ locals {
   }
 }
 
+resource "aws_iam_openid_connect_provider" "github_oidc_dev" {
+  provider = aws.data_eng_dev
 
-resource "aws_iam_openid_connect_provider" "github_oidc" {
   client_id_list  = ["sts.amazonaws.com"]
   url             = "https://token.actions.githubusercontent.com"
   thumbprint_list = ["1b511abead59c6ce207077c0bf0e0043b1382612"]
 }
 
-resource "aws_iam_role" "roles" {
+resource "aws_iam_openid_connect_provider" "github_oidc_prod" {
+  provider = aws.data_eng_prod
+
+  client_id_list  = ["sts.amazonaws.com"]
+  url             = "https://token.actions.githubusercontent.com"
+  thumbprint_list = ["1b511abead59c6ce207077c0bf0e0043b1382612"]
+}
+
+resource "aws_iam_role" "roles_dev" {
   for_each = local.groups
 
+  provider = aws.data_eng_dev
+
   name = "${each.key}_role"
-  
+
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
     Statement = [{
       Effect = "Allow",
       Principal = {
-        Federated = aws_iam_openid_connect_provider.github_oidc.arn
+        Federated = aws_iam_openid_connect_provider.github_oidc_dev.arn
       },
       Action = "sts:AssumeRoleWithWebIdentity",
       Condition = {
@@ -82,17 +110,65 @@ resource "aws_iam_role" "roles" {
   })
 }
 
-resource "aws_iam_policy" "policies" {
+resource "aws_iam_role" "roles_prod" {
+  for_each = local.groups
+
+  provider = aws.data_eng_prod
+
+  name = "${each.key}_role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [{
+      Effect = "Allow",
+      Principal = {
+        Federated = aws_iam_openid_connect_provider.github_oidc_prod.arn
+      },
+      Action = "sts:AssumeRoleWithWebIdentity",
+      Condition = {
+        StringEquals = {
+          "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com",
+          "token.actions.githubusercontent.com:sub" = "repo:rash-ms/*"
+        }
+      }
+    }]
+  })
+}
+
+resource "aws_iam_policy" "policies_dev" {
   for_each = local.policies
+
+  provider = aws.data_eng_dev
 
   name        = "${each.key}-policy"
   description = "Policy for ${each.key}"
-  policy      = jsonencode(each.value[each.key == "data-eng-DEV" ? "full_access_policy" : "readonly_policy"])
+  policy      = jsonencode(each.value.full_access_policy)
 }
 
-resource "aws_iam_role_policy_attachment" "policy_attachment" {
+resource "aws_iam_policy" "policies_prod" {
+  for_each = local.policies
+
+  provider = aws.data_eng_prod
+
+  name        = "${each.key}-policy"
+  description = "Policy for ${each.key}"
+  policy      = jsonencode(each.value.readonly_policy)
+}
+
+resource "aws_iam_role_policy_attachment" "policy_attachment_dev" {
   for_each = local.groups
 
-  role       = aws_iam_role.roles[each.key].name
-  policy_arn = aws_iam_policy.policies[each.key].arn
+  provider = aws.data_eng_dev
+
+  role       = aws_iam_role.roles_dev[each.key].name
+  policy_arn = aws_iam_policy.policies_dev[each.key].arn
+}
+
+resource "aws_iam_role_policy_attachment" "policy_attachment_prod" {
+  for_each = local.groups
+
+  provider = aws.data_eng_prod
+
+  role       = aws_iam_role.roles_prod[each.key].name
+  policy_arn = aws_iam_policy.policies_prod[each.key].arn
 }
