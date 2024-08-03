@@ -6,8 +6,8 @@
                 "Statement": [
                     {
                         "Effect": "Allow",
-                        "Action": "*",
-                        "Resource": "*"
+                        "Action": [],
+                        "Resource": []
                     }
                 ]
             }
