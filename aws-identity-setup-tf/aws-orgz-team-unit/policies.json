@@ -6,11 +6,7 @@
                 "Statement": [
                     {
                         "Effect": "Allow",
-                        "Action": [
-                            "ec2:Describe*",
-                            "iam:Get*",
-                            "iam:List*"
-                        ],
+                        "Action": "*",
                         "Resource": "*"
                     }
                 ]
