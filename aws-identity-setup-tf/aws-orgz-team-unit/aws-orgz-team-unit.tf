@@ -14,10 +14,16 @@ locals {
       ]
     ])
 
+  # account_map = {
+  #     for pair in local.team_env_pairs : 
+  #     "${pair.team}-${pair.env}" => pair
+  #   }
+
   account_map = {
-      for pair in local.team_env_pairs : 
-      "${pair.team}-${pair.env}" => pair
-    }
+    for pair in local.team_env_pairs :
+    "${pair.team}-${pair.env}" => pair
+    if contains(keys(aws_organizations_organizational_unit.team), pair.team)
+  }
 
   readonly_permission_sets = {
     for group, details in local.policies.policies :
@@ -52,16 +58,33 @@ data "aws_organizations_organization" "existing" {}
 #   ]
 # }
 
+
+# resource "aws_organizations_organizational_unit" "team" {
+#   for_each  = toset(var.teams)
+#   name      = each.value
+#   # parent_id = aws_organizations_organization.org.roots[0].id
+#   parent_id = data.aws_organizations_organization.existing.roots[0].id
+
+#   tags = {
+#     Name = "BYT-${each.value}"
+#   }
+# }
+
+data "aws_organizations_organizational_units" "existing_ous" {
+  parent_id = data.aws_organizations_organization.existing.roots[0].id
+}
+
 resource "aws_organizations_organizational_unit" "team" {
-  for_each  = toset(var.teams)
+  for_each = { for team in var.teams : team => team if length([for ou in data.aws_organizations_organizational_units.existing_ous.children : ou if ou.name == team]) == 0 }
+
   name      = each.value
-  # parent_id = aws_organizations_organization.org.roots[0].id
   parent_id = data.aws_organizations_organization.existing.roots[0].id
 
   tags = {
     Name = "BYT-${each.value}"
   }
 }
+
 
 resource "aws_organizations_organizational_unit" "team_env" {
   for_each  = local.account_map
@@ -72,6 +95,16 @@ resource "aws_organizations_organizational_unit" "team_env" {
     Name = "BYT-${each.value.team}-${each.value.env}"
   }
 }
+
+# resource "aws_organizations_organizational_unit" "team_env" {
+#   for_each  = local.account_map
+#   name      = each.value.env
+#   parent_id = aws_organizations_organizational_unit.team[each.value.team].id
+
+#   tags = {
+#     Name = "BYT-${each.value.team}-${each.value.env}"
+#   }
+# }
 
 resource "aws_organizations_account" "team_env_account" {
   for_each  = local.account_map
