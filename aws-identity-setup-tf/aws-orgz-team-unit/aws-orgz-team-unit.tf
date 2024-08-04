@@ -25,6 +25,13 @@ locals {
     "${pair.team}-${pair.env}" => pair
   }
 
+  # account_map = {
+  #   for pair in local.team_env_pairs :
+  #   "${pair.team}-${pair.env}" => pair
+  #   if contains(keys(aws_organizations_organizational_unit.team), pair.team)
+  # }
+
+
   readonly_permission_sets = {
     for group, details in local.policies.policies :
     group => {
@@ -74,13 +81,13 @@ resource "aws_organizations_organizational_unit" "team_env" {
 
 resource "aws_organizations_account" "team_wrkspc_account" {
   for_each  = local.account_map
-  name      = "BDT-${each.key}"
+  name      = "BYT-${each.key}"
   email     = local.aws_team_emails[each.key]
   parent_id = aws_organizations_organizational_unit.team_env[each.key].id
   role_name = "OrganizationAccountAccessRole"
 
   tags = {
-    Name        = "BDT-${each.key}",
+    Name        = "BYT-${each.key}",
     Team        = each.value.team,
     Environment = each.value.env
   }
