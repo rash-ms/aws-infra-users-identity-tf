@@ -66,13 +66,12 @@ resource "aws_organizations_organizational_unit" "team_env" {
   }
 }
 
-resource "aws_organizations_account" "team_env_account" {
+resource "aws_organizations_account" "team_wrkspc_account" {
   for_each  = local.account_map
   name      = "BYT-${each.key}"
   email     = local.team_account_emails[each.key]
   parent_id = aws_organizations_organizational_unit.team_env[each.key].id
-  # role_name = "OrganizationAccountAccessRole"
-  role_name = "AdministratorAccess"
+  role_name = "OrganizationAccountAccessRole"
 
   tags = {
     Name        = "BYT-${each.key}",
@@ -111,7 +110,7 @@ resource "aws_ssoadmin_account_assignment" "readonly_assignment" {
   permission_set_arn = aws_ssoadmin_permission_set.readonly_permission_set["data-eng-PROD"].arn
   principal_id = local.groups["data-eng-PROD"]  # Principal ID of the group
   principal_type = "GROUP"
-  target_id = aws_organizations_account.team_env_account[each.key].id
+  target_id = aws_organizations_account.team_wrkspc_account[each.key].id
   target_type = "AWS_ACCOUNT"
 }
 
@@ -143,6 +142,6 @@ resource "aws_ssoadmin_account_assignment" "full_access_assignment" {
   permission_set_arn = aws_ssoadmin_permission_set.full_access_permission_set["data-eng-DEV"].arn
   principal_id = local.groups["data-eng-DEV"]  # Principal ID of the group
   principal_type = "GROUP"
-  target_id = aws_organizations_account.team_env_account[each.key].id
+  target_id = aws_organizations_account.team_wrkspc_account[each.key].id
   target_type = "AWS_ACCOUNT"
 }
