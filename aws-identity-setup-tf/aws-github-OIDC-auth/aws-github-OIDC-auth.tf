@@ -17,7 +17,8 @@ provider "aws" {
 resource "aws_iam_openid_connect_provider" "github_oidc" {
   for_each = toset(var.workspaces)
 
-  provider = aws[each.value]
+#   provider = aws[each.value]
+  provider = aws["byt_data_eng_${each.key}"]
 
   client_id_list  = ["sts.amazonaws.com"]
   url             = "https://token.actions.githubusercontent.com"
@@ -27,7 +28,8 @@ resource "aws_iam_openid_connect_provider" "github_oidc" {
 resource "aws_iam_role" "roles" {
   for_each = toset(var.workspaces)
 
-  provider = aws[each.value]
+#   provider = aws[each.value]
+  provider = aws["byt_data_eng_${each.key}"]
 
   name = "byt-github-oidc-${each.value}-role"
 
@@ -52,7 +54,8 @@ resource "aws_iam_role" "roles" {
 resource "aws_iam_role_policy_attachment" "policy_attachment" {
   for_each = toset(var.workspaces)
 
-  provider = aws[each.value]
+#   provider = aws[each.value]
+  provider = aws["byt_data_eng_${each.key}"]
 
   role       = aws_iam_role.roles[each.value].name
   policy_arn = var.policy_arns[each.value]
