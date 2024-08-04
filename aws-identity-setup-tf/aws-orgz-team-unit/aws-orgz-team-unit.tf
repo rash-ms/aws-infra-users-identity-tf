@@ -43,24 +43,24 @@ locals {
   }
 }
 
-# data "aws_organizations_organization" "existing" {}
+data "aws_organizations_organization" "existing" {}
 
-resource "aws_organizations_organization" "org" {
-  aws_service_access_principals = [
-    "cloudtrail.amazonaws.com",
-    "config.amazonaws.com",
-  ]
+# resource "aws_organizations_organization" "org" {
+#   aws_service_access_principals = [
+#     "cloudtrail.amazonaws.com",
+#     "config.amazonaws.com",
+#   ]
 
-  enabled_policy_types = [
-    "SERVICE_CONTROL_POLICY"
-  ]
-}
+#   enabled_policy_types = [
+#     "SERVICE_CONTROL_POLICY"
+#   ]
+# }
 
 resource "aws_organizations_organizational_unit" "team" {
   for_each = toset(var.teams)
   name     = each.key
-  # parent_id = data.aws_organizations_organization.existing.roots[0].id
-  parent_id = aws_organizations_organization.org.roots[0].id
+  parent_id = data.aws_organizations_organization.existing.roots[0].id
+  # parent_id = aws_organizations_organization.org.roots[0].id
 }
 
 resource "aws_organizations_organizational_unit" "team_env" {
