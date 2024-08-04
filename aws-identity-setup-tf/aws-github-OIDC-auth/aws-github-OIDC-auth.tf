@@ -83,7 +83,8 @@ resource "aws_iam_role_policy_attachment" "policy_attachment_byt_dev" {
 #   provider = aws.byt_data_eng_dev
 
   role       = aws_iam_role.roles_byt_dev.name
-  policy_arn = "arn:aws:iam::021891586814:policy/bdt-data-org-dev-role-policy"
+#   policy_arn = "arn:aws:iam::021891586814:policy/bdt-data-org-dev-role-policy"
+  policy_arn = "arn:aws:iam::021891586728:policy/bdt-data-org-dev-role-policy"
 }
 
 resource "aws_iam_role_policy_attachment" "policy_attachment_byt_prod" {
@@ -92,4 +93,3 @@ resource "aws_iam_role_policy_attachment" "policy_attachment_byt_prod" {
   role       = aws_iam_role.roles_byt_prod.name
   policy_arn = "arn:aws:iam::021891586728:policy/bdt-data-org-prod-role-policy"
 }
-
