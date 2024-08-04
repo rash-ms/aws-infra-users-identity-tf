@@ -1,5 +1,5 @@
 {
-  "team_account_emails": {
+  "emails": {
     "data-org-PROD": "aws-byt-dataorg-prod@bagitek.com",
     "data-org-DEV": "aws-byt-dataorg-dev@bagitek.com"
   }
