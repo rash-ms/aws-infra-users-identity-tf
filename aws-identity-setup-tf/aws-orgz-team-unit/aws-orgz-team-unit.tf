@@ -1,5 +1,5 @@
 locals {
-  team_account_emails = jsondecode(file("${path.module}/aws_team_emails.json")).emails
+  aws_team_emails = jsondecode(file("${path.module}/aws_team_emails.json")).emails
   policies            = jsondecode(file("${path.module}/policies.json"))
   groups              = local.policies.groups
 
@@ -69,7 +69,7 @@ resource "aws_organizations_organizational_unit" "team_env" {
 resource "aws_organizations_account" "team_wrkspc_account" {
   for_each  = local.account_map
   name      = "BYT-${each.key}"
-  email     = local.team_account_emails[each.key]
+  email     = local.aws_team_emails[each.key]
   parent_id = aws_organizations_organizational_unit.team_env[each.key].id
   role_name = "OrganizationAccountAccessRole"
 
