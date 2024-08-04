@@ -14,10 +14,16 @@ locals {
       ]
     ])
 
+  # account_map = {
+  #     for pair in local.team_env_pairs : 
+  #     "${pair.team}-${pair.env}" => pair
+  #   }
+
   account_map = {
-      for pair in local.team_env_pairs : 
-      "${pair.team}-${pair.env}" => pair
-    }
+    for pair in local.team_env_pairs :
+    "${pair.team}-${pair.env}" => pair
+    if contains(keys(aws_organizations_organizational_unit.team), pair.team)
+  }
 
   readonly_permission_sets = {
     for group, details in local.policies.policies :
@@ -89,6 +95,16 @@ resource "aws_organizations_organizational_unit" "team_env" {
     Name = "BYT-${each.value.team}-${each.value.env}"
   }
 }
+
+# resource "aws_organizations_organizational_unit" "team_env" {
+#   for_each  = local.account_map
+#   name      = each.value.env
+#   parent_id = aws_organizations_organizational_unit.team[each.value.team].id
+
+#   tags = {
+#     Name = "BYT-${each.value.team}-${each.value.env}"
+#   }
+# }
 
 resource "aws_organizations_account" "team_env_account" {
   for_each  = local.account_map
