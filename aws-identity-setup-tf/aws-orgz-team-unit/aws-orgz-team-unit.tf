@@ -87,6 +87,7 @@ resource "aws_organizations_account" "team_env_account" {
   }
 }
 
+
 data "aws_ssoadmin_instances" "main" {}
 
 # Create permission sets for readonly access
