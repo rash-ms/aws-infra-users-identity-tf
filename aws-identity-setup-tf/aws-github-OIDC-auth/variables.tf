@@ -1,7 +1,8 @@
 variable "workspaces" {
   description = "List of workspaces"
   type        = list(string)
-  default     = ["dev", "prod"]
+#   default     = ["dev", "prod"]
+  default     = ["byt_data_eng_dev", "byt_data_eng_prod"]
 }
 
 variable "role_arns" {
