@@ -11,6 +11,6 @@ output "account_map" {
   value = local.account_map
 }
 
-output "created_teams" {
-  value = local.created_teams
-}
+# output "created_teams" {
+#   value = local.created_teams
+# }

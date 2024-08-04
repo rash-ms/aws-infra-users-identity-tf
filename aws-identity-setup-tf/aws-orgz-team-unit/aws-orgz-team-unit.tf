@@ -12,12 +12,17 @@ locals {
     ]
   ])
 
-  created_teams = { for k, v in aws_organizations_organizational_unit.team : k => v.id }
+  # created_teams = { for k, v in aws_organizations_organizational_unit.team : k => v.id }
+
+  # account_map = {
+  #   for pair in local.team_env_pairs :
+  #   "${pair.team}-${pair.env}" => pair
+  #   if contains(keys(local.created_teams), pair.team)
+  # }
 
   account_map = {
     for pair in local.team_env_pairs :
     "${pair.team}-${pair.env}" => pair
-    if contains(keys(local.created_teams), pair.team)
   }
 
   readonly_permission_sets = {
@@ -59,7 +64,8 @@ resource "aws_organizations_organizational_unit" "team" {
 resource "aws_organizations_organizational_unit" "team_env" {
   for_each  = local.account_map
   name      = each.value.env
-  parent_id = local.created_teams[each.value.team]
+  # parent_id = local.created_teams[each.value.team]
+  parent_id = aws_organizations_organizational_unit.team[each.value.team].id
 
   tags = {
     Name = "BYT-${each.value.team}-${each.value.env}"
