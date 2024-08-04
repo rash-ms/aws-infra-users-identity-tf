@@ -1,6 +1,6 @@
 {
   "team_account_emails": {
-    "data-org-PROD": "aws-bdt-dataorg-prod-env@bagitek.com",
-    "data-org-DEV": "aws-bdt-dataorg-dev-env@bagitek.com"
+    "data-org-PROD": "aws-byt-dataorg-prod@bagitek.com",
+    "data-org-DEV": "aws-byt-dataorg-dev@bagitek.com"
   }
 }

@@ -10,16 +10,6 @@ variable "workspace" {
   default     = ["PROD", "DEV"]
 }
 
-# variable "teams" {
-#   description = "List of teams"
-#   type        = list(string)
-# }
-
-# variable "workspace" {
-#   description = "List of workspaces"
-#   type        = list(string)
-# }
-
 
 # variable "github_action_name" {
 #   description = "The name for the GitHub Actions IAM role"
