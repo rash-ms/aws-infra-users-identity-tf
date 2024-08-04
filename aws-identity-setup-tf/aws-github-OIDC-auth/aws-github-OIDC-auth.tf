@@ -2,7 +2,7 @@ provider "aws" {
   alias  = "byt_data_eng_dev"
   region = "us-east-1"
   assume_role {
-    role_arn ="arn:aws:iam::021891586728:role/bdt-data-org-dev-role"
+    role_arn ="arn:aws:iam::021891586814:role/bdt-data-org-dev-role"
   }
 }
 
