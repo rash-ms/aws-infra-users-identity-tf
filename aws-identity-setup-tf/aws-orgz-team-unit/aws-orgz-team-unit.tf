@@ -19,12 +19,17 @@ locals {
   #     "${pair.team}-${pair.env}" => pair
   #   }
 
+  # account_map = {
+  #   for pair in local.team_env_pairs :
+  #   "${pair.team}-${pair.env}" => pair
+  #   if contains(keys(aws_organizations_organizational_unit.team), pair.team)
+  # }
+
   account_map = {
     for pair in local.team_env_pairs :
     "${pair.team}-${pair.env}" => pair
-    if contains(keys(aws_organizations_organizational_unit.team), pair.team)
+    if contains([for ou in data.aws_organizations_organizational_units.existing_ous.children : ou.name], pair.team)
   }
-
 
   readonly_permission_sets = {
     for group, details in local.policies.policies :
@@ -110,6 +115,7 @@ resource "aws_organizations_account" "team_env_account" {
     Environment = each.value.env
   }
 }
+
 
 
 # data "aws_ssoadmin_instances" "main" {}
