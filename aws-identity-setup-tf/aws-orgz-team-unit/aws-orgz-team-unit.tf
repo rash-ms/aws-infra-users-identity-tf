@@ -25,6 +25,7 @@ locals {
     if contains(keys(aws_organizations_organizational_unit.team), pair.team)
   }
 
+
   readonly_permission_sets = {
     for group, details in local.policies.policies :
     group => {
@@ -95,16 +96,6 @@ resource "aws_organizations_organizational_unit" "team_env" {
     Name = "BYT-${each.value.team}-${each.value.env}"
   }
 }
-
-# resource "aws_organizations_organizational_unit" "team_env" {
-#   for_each  = local.account_map
-#   name      = each.value.env
-#   parent_id = aws_organizations_organizational_unit.team[each.value.team].id
-
-#   tags = {
-#     Name = "BYT-${each.value.team}-${each.value.env}"
-#   }
-# }
 
 resource "aws_organizations_account" "team_env_account" {
   for_each  = local.account_map
@@ -190,6 +181,10 @@ resource "aws_ssoadmin_account_assignment" "full_access_assignment" {
   target_id = aws_organizations_account.team_env_account[each.key].id
   target_type = "AWS_ACCOUNT"
 }
+
+
+
+
 
 
 # # OIDC Provider configuration
