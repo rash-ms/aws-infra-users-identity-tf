@@ -64,8 +64,6 @@ data "aws_organizations_organization" "existing" {}
 #   }
 # }
 
-data "aws_organizations_organization" "existing" {}
-
 data "aws_organizations_organizational_units" "existing_ous" {
   parent_id = data.aws_organizations_organization.existing.roots[0].id
 }
