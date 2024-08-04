@@ -59,7 +59,7 @@ resource "aws_organizations_organizational_unit" "team" {
   parent_id = data.aws_organizations_organization.existing.roots[0].id
 
   tags = {
-    Name = "BDT-${each.value}"
+    Name = "BYT-${each.value}"
   }
 }
 
@@ -69,19 +69,19 @@ resource "aws_organizations_organizational_unit" "team_env" {
   parent_id = aws_organizations_organizational_unit.team[each.value.team].id
 
   tags = {
-    Name = "BDT-${each.value.team}-${each.value.env}"
+    Name = "BYT-${each.value.team}-${each.value.env}"
   }
 }
 
 resource "aws_organizations_account" "team_env_account" {
   for_each  = local.account_map
-  name      = "BDT-${each.key}"
+  name      = "BYT-${each.key}"
   email     = local.team_account_emails[each.key]
   parent_id = aws_organizations_organizational_unit.team_env[each.key].id
   role_name = "OrganizationAccountAccessRole"
 
   tags = {
-    Name = "BDT-${each.key}",
+    Name = "BYT-${each.key}",
     Team = each.value.team,
     Environment = each.value.env
   }
