@@ -17,7 +17,7 @@ locals {
   account_map = {
     for pair in local.team_env_pairs :
     "${pair.team}-${pair.env}" => pair
-    if contains(keys(created_teams), pair.team)
+    if contains(keys(local.created_teams), pair.team)
   }
 
   readonly_permission_sets = {
@@ -39,6 +39,24 @@ locals {
   }
 }
 
+
+variable "teams" {
+  description = "List of teams"
+  type        = list(string)
+  default     = ["data-org"]
+}
+
+variable "workspace" {
+  description = "List of workspaces"
+  type        = list(string)
+  default     = ["PROD", "DEV"]
+}
+
+data "aws_organizations_organization" "existing" {}
+
+data "aws_organizations_organizational_units" "existing_ous" {
+  parent_id = data.aws_organizations_organization.existing.roots[0].id
+}
 
 resource "aws_organizations_organizational_unit" "team" {
   for_each = { for team in var.teams : team => team if length([for ou in data.aws_organizations_organizational_units.existing_ous.children : ou if ou.name == team]) == 0 }
