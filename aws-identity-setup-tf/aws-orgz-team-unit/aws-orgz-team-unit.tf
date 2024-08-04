@@ -159,57 +159,57 @@ resource "aws_ssoadmin_account_assignment" "full_access_assignment" {
 
 
 
-# OIDC Provider configuration
-resource "aws_iam_openid_connect_provider" "github_oidc" {
-    client_id_list  =   ["sts.amazonaws.com"]
-    thumbprint_list =   ["1b511abead59c6ce207077c0bf0e0043b1382612"]
-    url             =   "https://token.actions.githubusercontent.com"
-}
+# # OIDC Provider configuration
+# resource "aws_iam_openid_connect_provider" "github_oidc" {
+#     client_id_list  =   ["sts.amazonaws.com"]
+#     thumbprint_list =   ["1b511abead59c6ce207077c0bf0e0043b1382612"]
+#     url             =   "https://token.actions.githubusercontent.com"
+# }
 
-# IAM Role to be assumed by the OIDC provider
-resource "aws_iam_role" "oidc_role" {
-  for_each = local.account_map
-  name = "oidc-role-${each.key}"
+# # IAM Role to be assumed by the OIDC provider
+# resource "aws_iam_role" "oidc_role" {
+#   for_each = local.account_map
+#   name = "oidc-role-${each.key}"
 
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [{
-      Effect = "Allow",
-      Principal = {
-        Federated = aws_iam_openid_connect_provider.github_oidc.arn
-      },
-      Action = "sts:AssumeRoleWithWebIdentity",
-      Condition = {
-        StringEquals = {
-          "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com",
-          "token.actions.githubusercontent.com:sub" = "repo:rash-ms/*"
-        }
-      }
-    }]
-  })
+#   assume_role_policy = jsonencode({
+#     Version = "2012-10-17",
+#     Statement = [{
+#       Effect = "Allow",
+#       Principal = {
+#         Federated = aws_iam_openid_connect_provider.github_oidc.arn
+#       },
+#       Action = "sts:AssumeRoleWithWebIdentity",
+#       Condition = {
+#         StringEquals = {
+#           "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com",
+#           "token.actions.githubusercontent.com:sub" = "repo:rash-ms/*"
+#         }
+#       }
+#     }]
+#   })
 
-  # Attach policies to the role as needed
-  inline_policy {
-    name = "allow-s3-access"
-    policy = jsonencode({
-      Version = "2012-10-17",
-      Statement = [{
-        Effect = "Allow",
-        Action = "s3:*",
-        Resource = "*"
-      }]
-    })
-  }
+#   # Attach policies to the role as needed
+#   inline_policy {
+#     name = "allow-s3-access"
+#     policy = jsonencode({
+#       Version = "2012-10-17",
+#       Statement = [{
+#         Effect = "Allow",
+#         Action = "s3:*",
+#         Resource = "*"
+#       }]
+#     })
+#   }
 
-  tags = {
-    Name = "oidc-role-${each.key}"
-  }
-}
+#   tags = {
+#     Name = "oidc-role-${each.key}"
+#   }
+# }
 
-# Attach the IAM role to accounts in the OU
-resource "aws_iam_role_policy_attachment" "oidc_role_attachment" {
-  for_each = local.account_map
+# # Attach the IAM role to accounts in the OU
+# resource "aws_iam_role_policy_attachment" "oidc_role_attachment" {
+#   for_each = local.account_map
 
-  role       = aws_iam_role.oidc_role[each.key].name
-  policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"  # Adjust as needed
-}
+#   role       = aws_iam_role.oidc_role[each.key].name
+#   policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"  # Adjust as needed
+# }
