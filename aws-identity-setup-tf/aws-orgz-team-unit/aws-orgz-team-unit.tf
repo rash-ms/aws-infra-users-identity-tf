@@ -1,70 +1,70 @@
-# locals {
-#   team_account_emails = jsondecode(file("${path.module}/team_emails.json")).team_account_emails
-#   policies            = jsondecode(file("${path.module}/policies.json"))
-#   groups              = local.policies.groups
+locals {
+  team_account_emails = jsondecode(file("${path.module}/team_emails.json")).team_account_emails
+  policies            = jsondecode(file("${path.module}/policies.json"))
+  groups              = local.policies.groups
 
-#   team_env_pairs = flatten([
-#     for team in var.teams : [
-#       for env in var.workspace : {
-#         team = team,
-#         env  = env
-#       }
-#     ]
-#   ])
+  team_env_pairs = flatten([
+    for team in var.teams : [
+      for env in var.workspace : {
+        team = team,
+        env  = env
+      }
+    ]
+  ])
 
-#   created_teams = { for k, v in aws_organizations_organizational_unit.team : k => v.id }
+  created_teams = { for k, v in aws_organizations_organizational_unit.team : k => v.id }
 
-#   account_map = {
-#     for pair in local.team_env_pairs :
-#     "${pair.team}-${pair.env}" => pair
-#     if contains(keys(local.created_teams), pair.team)
-#   }
+  account_map = {
+    for pair in local.team_env_pairs :
+    "${pair.team}-${pair.env}" => pair
+    if contains(keys(local.created_teams), pair.team)
+  }
 
-#   readonly_permission_sets = {
-#     for group, details in local.policies.policies :
-#     group => {
-#       name   = "byt-${group}-readonly"
-#       policy = jsonencode(details.readonly_policy)
-#     }
-#     if contains(keys(details), "readonly_policy")
-#   }
+  readonly_permission_sets = {
+    for group, details in local.policies.policies :
+    group => {
+      name   = "byt-${group}-readonly"
+      policy = jsonencode(details.readonly_policy)
+    }
+    if contains(keys(details), "readonly_policy")
+  }
 
-#   full_access_permission_sets = {
-#     for group, details in local.policies.policies :
-#     group => {
-#       name   = "byt-${group}-fullAccess"
-#       policy = jsonencode(details.full_access_policy)
-#     }
-#     if contains(keys(details), "full_access_policy")
-#   }
-# }
+  full_access_permission_sets = {
+    for group, details in local.policies.policies :
+    group => {
+      name   = "byt-${group}-fullAccess"
+      policy = jsonencode(details.full_access_policy)
+    }
+    if contains(keys(details), "full_access_policy")
+  }
+}
 
-# data "aws_organizations_organization" "existing" {}
+data "aws_organizations_organization" "existing" {}
 
-# data "aws_organizations_organizational_units" "existing_ous" {
-#   parent_id = data.aws_organizations_organization.existing.roots[0].id
-# }
+data "aws_organizations_organizational_units" "existing_ous" {
+  parent_id = data.aws_organizations_organization.existing.roots[0].id
+}
 
-# resource "aws_organizations_organizational_unit" "team" {
-#   for_each = { for team in var.teams : team => team if length([for ou in data.aws_organizations_organizational_units.existing_ous.children : ou if ou.name == team]) == 0 }
+resource "aws_organizations_organizational_unit" "team" {
+  for_each = { for team in var.teams : team => team if length([for ou in data.aws_organizations_organizational_units.existing_ous.children : ou if ou.name == team]) == 0 }
 
-#   name      = each.value
-#   parent_id = data.aws_organizations_organization.existing.roots[0].id
+  name      = each.value
+  parent_id = data.aws_organizations_organization.existing.roots[0].id
 
-#   tags = {
-#     Name = "BYT-${each.value}"
-#   }
-# }
+  tags = {
+    Name = "BYT-${each.value}"
+  }
+}
 
-# resource "aws_organizations_organizational_unit" "team_env" {
-#   for_each  = local.account_map
-#   name      = each.value.env
-#   parent_id = local.created_teams[each.value.team]
+resource "aws_organizations_organizational_unit" "team_env" {
+  for_each  = local.account_map
+  name      = each.value.env
+  parent_id = local.created_teams[each.value.team]
 
-#   tags = {
-#     Name = "BYT-${each.value.team}-${each.value.env}"
-#   }
-# }
+  tags = {
+    Name = "BYT-${each.value.team}-${each.value.env}"
+  }
+}
 
 # resource "aws_organizations_account" "team_env_account" {
 #   for_each  = local.account_map
