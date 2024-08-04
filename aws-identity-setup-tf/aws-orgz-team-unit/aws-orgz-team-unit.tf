@@ -66,6 +66,20 @@ resource "aws_organizations_organizational_unit" "team_env" {
   }
 }
 
+# resource "aws_organizations_account" "team_wrkspc_account" {
+#   for_each  = local.account_map
+#   name      = "BYT-${each.key}"
+#   email     = local.aws_team_emails[each.key]
+#   parent_id = aws_organizations_organizational_unit.team_env[each.key].id
+#   role_name = "OrganizationAccountAccessRole"
+
+#   tags = {
+#     Name        = "BYT-${each.key}",
+#     Team        = each.value.team,
+#     Environment = each.value.env
+#   }
+# }
+
 resource "aws_organizations_account" "team_wrkspc_account" {
   for_each  = local.account_map
   name      = "BYT-${each.key}"
@@ -79,6 +93,7 @@ resource "aws_organizations_account" "team_wrkspc_account" {
     Environment = each.value.env
   }
 }
+
 
 data "aws_ssoadmin_instances" "main" {}
 
