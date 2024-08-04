@@ -159,7 +159,6 @@ resource "aws_ssoadmin_account_assignment" "full_access_assignment" {
 }
 
 
-
 # # OIDC Provider configuration
 # resource "aws_iam_openid_connect_provider" "github_oidc" {
 #     client_id_list  =   ["sts.amazonaws.com"]
