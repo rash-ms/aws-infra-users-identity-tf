@@ -8,7 +8,6 @@ terraform {
   backend "s3" {
     bucket         = "byt-infra-user-identity-backend"
     key            = "aws-orgz-team-unit/terraform.tfstate"
-    # key            = "complete-state/terraform.tfstate"
     region         = "us-east-1"                
   }
 }
