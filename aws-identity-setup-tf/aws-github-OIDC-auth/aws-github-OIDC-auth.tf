@@ -14,11 +14,18 @@ provider "aws" {
   }
 }
 
+
+locals {
+  provider_aliases = {
+    dev  = "aws.byt_data_eng_dev"
+    prod = "aws.byt_data_eng_prod"
+  }
+}
+
 resource "aws_iam_openid_connect_provider" "github_oidc" {
   for_each = toset(var.workspaces)
 
-#   provider = aws[each.value]
-  provider = aws["byt_data_eng_${each.key}"]
+  provider = aws[local.provider_aliases[each.key]]
 
   client_id_list  = ["sts.amazonaws.com"]
   url             = "https://token.actions.githubusercontent.com"
@@ -28,17 +35,16 @@ resource "aws_iam_openid_connect_provider" "github_oidc" {
 resource "aws_iam_role" "roles" {
   for_each = toset(var.workspaces)
 
-#   provider = aws[each.value]
-  provider = aws["byt_data_eng_${each.key}"]
+  provider = aws[local.provider_aliases[each.key]]
 
-  name = "byt-github-oidc-${each.value}-role"
+  name = "byt-github-oidc-${each.key}-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
     Statement = [{
       Effect = "Allow",
       Principal = {
-        Federated = aws_iam_openid_connect_provider.github_oidc[each.value].arn
+        Federated = aws_iam_openid_connect_provider.github_oidc[each.key].arn
       },
       Action = "sts:AssumeRoleWithWebIdentity",
       Condition = {
@@ -54,13 +60,11 @@ resource "aws_iam_role" "roles" {
 resource "aws_iam_role_policy_attachment" "policy_attachment" {
   for_each = toset(var.workspaces)
 
-#   provider = aws[each.value]
-  provider = aws["byt_data_eng_${each.key}"]
+  provider = aws[local.provider_aliases[each.key]]
 
-  role       = aws_iam_role.roles[each.value].name
-  policy_arn = var.policy_arns[each.value]
+  role       = aws_iam_role.roles[each.key].name
+  policy_arn = var.policy_arns[each.key]
 }
-
 
 # provider "aws" {
 #   alias  = "byt_data_eng_dev"
