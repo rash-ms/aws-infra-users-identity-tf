@@ -10,7 +10,3 @@ output "team_wrkspc_account_ids" {
 output "account_map" {
   value = local.account_map
 }
-
-# output "created_teams" {
-#   value = local.created_teams
-# }
