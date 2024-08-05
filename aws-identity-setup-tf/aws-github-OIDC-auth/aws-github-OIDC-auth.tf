@@ -15,27 +15,28 @@ provider "aws" {
 }
 
 
-locals {
-  provider_aliases = {
-    dev  = "aws.byt_data_eng_dev"
-    prod = "aws.byt_data_eng_prod"
-  }
-}
-
-resource "aws_iam_openid_connect_provider" "github_oidc" {
-  for_each = toset(var.workspaces)
-
-  provider = aws[local.provider_aliases[each.key]]
+resource "aws_iam_openid_connect_provider" "github_oidc_dev" {
+  provider = aws.byt_data_eng_dev
 
   client_id_list  = ["sts.amazonaws.com"]
   url             = "https://token.actions.githubusercontent.com"
   thumbprint_list = ["1b511abead59c6ce207077c0bf0e0043b1382612"]
 }
 
+resource "aws_iam_openid_connect_provider" "github_oidc_prod" {
+  provider = aws.byt_data_eng_prod
+
+  client_id_list  = ["sts.amazonaws.com"]
+  url             = "https://token.actions.githubusercontent.com"
+  thumbprint_list = ["1b511abead59c6ce207077c0bf0e0043b1382612"]
+}
+
+
+
 resource "aws_iam_role" "roles" {
   for_each = toset(var.workspaces)
 
-  provider = aws[local.provider_aliases[each.key]]
+  provider = each.key == "dev" ? aws.byt_data_eng_dev : aws.byt_data_eng_prod
 
   name = "byt-github-oidc-${each.key}-role"
 
@@ -44,7 +45,7 @@ resource "aws_iam_role" "roles" {
     Statement = [{
       Effect = "Allow",
       Principal = {
-        Federated = aws_iam_openid_connect_provider.github_oidc[each.key].arn
+        Federated = each.key == "dev" ? aws_iam_openid_connect_provider.github_oidc_dev.arn : aws_iam_openid_connect_provider.github_oidc_prod.arn
       },
       Action = "sts:AssumeRoleWithWebIdentity",
       Condition = {
@@ -57,14 +58,16 @@ resource "aws_iam_role" "roles" {
   })
 }
 
+
 resource "aws_iam_role_policy_attachment" "policy_attachment" {
   for_each = toset(var.workspaces)
 
-  provider = aws[local.provider_aliases[each.key]]
+  provider = each.key == "dev" ? aws.byt_data_eng_dev : aws.byt_data_eng_prod
 
   role       = aws_iam_role.roles[each.key].name
   policy_arn = var.policy_arns[each.key]
 }
+
 
 # provider "aws" {
 #   alias  = "byt_data_eng_dev"
