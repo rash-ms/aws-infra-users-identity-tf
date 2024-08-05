@@ -1,6 +1,7 @@
 locals {
   config = yamldecode(file(var.yaml_path))
   
+  # Flatten the user_groups into a single map
   flattened_user_groups = merge([
     for group_name, users in local.config : {
       for user in users : "${group_name}-${user}" => {
@@ -12,6 +13,8 @@ locals {
 }
 
 data "aws_ssoadmin_instances" "main" {}
+
+data "aws_organizations_organization" "main" {}
 
 data "aws_identitystore_user" "sso_users" {
   for_each          = local.flattened_user_groups
