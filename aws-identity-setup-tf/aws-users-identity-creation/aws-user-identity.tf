@@ -1,7 +1,6 @@
 locals {
   config = yamldecode(file(var.yaml_path))
   
-  # Flatten the user_groups into a single map
   flattened_user_groups = merge([
     for group_name, users in local.config : {
       for user in users : "${group_name}-${user}" => {
@@ -10,10 +9,6 @@ locals {
       }
     }
   ]...)
-}
-
-provider "aws" {
-  region = "us-east-1"  # Replace with your desired region
 }
 
 data "aws_ssoadmin_instances" "main" {}
