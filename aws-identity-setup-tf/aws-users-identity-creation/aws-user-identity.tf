@@ -1,5 +1,11 @@
+data "local_file" "users" {
+  filename = var.yaml_path
+}
+
+
 locals {
-  config = yamldecode(file(var.yaml_path))
+  # config = yamldecode(file(var.yaml_path))
+  config = yamldecode(data.local_file.users.content)
   
   # Flatten the user_groups into a single map
   flattened_user_groups = merge([
