@@ -5,7 +5,6 @@ locals {
   }
 }
 
-
 data "aws_ssoadmin_instances" "main" {}
 
 data "aws_identitystore_user" "sso_users" {
@@ -27,13 +26,19 @@ data "aws_ssoadmin_permission_set" "all" {
 }
 
 resource "aws_ssoadmin_account_assignment" "assignments" {
-  for_each = { for group, users in local.user_groups : group => users }
+  for_each = {
+    for group, users in local.user_groups :
+    "${group}-${users}" => {
+      group = group
+      users = users
+    }
+  }
 
   instance_arn       = data.aws_ssoadmin_instances.main.arns[0]
-  permission_set_arn = data.aws_ssoadmin_permission_set.all[each.key].arn
+  permission_set_arn = data.aws_ssoadmin_permission_set.all[each.value.group].arn
   principal_type     = "USER"
   target_id          = data.aws_organizations_organization.main.id
   target_type        = "AWS_ACCOUNT"
 
-  principal_id = data.aws_identitystore_user.sso_users[each.value].id
+  principal_id = data.aws_identitystore_user.sso_users[each.value.users].id
 }
