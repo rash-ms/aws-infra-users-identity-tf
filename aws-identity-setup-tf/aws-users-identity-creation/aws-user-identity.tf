@@ -5,12 +5,19 @@ locals {
   }
 }
 
+
 data "aws_ssoadmin_instances" "main" {}
 
 data "aws_identitystore_user" "sso_users" {
   for_each        = { for user in flatten([for group, users in local.user_groups : users]) : user => user }
   identity_store_id = data.aws_ssoadmin_instances.main.identity_store_ids[0]
-  user_name       = each.key
+
+  alternate_identifier {
+    external_id {
+      issuer = "aws"
+      id     = each.key
+    }
+  }
 }
 
 data "aws_ssoadmin_permission_set" "all" {
