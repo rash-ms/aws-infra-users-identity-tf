@@ -1,20 +1,3 @@
-provider "aws" {
-  alias  = "byt_data_eng_dev"
-  region = "us-east-1"
-  assume_role {
-    role_arn ="arn:aws:iam::022499035350:role/byt-data-org-dev-role"
-  }
-}
-
-provider "aws" {
-  alias  = "byt_data_eng_prod"
-  region = "us-east-1"
-  assume_role {
-    role_arn ="arn:aws:iam::022499035568:role/byt-data-org-prod-role"
-  }
-}
-
-
 resource "aws_iam_openid_connect_provider" "github_oidc_byt_dev" {
   provider = aws.byt_data_eng_dev
 
@@ -34,7 +17,7 @@ resource "aws_iam_openid_connect_provider" "github_oidc_byt_prod" {
 resource "aws_iam_role" "roles_byt_dev" {
   provider = aws.byt_data_eng_dev
 
-  name = "dev-role"
+  name = "byt-github-oidc-dev-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
@@ -57,7 +40,7 @@ resource "aws_iam_role" "roles_byt_dev" {
 resource "aws_iam_role" "roles_byt_prod" {
   provider = aws.byt_data_eng_prod
 
-  name = "prod-role"
+  name = "byt-github-oidc-prod-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
