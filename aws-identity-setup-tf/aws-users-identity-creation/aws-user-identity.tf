@@ -46,7 +46,7 @@ resource "aws_identitystore_user" "users" {
 }
 
 resource "aws_identitystore_group" "groups" {
-  for_each = distinct([for user_map in local.flattened_user_groups : user_map.group])
+  for_each = toset([for user_map in local.flattened_user_groups : user_map.group])
 
   identity_store_id = local.identity_store_id
   display_name      = each.value
