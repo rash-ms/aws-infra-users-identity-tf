@@ -38,9 +38,6 @@ resource "null_resource" "check_existing_users" {
       aws identitystore list-users --identity-store-id ${local.identity_store_id} --filter "UserName eq '${each.key}'" > /dev/null 2>&1
     EOT
 
-    environment = {
-      AWS_REGION = var.region
-    }
   }
 }
 
@@ -55,9 +52,6 @@ resource "null_resource" "check_existing_groups" {
       aws identitystore list-groups --identity-store-id ${local.identity_store_id} --filter "DisplayName eq '${each.key}'" > /dev/null 2>&1
     EOT
 
-    environment = {
-      AWS_REGION = var.region
-    }
   }
 }
 
