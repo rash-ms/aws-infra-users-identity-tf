@@ -14,20 +14,24 @@ locals {
 
   config = yamldecode(file(var.yaml_path))
 
-  # Flatten the user_groups into a list of maps, ensuring we handle null values
+  # Flatten the user_groups into a list of maps, ensuring we handle null values and skip empty entries
   flattened_user_groups = flatten([
     for group_name, users in local.config : [
       for user in coalesce(users, []) : {
         group = group_name
         user  = user
       }
+      if length(users) > 0
     ]
   ])
 }
 
 # Fetch existing users
 data "aws_identitystore_user" "existing_users" {
-  for_each = toset([for user_map in local.flattened_user_groups : user_map.user])
+  for_each = {
+    for user_map in local.flattened_user_groups : user_map.user => user_map.user
+    if user_map.user != ""
+  }
 
   identity_store_id = local.identity_store_id
   filter {
