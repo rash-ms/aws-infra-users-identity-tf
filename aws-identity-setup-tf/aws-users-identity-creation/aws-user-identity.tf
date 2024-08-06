@@ -30,7 +30,10 @@ data "aws_identitystore_user" "existing_users" {
   for_each = toset([for user_map in local.flattened_user_groups : user_map.user])
 
   identity_store_id = local.identity_store_id
-  user_name         = each.key
+  filter {
+    attribute_path   = "UserName"
+    attribute_value  = each.key
+  }
 }
 
 # Fetch existing groups
@@ -38,13 +41,16 @@ data "aws_identitystore_group" "existing_groups" {
   for_each = toset([for user_map in local.flattened_user_groups : user_map.group])
 
   identity_store_id = local.identity_store_id
-  display_name      = each.key
+  filter {
+    attribute_path   = "DisplayName"
+    attribute_value  = each.key
+  }
 }
 
 resource "aws_identitystore_user" "users" {
   for_each = {
     for user_map in local.flattened_user_groups : "${user_map.user}" => user_map
-    if length(data.aws_identitystore_user.existing_users[user_map.user].id) == 0
+    if length(data.aws_identitystore_user.existing_users[user_map.user].filter[0].attribute_value) == 0
   }
 
   identity_store_id = local.identity_store_id
@@ -64,7 +70,7 @@ resource "aws_identitystore_user" "users" {
 resource "aws_identitystore_group" "groups" {
   for_each = {
     for user_map in local.flattened_user_groups : user_map.group => user_map.group
-    if length(data.aws_identitystore_group.existing_groups[user_map.group].id) == 0
+    if length(data.aws_identitystore_group.existing_groups[user_map.group].filter[0].attribute_value) == 0
   }
 
   identity_store_id = local.identity_store_id
@@ -75,12 +81,10 @@ resource "aws_identitystore_group" "groups" {
 resource "aws_identitystore_group_membership" "memberships" {
   for_each = {
     for user_map in local.flattened_user_groups : "${user_map.group}-${user_map.user}" => user_map
-    if length(data.aws_identitystore_user.existing_users[user_map.user].id) > 0 && length(data.aws_identitystore_group.existing_groups[user_map.group].id) > 0
+    if length(data.aws_identitystore_user.existing_users[user_map.user].filter[0].attribute_value) > 0 && length(data.aws_identitystore_group.existing_groups[user_map.group].filter[0].attribute_value) > 0
   }
 
   identity_store_id = local.identity_store_id
   group_id          = data.aws_identitystore_group.existing_groups[each.value.group].id
   member_id         = data.aws_identitystore_user.existing_users[each.value.user].id
 }
-
-
