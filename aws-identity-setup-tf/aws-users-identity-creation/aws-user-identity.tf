@@ -26,6 +26,11 @@ locals {
   ])
 }
 
+# Output the identity store ID for debugging
+output "identity_store_id" {
+  value = local.identity_store_id
+}
+
 # Fetch existing users
 data "aws_identitystore_user" "existing_users" {
   for_each = {
@@ -40,6 +45,11 @@ data "aws_identitystore_user" "existing_users" {
   }
 }
 
+# Output the existing users for debugging
+output "existing_users" {
+  value = data.aws_identitystore_user.existing_users
+}
+
 # Fetch existing groups
 data "aws_identitystore_group" "existing_groups" {
   for_each = {
@@ -51,6 +61,11 @@ data "aws_identitystore_group" "existing_groups" {
     attribute_path   = "DisplayName"
     attribute_value  = each.key
   }
+}
+
+# Output the existing groups for debugging
+output "existing_groups" {
+  value = data.aws_identitystore_group.existing_groups
 }
 
 resource "aws_identitystore_user" "users" {
@@ -72,7 +87,6 @@ resource "aws_identitystore_user" "users" {
     value   = each.value.user
   }
 }
-
 
 resource "aws_identitystore_group" "groups" {
   for_each = {
