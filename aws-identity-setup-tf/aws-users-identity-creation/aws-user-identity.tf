@@ -81,11 +81,3 @@ resource "null_resource" "add_users_to_group" {
     interpreter = ["sh", "-c"]
   }
 }
-
-output "debug_mappings" {
-  value = local.flattened_user_groups
-}
-
-output "user_ids" {
-  value = local.user_ids
-}
