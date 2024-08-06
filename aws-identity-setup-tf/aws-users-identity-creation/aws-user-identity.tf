@@ -44,25 +44,18 @@ resource "null_resource" "get_user_ids" {
   }
 
   provisioner "local-exec" {
-    command = "echo user_id_${each.key}=$(cat user_id_${each.key}.txt) >> user_ids.env"
+    command = "echo user_id_${each.key}=$(cat user_id_${each.key}.txt) >> ${path.module}/user_ids.env"
   }
 }
 
 data "local_file" "user_ids" {
   filename = "${path.module}/user_ids.env"
-}
-
-resource "null_resource" "source_env" {
   depends_on = [null_resource.get_user_ids]
-
-  provisioner "local-exec" {
-    command = "source ${data.local_file.user_ids.filename}"
-  }
 }
 
 resource "aws_ssoadmin_account_assignment" "assignments" {
   for_each = local.flattened_user_groups
-  depends_on = [null_resource.source_env]
+  depends_on = [data.local_file.user_ids]
 
   instance_arn       = data.aws_ssoadmin_instances.main.arns[0]
   permission_set_arn = try(data.aws_ssoadmin_permission_set.all[each.value.permission_set].arn, "")
@@ -70,7 +63,7 @@ resource "aws_ssoadmin_account_assignment" "assignments" {
   target_id          = data.aws_organizations_organization.main.id
   target_type        = "AWS_ACCOUNT"
 
-  principal_id = "user_id_${each.key}"
+  principal_id = chomp(element(split("=", file("${path.module}/user_id_${each.key}.txt")), 1))
 }
 
 # Permission Sets
@@ -79,9 +72,6 @@ data "aws_ssoadmin_permission_set" "all" {
   instance_arn = data.aws_ssoadmin_instances.main.arns[0]
   name         = local.group_to_permission_set[each.key]
 }
-
-
-
 
 
 # locals {
