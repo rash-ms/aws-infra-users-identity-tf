@@ -3,14 +3,10 @@ variable "yaml_path" {
   type        = string
 }
 
-variable "region" {
-  description = "AWS Region"
-  type        = string
+provider "aws" {
+  region = "us-east-1"  # Replace with your desired region
 }
 
-provider "aws" {
-  region = var.region
-}
 
 data "aws_ssoadmin_instances" "main" {}
 
