@@ -40,7 +40,7 @@ resource "null_resource" "get_user_ids" {
   provisioner "local-exec" {
     command = <<EOT
       user_id=$(aws identitystore list-users --identity-store-id ${data.aws_ssoadmin_instances.main.identity_store_ids[0]} --query "Users[?UserName=='${each.value.user}'].UserId" --output text)
-      echo ${user_id} > user_id_${each.value.user}.txt
+      echo "$user_id" > user_id_${each.value.user}.txt
     EOT
   }
 }
@@ -68,13 +68,6 @@ resource "null_resource" "add_users_to_group" {
     EOT
   }
 }
-
-# Debug output to verify the mappings
-output "debug_mappings" {
-  value = local.flattened_user_groups
-}
-
-
 
 # provider "aws" {
 #   region = "us-east-1"  # Replace with your desired region
