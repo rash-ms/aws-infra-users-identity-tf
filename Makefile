@@ -12,6 +12,8 @@ python_exec=$(shell command -v python3)
 TERRAFORM_DIR = ./aws-identity-deployment-tf
 RESOURCE = 'module.prod_users.aws_identitystore_user.users["admin@bagitek.com"]'
 
+.PHONY: auth set_env init plan apply state-rm reapply init_remove destroy tf_lint_with_write tf_lint_without_write install_python_deps
+
 auth:
 		saml2aws login
 
@@ -46,10 +48,10 @@ state-rm:
 reapply: state-rm apply
 
 init_remove:
-		cd $(TERRAFORM_DIR) && rm -dfr ./.terraform
+		cd $(TERRAFORM_DIR) && rm -rf .terraform
 
 destroy:
-		cd $(TERRAFORM_DIR) && terraform destroy
+		cd $(TERRAFORM_DIR) && terraform destroy -auto-approve
 
 # init_aws_sso_admin:
 # 		cd ./tf-identity-setup/tf-identity-deployment/aws-sso-admin && terraform init -upgrade -var "PEOPLE_DEV=${PEOPLE_DEV}" -var "PEOPLE_STG=${PEOPLE_STG}" -var "PEOPLE_PROD=${PEOPLE_PROD}"
