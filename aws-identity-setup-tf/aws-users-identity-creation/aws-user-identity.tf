@@ -16,12 +16,13 @@ locals {
 
   # Flatten the user_groups into a list of maps, ensuring we handle null values and skip empty entries
   flattened_user_groups = flatten([
-    for group_name, users in local.config : [
-      for user in coalesce(users, []) : {
+    for group_name, group_data in local.config : [
+      for user in coalesce(group_data.users, []) : {
         group = group_name
-        user  = user
+        user  = user.email
+        create = user.create
       }
-      if users != null
+      if group_data.users != null
     ]
   ])
 }
@@ -47,6 +48,7 @@ data "aws_identitystore_group" "existing_groups" {
 resource "aws_identitystore_user" "users" {
   for_each = {
     for user_map in local.flattened_user_groups : user_map.user => user_map
+    if user_map.create == true
   }
 
   identity_store_id = local.identity_store_id
@@ -66,6 +68,7 @@ resource "aws_identitystore_user" "users" {
 resource "aws_identitystore_group" "groups" {
   for_each = {
     for user_map in local.flattened_user_groups : user_map.group => user_map.group
+    if anytrue([for user in local.flattened_user_groups : user.group == user_map.group && user.create == true])
   }
 
   identity_store_id = local.identity_store_id
@@ -76,6 +79,7 @@ resource "aws_identitystore_group" "groups" {
 resource "aws_identitystore_group_membership" "memberships" {
   for_each = {
     for user_map in local.flattened_user_groups : "${user_map.group}-${user_map.user}" => user_map
+    if user_map.create == true
   }
 
   identity_store_id = local.identity_store_id

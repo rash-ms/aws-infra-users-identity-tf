@@ -1,2 +1,7 @@
+# byt-data-eng-fullAccess:
+#   - admin@bagitek.com
+
 byt-data-eng-fullAccess:
-  - admin@bagitek.com
+  users:
+    - email: admin@bagitek.com
+      create: false
