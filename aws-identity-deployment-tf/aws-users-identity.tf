@@ -11,10 +11,10 @@ module "identity" {
 }
 
 
-output "existing_users" {
-  value = module.identity.existing_users
+output "created_users" {
+  value = module.identity.created_users
 }
 
-output "existing_groups" {
-  value = module.identity.existing_groups
+output "group_memberships" {
+  value = module.identity.group_memberships
 }

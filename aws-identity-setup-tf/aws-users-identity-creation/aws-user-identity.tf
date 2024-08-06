@@ -41,6 +41,19 @@ resource "aws_identitystore_user" "users" {
   }
 }
 
+# Fetch existing groups
+data "aws_identitystore_group" "existing_groups" {
+  for_each = {
+    for group_name in local.groups_config.groups : group_name => group_name
+  }
+
+  identity_store_id = local.identity_store_id
+  filter {
+    attribute_path   = "DisplayName"
+    attribute_value  = each.key
+  }
+}
+
 # Attach users to groups
 resource "aws_identitystore_group_membership" "memberships" {
   for_each = {
@@ -48,7 +61,7 @@ resource "aws_identitystore_group_membership" "memberships" {
   }
 
   identity_store_id = local.identity_store_id
-  group_id          = data.aws_identitystore_group.existing_groups[each.value.group].id
+  group_id          = try(data.aws_identitystore_group.existing_groups[each.value.group].id, null)
   member_id         = aws_identitystore_user.users[each.value.user].id
 
   lifecycle {
@@ -60,10 +73,10 @@ resource "aws_identitystore_group_membership" "memberships" {
   }
 }
 
-output "existing_users" {
+output "created_users" {
   value = aws_identitystore_user.users
 }
 
-output "existing_groups" {
-  value = { for k, v in data.aws_identitystore_group.existing_groups : k => try(v.id, "Group not found") }
+output "group_memberships" {
+  value = aws_identitystore_group_membership.memberships
 }
