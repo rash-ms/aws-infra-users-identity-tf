@@ -1,19 +1,12 @@
 locals {
   config = yamldecode(file(var.yaml_path))
 
-  # Mapping of groups to permission sets
-  group_to_permission_set = {
-    "byt-data-eng-fullAccess" = "byt-data-eng-DEV-fullAccess"
-    "byt-data-eng-readonly" = "byt-data-eng-PROD-readonly"
-  }
-
   # Flatten the user_groups into a single map
   flattened_user_groups = merge([
     for group_name, users in local.config : {
       for user in users : "${group_name}-${user}" => {
         group = group_name
         user  = user
-        permission_set = local.group_to_permission_set[group_name]
       }
     }
   ]...)
@@ -53,12 +46,19 @@ data "local_file" "user_ids" {
   depends_on = [null_resource.get_user_ids]
 }
 
+# Permission Sets
+data "aws_ssoadmin_permission_set" "all" {
+  for_each     = toset([for group, _ in local.config : group])
+  instance_arn = data.aws_ssoadmin_instances.main.arns[0]
+  name         = each.key
+}
+
 resource "aws_ssoadmin_account_assignment" "assignments" {
   for_each = local.flattened_user_groups
   depends_on = [data.local_file.user_ids]
 
   instance_arn       = data.aws_ssoadmin_instances.main.arns[0]
-  permission_set_arn = try(data.aws_ssoadmin_permission_set.all[each.value.permission_set].arn, "")
+  permission_set_arn = data.aws_ssoadmin_permission_set.all[each.value.group].arn
   principal_type     = "USER"
   target_id          = data.aws_organizations_organization.main.id
   target_type        = "AWS_ACCOUNT"
@@ -66,12 +66,6 @@ resource "aws_ssoadmin_account_assignment" "assignments" {
   principal_id = chomp(element(split("=", file("${path.module}/user_id_${each.key}.txt")), 1))
 }
 
-# Permission Sets
-data "aws_ssoadmin_permission_set" "all" {
-  for_each     = toset([for group, _ in local.config : group])
-  instance_arn = data.aws_ssoadmin_instances.main.arns[0]
-  name         = local.group_to_permission_set[each.key]
-}
 
 
 # locals {
