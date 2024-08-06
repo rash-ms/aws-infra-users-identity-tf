@@ -60,10 +60,13 @@ resource "null_resource" "manage_users" {
 
       # Add user to group
       aws identitystore create-group-membership --identity-store-id ${data.aws_ssoadmin_instances.main.identity_store_ids[0]} --group-id "$group_id" --member-id "UserId=$user_id"
+
+      # Send email verification link
+      aws identitystore send-user-verification-email --identity-store-id ${data.aws_ssoadmin_instances.main.identity_store_ids[0]} --user-id "$user_id"
     EOT
 
     environment = {
-      AWS_REGION = "us-east-1" 
+      AWS_REGION = "us-east-1"  # Ensure the correct region is set
     }
 
     interpreter = ["sh", "-c"]
@@ -74,3 +77,6 @@ resource "null_resource" "manage_users" {
   }
 }
 
+output "debug_mappings" {
+  value = local.flattened_user_groups
+}
