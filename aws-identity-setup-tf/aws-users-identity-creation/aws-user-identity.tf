@@ -52,14 +52,15 @@ resource "null_resource" "get_user_ids" {
   }
 }
 
-data "local_file" "user_ids" {
+resource "local_file" "user_ids_env" {
+  content  = file("${path.module}/user_ids.env")
   filename = "${path.module}/user_ids.env"
   depends_on = [null_resource.get_user_ids]
 }
 
 resource "aws_ssoadmin_account_assignment" "assignments" {
   for_each = { for user_map in flatten(local.flattened_user_groups) : user_map.user => user_map }
-  depends_on = [data.local_file.user_ids]
+  depends_on = [local_file.user_ids_env]
 
   instance_arn       = data.aws_ssoadmin_instances.main.arns[0]
   permission_set_arn = try(data.aws_ssoadmin_permission_set.all[each.value.permission_set].arn, "")
