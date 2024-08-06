@@ -3,8 +3,8 @@ locals {
 
   # Mapping of groups to permission sets
   group_to_permission_set = {
-    "byt-data-eng-fullAccess" = "byt-data-eng-fullAccess"
-    "byt-data-eng-readonly" = "byt-data-eng-readonly"
+    "byt-data-eng-fullAccess" = "byt-data-eng-DEV-fullAccess" # Ensure this exists in AWS SSO
+    "byt-data-eng-readonly" = "byt-data-eng-PROD-readonly"   # Ensure this exists in AWS SSO
   }
 
   # Flatten the user_groups into a list of maps
@@ -70,8 +70,9 @@ resource "aws_ssoadmin_account_assignment" "assignments" {
 data "aws_ssoadmin_permission_set" "all" {
   for_each     = toset([for group, _ in local.config : group])
   instance_arn = data.aws_ssoadmin_instances.main.arns[0]
-  name         = each.key
+  name         = lookup(local.group_to_permission_set, each.key, null)
 }
+
 
 
 
