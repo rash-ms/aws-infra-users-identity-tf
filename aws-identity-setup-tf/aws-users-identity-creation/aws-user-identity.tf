@@ -1,22 +1,22 @@
-# locals {
-#   config = yamldecode(file(var.yaml_path))
-
-#   # Flatten the user_groups into a list of maps
-#   flattened_user_groups = flatten([
-#     for group_name, users in local.config : [
-#       for user in users : {
-#         group = group_name
-#         user  = user
-#       }
-#     ]
-#   ])
-# }
-
-provider "aws" {
-  region = "us-east-1"  # Replace with your desired region
+variable "yaml_path" {
+  description = "Path to the YAML configuration file"
+  type        = string
 }
 
+variable "region" {
+  description = "AWS Region"
+  type        = string
+}
+
+provider "aws" {
+  region = var.region
+}
+
+data "aws_ssoadmin_instances" "main" {}
+
 locals {
+  identity_store_id = data.aws_ssoadmin_instances.main.identity_store_ids[0]
+
   config = yamldecode(file(var.yaml_path))
 
   # Flatten the user_groups into a list of maps, ensuring we handle null values
@@ -30,67 +30,39 @@ locals {
   ])
 }
 
-data "aws_ssoadmin_instances" "main" {}
-
-resource "null_resource" "manage_users" {
-  for_each = { for user_map in local.flattened_user_groups : user_map.user => user_map }
-
-  provisioner "local-exec" {
-    command = <<EOT
-      set -e
-
-      echo "Processing user: ${each.value.user}"
-      echo "Processing group: ${each.value.group}"
-
-      # Check if the user exists
-      user_id=$(aws identitystore list-users --identity-store-id ${data.aws_ssoadmin_instances.main.identity_store_ids[0]} --query "Users[?UserName=='${each.value.user}'].UserId" --output text)
-      if [ -z "$user_id" ]; then
-        echo "Creating user: ${each.value.user}"
-        # Create the user if it doesn't exist
-        user_id=$(aws identitystore create-user --identity-store-id ${data.aws_ssoadmin_instances.main.identity_store_ids[0]} --user-name "${each.value.user}" --display-name "${each.value.user}" --name '{"FamilyName": "default", "GivenName": "${split("@", each.value.user)[0]}"}' --emails '[{"Primary": true, "Type": "work", "Value": "${each.value.user}"}]' --query "User.UserId" --output text)
-      fi
-
-      # Debugging output for user_id
-      echo "User ID for ${each.value.user} is $user_id"
-
-      # Check and get group ID
-      group_id=$(aws identitystore list-groups --identity-store-id ${data.aws_ssoadmin_instances.main.identity_store_ids[0]} --query "Groups[?DisplayName=='${each.value.group}'].GroupId" --output text)
-      
-      # Debugging output for group_id
-      echo "Group ID for ${each.value.group} is $group_id"
-
-      # Ensure both IDs are correctly retrieved
-      if [ -z "$user_id" ]; then
-        echo "Error: User ID could not be retrieved."
-        exit 1
-      fi
-
-      if [ -z "$group_id" ]; then
-        echo "Error: Group ID could not be retrieved."
-        exit 1
-      fi
-
-      echo "Checking membership for user ID: $user_id in group ID: $group_id"
-
-      # Check if the user is already a member of the group
-      membership_exists=$(aws identitystore list-group-memberships --identity-store-id ${data.aws_ssoadmin_instances.main.identity_store_ids[0]} --query "GroupMemberships[?GroupId=='$group_id' && MemberId.UserId=='$user_id'].GroupMembershipId" --output text)
-      if [ -z "$membership_exists" ]; then
-        echo "Adding user ${each.value.user} to group ${each.value.group}"
-        # Add user to group if not already a member
-        aws identitystore create-group-membership --identity-store-id ${data.aws_ssoadmin_instances.main.identity_store_ids[0]} --group-id "$group_id" --member-id "UserId=$user_id"
-      else
-        echo "User ${each.value.user} is already a member of group ${each.value.group}"
-      fi
-    EOT
-
-    environment = {
-      AWS_REGION = "us-east-1"  # Ensure the correct region is set
-    }
-
-    interpreter = ["sh", "-c"]
+resource "aws_identitystore_user" "users" {
+  for_each = {
+    for user_map in local.flattened_user_groups : "${user_map.user}" => user_map
   }
 
-  triggers = {
-    always_run = timestamp()
+  identity_store_id = local.identity_store_id
+  user_name         = each.value.user
+  display_name      = each.value.user
+  name {
+    family_name = split("@", each.value.user)[0]
+    given_name  = split("@", each.value.user)[0]
   }
+  emails {
+    primary = true
+    type    = "work"
+    value   = each.value.user
+  }
+}
+
+resource "aws_identitystore_group" "groups" {
+  for_each = distinct([for user_map in local.flattened_user_groups : user_map.group])
+
+  identity_store_id = local.identity_store_id
+  display_name      = each.value
+  description       = "Group ${each.value}"
+}
+
+resource "aws_identitystore_group_membership" "memberships" {
+  for_each = {
+    for user_map in local.flattened_user_groups : "${user_map.group}-${user_map.user}" => user_map
+  }
+
+  identity_store_id = local.identity_store_id
+  group_id          = aws_identitystore_group.groups[each.value.group].id
+  member_id         = aws_identitystore_user.users[each.value.user].id
 }
