@@ -97,7 +97,7 @@ resource "null_resource" "create_users" {
 
   provisioner "local-exec" {
     command = <<EOT
-      aws identitystore create-user --identity-store-id ${data.aws_ssoadmin_instances.main.identity_store_ids[0]} --user-name "${each.value.user}" --display-name "${each.value.user}" --email "${each.value.user}" --name "${each.value.user}"
+      aws identitystore create-user --identity-store-id ${data.aws_ssoadmin_instances.main.identity_store_ids[0]} --user-name "${each.value.user}" --display-name "${each.value.user}" --email "${each.value.user}"
     EOT
   }
 }
