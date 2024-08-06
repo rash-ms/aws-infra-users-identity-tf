@@ -1,3 +1,3 @@
 output "user_ids" {
-  value = [for user in data.aws_identitystore_user.sso_users : user.id]
+  value = [for user in aws_iam_identity_center_user.users : user.id]
 }

@@ -23,10 +23,10 @@ resource "aws_iam_identity_center_user" "users" {
   for_each = { for k, v in local.flattened_user_groups : k => v if length(v.user) > 0 }
 
   user_name   = each.value.user
-  first_name  = split("@", each.value.user)[0]
-  last_name   = "default"
   display_name = each.value.user
   email       = each.value.user
+  first_name  = split("@", each.value.user)[0]
+  last_name   = "default"
 }
 
 data "aws_ssoadmin_instances" "main" {}
@@ -44,7 +44,7 @@ resource "aws_ssoadmin_account_assignment" "assignments" {
   for_each = local.flattened_user_groups
 
   instance_arn       = data.aws_ssoadmin_instances.main.arns[0]
-  permission_set_arn = data.aws_ssoadmin_permission_set.all[each.value.permission_set].arn
+  permission_set_arn = try(data.aws_ssoadmin_permission_set.all[each.value.permission_set].arn, "")
   principal_type     = "USER"
   target_id          = data.aws_organizations_organization.main.id
   target_type        = "AWS_ACCOUNT"
