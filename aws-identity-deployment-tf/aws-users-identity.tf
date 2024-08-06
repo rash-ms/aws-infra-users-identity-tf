@@ -2,17 +2,6 @@ provider "aws" {
   region = "us-east-1"  
 }
 
-variable "users_yaml_path" {
-  description = "Path to the users YAML configuration file"
-  type        = string
-}
-
-variable "groups_yaml_path" {
-  description = "Path to the groups YAML configuration file"
-  type        = string
-}
-
-
 module "identity" {
   source    = "../aws-identity-setup-tf/aws-users-identity-creation"
   # users_yaml_path = "${path.module}/users.yaml"
