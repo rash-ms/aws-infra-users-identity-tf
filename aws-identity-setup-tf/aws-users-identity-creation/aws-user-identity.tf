@@ -43,24 +43,21 @@ resource "null_resource" "get_user_ids" {
 
   provisioner "local-exec" {
     command = <<EOT
-      aws identitystore list-users --identity-store-id ${data.aws_ssoadmin_instances.main.identity_store_ids[0]} --query "Users[?UserName=='${each.value.user}'].UserId" --output text > ${path.module}/user_id_${each.value.user}.txt
+      user_id=$(aws identitystore list-users --identity-store-id ${data.aws_ssoadmin_instances.main.identity_store_ids[0]} --query "Users[?UserName=='${each.value.user}'].UserId" --output text)
+      echo "{\"user_id\": \"${user_id}\"}" > ${path.module}/user_id_${each.value.user}.json
     EOT
-  }
-
-  provisioner "local-exec" {
-    command = "echo user_id_${each.value.user}=$(cat ${path.module}/user_id_${each.value.user}.txt) >> ${path.module}/user_ids.env"
   }
 }
 
-resource "local_file" "user_ids_env" {
-  content  = file("${path.module}/user_ids.env")
-  filename = "${path.module}/user_ids.env"
+data "local_file" "user_ids" {
+  for_each = { for user_map in flatten(local.flattened_user_groups) : user_map.user => user_map }
+  filename = "${path.module}/user_id_${each.key}.json"
   depends_on = [null_resource.get_user_ids]
 }
 
 resource "aws_ssoadmin_account_assignment" "assignments" {
   for_each = { for user_map in flatten(local.flattened_user_groups) : user_map.user => user_map }
-  depends_on = [local_file.user_ids_env]
+  depends_on = [data.local_file.user_ids]
 
   instance_arn       = data.aws_ssoadmin_instances.main.arns[0]
   permission_set_arn = try(data.aws_ssoadmin_permission_set.all[each.value.permission_set].arn, "")
@@ -68,7 +65,7 @@ resource "aws_ssoadmin_account_assignment" "assignments" {
   target_id          = data.aws_organizations_organization.main.id
   target_type        = "AWS_ACCOUNT"
 
-  principal_id = chomp(element(split("=", file("${path.module}/user_id_${each.value.user}.txt")), 1))
+  principal_id = jsondecode(data.local_file.user_ids[each.key].content).user_id
 }
 
 # Permission Sets
