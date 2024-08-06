@@ -37,11 +37,24 @@ data "aws_identitystore_user" "existing_users" {
   }
 }
 
+# Fetch existing groups
+data "aws_identitystore_group" "existing_groups" {
+  for_each = {
+    for user_map in local.flattened_user_groups : user_map.group => user_map.group
+  }
+
+  identity_store_id = local.identity_store_id
+  filter {
+    attribute_path   = "DisplayName"
+    attribute_value  = each.key
+  }
+}
+
 # Create users if they don't exist
 resource "aws_identitystore_user" "users" {
   for_each = {
     for user_map in local.flattened_user_groups : user_map.user => user_map
-    if length(data.aws_identitystore_user.existing_users[user_map.user].filter) == 0
+    if try(data.aws_identitystore_user.existing_users[user_map.user].id, null) == null
   }
 
   identity_store_id = local.identity_store_id
@@ -58,19 +71,6 @@ resource "aws_identitystore_user" "users" {
   }
 }
 
-# Fetch existing groups
-data "aws_identitystore_group" "existing_groups" {
-  for_each = {
-    for user_map in local.flattened_user_groups : user_map.group => user_map.group
-  }
-
-  identity_store_id = local.identity_store_id
-  filter {
-    attribute_path   = "DisplayName"
-    attribute_value  = each.key
-  }
-}
-
 # Attach users to groups
 resource "aws_identitystore_group_membership" "memberships" {
   for_each = {
@@ -83,9 +83,9 @@ resource "aws_identitystore_group_membership" "memberships" {
 }
 
 output "existing_users" {
-  value = data.aws_identitystore_user.existing_users
+  value = { for k, v in data.aws_identitystore_user.existing_users : k => try(v.id, "User not found") }
 }
 
 output "existing_groups" {
-  value = data.aws_identitystore_group.existing_groups
+  value = { for k, v in data.aws_identitystore_group.existing_groups : k => try(v.id, "Group not found") }
 }
