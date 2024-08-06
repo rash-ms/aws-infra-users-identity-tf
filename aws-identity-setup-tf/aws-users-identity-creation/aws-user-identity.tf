@@ -27,37 +27,45 @@ locals {
   ])
 }
 
-# Fetch existing users
-data "aws_identitystore_user" "existing_users" {
+# Check for existing users
+resource "null_resource" "check_existing_users" {
   for_each = {
     for user_map in local.flattened_user_groups : user_map.user => user_map.user
-    if user_map.user != ""
   }
 
-  identity_store_id = local.identity_store_id
-  filter {
-    attribute_path   = "UserName"
-    attribute_value  = each.key
+  provisioner "local-exec" {
+    command = <<EOT
+      aws identitystore list-users --identity-store-id ${local.identity_store_id} --filter "UserName eq '${each.key}'" > /dev/null 2>&1
+    EOT
+
+    environment = {
+      AWS_REGION = var.region
+    }
   }
 }
 
-# Fetch existing groups
-data "aws_identitystore_group" "existing_groups" {
+# Check for existing groups
+resource "null_resource" "check_existing_groups" {
   for_each = {
     for user_map in local.flattened_user_groups : user_map.group => user_map.group
   }
 
-  identity_store_id = local.identity_store_id
-  filter {
-    attribute_path   = "DisplayName"
-    attribute_value  = each.key
+  provisioner "local-exec" {
+    command = <<EOT
+      aws identitystore list-groups --identity-store-id ${local.identity_store_id} --filter "DisplayName eq '${each.key}'" > /dev/null 2>&1
+    EOT
+
+    environment = {
+      AWS_REGION = var.region
+    }
   }
 }
 
+# Create users only if they do not exist
 resource "aws_identitystore_user" "users" {
   for_each = {
     for user_map in local.flattened_user_groups : "${user_map.user}" => user_map
-    if length(try(data.aws_identitystore_user.existing_users[user_map.user].id, [])) == 0
+    if try(null_resource.check_existing_users[user_map.user].id, null) == null
   }
 
   identity_store_id = local.identity_store_id
@@ -74,10 +82,11 @@ resource "aws_identitystore_user" "users" {
   }
 }
 
+# Create groups only if they do not exist
 resource "aws_identitystore_group" "groups" {
   for_each = {
     for user_map in local.flattened_user_groups : user_map.group => user_map.group
-    if length(try(data.aws_identitystore_group.existing_groups[user_map.group].id, [])) == 0
+    if try(null_resource.check_existing_groups[user_map.group].id, null) == null
   }
 
   identity_store_id = local.identity_store_id
@@ -85,18 +94,17 @@ resource "aws_identitystore_group" "groups" {
   description       = "Group ${each.value}"
 }
 
+# Create group memberships only if both user and group exist
 resource "aws_identitystore_group_membership" "memberships" {
   for_each = {
     for user_map in local.flattened_user_groups : "${user_map.group}-${user_map.user}" => user_map
-    if length(try(data.aws_identitystore_user.existing_users[user_map.user].id, [])) > 0 && length(try(data.aws_identitystore_group.existing_groups[user_map.group].id, [])) > 0
+    if try(null_resource.check_existing_users[user_map.user].id, null) != null && try(null_resource.check_existing_groups[user_map.group].id, null) != null
   }
 
   identity_store_id = local.identity_store_id
-  group_id          = data.aws_identitystore_group.existing_groups[each.value.group].id
-  member_id         = data.aws_identitystore_user.existing_users[each.value.user].id
+  group_id          = aws_identitystore_group.groups[each.value.group].id
+  member_id         = aws_identitystore_user.users[each.value.user].id
 }
-
-
 
 # resource "aws_identitystore_group" "groups" {
 #   for_each = toset([for user_map in local.flattened_user_groups : user_map.group])
