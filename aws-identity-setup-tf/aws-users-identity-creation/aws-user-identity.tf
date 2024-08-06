@@ -27,7 +27,7 @@ resource "null_resource" "check_and_create_users" {
       if [ -z "$user_id" ]; then
         user_id=$(aws identitystore create-user --identity-store-id ${data.aws_ssoadmin_instances.main.identity_store_ids[0]} --user-name "${each.value.user}" --display-name "${each.value.user}" --name '{"FamilyName": "default", "GivenName": "${split("@", each.value.user)[0]}"}' --emails '[{"Primary": true, "Type": "work", "Value": "${each.value.user}"}]' --query "User.UserId" --output text)
       fi
-      echo "{\"user\": \"${each.value.user}\", \"user_id\": \"$user_id\"}"
+      echo "{\"user\": \"${each.value.user}\", \"user_id\": \"$user_id\"}" > ${path.module}/user_id_${each.value.user}.json
     EOT
 
     environment = {
@@ -42,10 +42,19 @@ resource "null_resource" "check_and_create_users" {
   }
 }
 
-locals {
-  user_ids = { for k, v in null_resource.check_and_create_users : k => jsondecode(v.triggers.result)["user_id"] }
+data "local_file" "user_ids" {
+  for_each = { for user_map in local.flattened_user_groups : user_map.user => user_map }
+  filename = "${path.module}/user_id_${each.key}.json"
 }
 
+locals {
+  user_ids = {
+    for user_map in local.flattened_user_groups : 
+    user_map.user => jsondecode(data.local_file.user_ids[user_map.user].content).user_id
+  }
+}
+
+# Add users to groups
 resource "null_resource" "add_users_to_group" {
   for_each = { for user_map in local.flattened_user_groups : user_map.user => user_map }
 
