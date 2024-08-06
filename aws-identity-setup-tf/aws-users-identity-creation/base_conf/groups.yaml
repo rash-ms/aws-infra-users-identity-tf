@@ -3,4 +3,4 @@ groups:
     - admin@bagitek.com
 
   byt-data-eng-fullAccess:
-    - admin@bagitek.com
+    # - admin@bagitek.com
