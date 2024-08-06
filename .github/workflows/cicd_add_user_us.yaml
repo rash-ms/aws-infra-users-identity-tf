@@ -43,6 +43,12 @@ jobs:
           sudo apt-get install build-essential
           make install_python_deps
 
+      - name: Run check_existing_resources.sh
+        run: |
+          chmod +x ./check_existing_resources.sh
+          ./check_existing_resources.sh $IDENTITY_STORE_ID "${USERS}" "${GROUPS}"
+
+
       - name: AWS STS GetCallerIdentity and Init, Apply Terraform
         # if: env.AUTH_SUCCESS == 'true'
         run: |

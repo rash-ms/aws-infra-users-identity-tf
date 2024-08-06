@@ -4,10 +4,10 @@ variable "yaml_path" {
 }
 
 provider "aws" {
-  region = "us-east-1" 
+  region = "us-east-1"
 }
 
- data "aws_ssoadmin_instances" "main" {}
+data "aws_ssoadmin_instances" "main" {}
 
 locals {
   identity_store_id = data.aws_ssoadmin_instances.main.identity_store_ids[0]
@@ -24,37 +24,29 @@ locals {
       if users != null
     ]
   ])
+
+  users = distinct([for user_map in local.flattened_user_groups : user_map.user])
+  groups = distinct([for user_map in local.flattened_user_groups : user_map.group])
 }
 
-# Fetch existing users
-data "aws_identitystore_user" "existing_users" {
-  for_each = {
-    for user_map in local.flattened_user_groups : user_map.user => user_map.user
-    if user_map.user != ""
-  }
+resource "null_resource" "check_existing_resources" {
+  for_each = { for user_map in local.flattened_user_groups : user_map.user => user_map }
+  
+  provisioner "local-exec" {
+    command = <<EOT
+      ./check_existing_resources.sh ${local.identity_store_id} ${each.value.user} ${each.value.group}
+    EOT
 
-  identity_store_id = local.identity_store_id
-  filter {
-    attribute_path   = "UserName"
-    attribute_value  = each.key
-  }
-}
-
-# Fetch existing groups
-data "aws_identitystore_group" "existing_groups" {
-  for_each = toset([for user_map in local.flattened_user_groups : user_map.group])
-
-  identity_store_id = local.identity_store_id
-  filter {
-    attribute_path   = "DisplayName"
-    attribute_value  = each.key
+    environment = {
+      AWS_REGION = "us-east-1"
+    }
   }
 }
 
 resource "aws_identitystore_user" "users" {
   for_each = {
     for user_map in local.flattened_user_groups : "${user_map.user}" => user_map
-    if length(data.aws_identitystore_user.existing_users[user_map.user].filter) == 0
+    if !fileexists("user_exists_${user_map.user}")
   }
 
   identity_store_id = local.identity_store_id
@@ -74,7 +66,7 @@ resource "aws_identitystore_user" "users" {
 resource "aws_identitystore_group" "groups" {
   for_each = {
     for user_map in local.flattened_user_groups : user_map.group => user_map.group
-    if length(data.aws_identitystore_group.existing_groups[user_map.group].filter) == 0
+    if !fileexists("group_exists_${user_map.group}")
   }
 
   identity_store_id = local.identity_store_id
@@ -85,10 +77,10 @@ resource "aws_identitystore_group" "groups" {
 resource "aws_identitystore_group_membership" "memberships" {
   for_each = {
     for user_map in local.flattened_user_groups : "${user_map.group}-${user_map.user}" => user_map
-    if length(data.aws_identitystore_user.existing_users[user_map.user].filter) > 0 && length(data.aws_identitystore_group.existing_groups[user_map.group].filter) > 0
+    if fileexists("user_exists_${user_map.user}") && fileexists("group_exists_${user_map.group}")
   }
 
   identity_store_id = local.identity_store_id
-  group_id          = data.aws_identitystore_group.existing_groups[each.value.group].id
-  member_id         = data.aws_identitystore_user.existing_users[each.value.user].id
+  group_id          = aws_identitystore_group.groups[each.value.group].id
+  member_id         = aws_identitystore_user.users[each.value.user].id
 }
