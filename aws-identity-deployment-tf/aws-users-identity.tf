@@ -1,11 +1,13 @@
-# module "prod_users" {
-#   source    = "../aws-identity-setup-tf/aws-users-identity-creation"
-#   yaml_file = "${path.module}/base_conf/byt-aws-prod.yaml"
+provider "aws" {
+  region = "us-east-1"  # Replace with your desired region
+}
 
-# }
+module "prod_users" {
+  source    = "../aws-identity-setup-tf/aws-users-identity-creation"
+  yaml_path = "../aws-identity-setup-tf/aws-users-identity-creation/base_conf/byt-aws-prod.yaml"
+}
 
-# module "dev_users" {
-#   source    = "../aws-identity-setup-tf/aws-users-identity-creation"
-#   yaml_file = "${path.module}/base_conf/byt-aws-dev.yaml"
-
-# }
+module "dev_users" {
+  source    = "../aws-identity-setup-tf/aws-users-identity-creation"
+  yaml_path = "../aws-identity-setup-tf/aws-users-identity-creation/base_conf/byt-aws-dev.yaml"
+}

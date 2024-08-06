@@ -1,4 +1,4 @@
-variable "yaml_file" {
-  description = "Path to the YAML file containing user definitions"
+variable "yaml_path" {
+  description = "Path to the YAML file"
   type        = string
 }
