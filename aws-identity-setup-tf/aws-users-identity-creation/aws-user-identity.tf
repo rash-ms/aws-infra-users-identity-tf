@@ -48,7 +48,7 @@ resource "null_resource" "manage_users" {
       fi
 
       # Add user to group
-      aws identitystore create-group-membership --identity-store-id ${data.aws_ssoadmin_instances.main.identity_store_ids[0]} --group-id "$group_id" --member-id "$user_id"
+      aws identitystore create-group-membership --identity-store-id ${data.aws_ssoadmin_instances.main.identity_store_ids[0]} --group-id "$group_id" --member-id "UserId=$user_id"
     EOT
 
     environment = {
