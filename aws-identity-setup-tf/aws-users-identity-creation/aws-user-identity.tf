@@ -73,10 +73,6 @@ resource "aws_identitystore_group_membership" "memberships" {
   count = group_id != null ? 1 : 0
 }
 
-output "existing_users" {
-  value = aws_identitystore_user.users
-}
-
 output "existing_groups" {
   value = { for k, v in data.aws_identitystore_group.existing_groups : k => try(v.id, "Group not found") }
 }
