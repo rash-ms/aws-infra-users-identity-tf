@@ -4,4 +4,4 @@
 byt-data-eng-fullAccess:
   users:
     - email: admin@bagitek.com
-      create: false
+      create: true

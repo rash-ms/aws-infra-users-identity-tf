@@ -1,6 +1,12 @@
+variable "env" {
+  description = "Environment (dev or prod)"
+  type        = string
+}
+
 variable "yaml_path" {
   description = "Path to the YAML configuration file"
   type        = string
+  default     = "${path.module}/${var.env}.yaml"
 }
 
 provider "aws" {
@@ -25,6 +31,15 @@ locals {
       if group_data.users != null
     ]
   ])
+
+  # Ensure unique names by adding environment prefix
+  users_with_env = [
+    for user_map in local.flattened_user_groups : {
+      group = "${var.env}-${user_map.group}"
+      user  = user_map.user
+      create = user_map.create
+    }
+  ]
 }
 
 # Output the identity store ID for debugging
@@ -32,27 +47,14 @@ output "identity_store_id" {
   value = local.identity_store_id
 }
 
-# Fetch existing groups
-data "aws_identitystore_group" "existing_groups" {
-  for_each = {
-    for user_map in local.flattened_user_groups : user_map.group => user_map.group
-  }
-
-  identity_store_id = local.identity_store_id
-  filter {
-    attribute_path   = "DisplayName"
-    attribute_value  = each.key
-  }
-}
-
 resource "aws_identitystore_user" "users" {
   for_each = {
-    for user_map in local.flattened_user_groups : user_map.user => user_map
+    for user_map in local.users_with_env : user_map.user => user_map
     if user_map.create == true
   }
 
   identity_store_id = local.identity_store_id
-  user_name         = each.value.user
+  user_name         = "${var.env}-${each.value.user}"
   display_name      = each.value.user
   name {
     family_name = split("@", each.value.user)[0]
@@ -67,8 +69,8 @@ resource "aws_identitystore_user" "users" {
 
 resource "aws_identitystore_group" "groups" {
   for_each = {
-    for user_map in local.flattened_user_groups : user_map.group => user_map.group
-    if anytrue([for user in local.flattened_user_groups : user.group == user_map.group && user.create == true])
+    for user_map in local.users_with_env : user_map.group => user_map.group
+    if anytrue([for user in local.users_with_env : user.group == user_map.group && user.create == true])
   }
 
   identity_store_id = local.identity_store_id
@@ -78,11 +80,11 @@ resource "aws_identitystore_group" "groups" {
 
 resource "aws_identitystore_group_membership" "memberships" {
   for_each = {
-    for user_map in local.flattened_user_groups : "${user_map.group}-${user_map.user}" => user_map
+    for user_map in local.users_with_env : "${user_map.group}-${user_map.user}" => user_map
     if user_map.create == true
   }
 
   identity_store_id = local.identity_store_id
-  group_id          = data.aws_identitystore_group.existing_groups[each.value.group].id
+  group_id          = aws_identitystore_group.groups[each.value.group].id
   member_id         = aws_identitystore_user.users[each.value.user].id
 }
