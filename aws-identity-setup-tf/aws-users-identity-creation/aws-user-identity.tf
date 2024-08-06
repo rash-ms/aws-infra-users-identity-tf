@@ -89,5 +89,3 @@ resource "null_resource" "manage_users" {
     always_run = timestamp()
   }
 }
-
-
