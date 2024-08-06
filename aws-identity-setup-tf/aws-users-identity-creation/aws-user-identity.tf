@@ -1,7 +1,7 @@
 locals {
   config = yamldecode(file(var.yaml_path))
 
-  # Mapping of groups to permission sets
+  # Mapping of groups to permission sets - Update this to match your actual AWS SSO permission sets
   group_to_permission_set = {
     "byt-data-eng-fullAccess" = "byt-data-eng-DEV-fullAccess" # Ensure this exists in AWS SSO
     "byt-data-eng-readonly" = "byt-data-eng-PROD-readonly"   # Ensure this exists in AWS SSO
@@ -53,6 +53,14 @@ data "local_file" "user_ids" {
   depends_on = [null_resource.get_user_ids]
 }
 
+# Debug output to verify the permission sets
+output "debug_permission_sets" {
+  value = {
+    for group_name, users in local.config :
+    group_name => lookup(local.group_to_permission_set, group_name, null)
+  }
+}
+
 resource "aws_ssoadmin_account_assignment" "assignments" {
   for_each = { for user_map in flatten(local.flattened_user_groups) : user_map.user => user_map }
   depends_on = [data.local_file.user_ids]
@@ -72,6 +80,7 @@ data "aws_ssoadmin_permission_set" "all" {
   instance_arn = data.aws_ssoadmin_instances.main.arns[0]
   name         = lookup(local.group_to_permission_set, each.key, null)
 }
+
 
 
 
