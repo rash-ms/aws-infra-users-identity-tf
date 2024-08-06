@@ -31,34 +31,6 @@ output "identity_store_id" {
   value = local.identity_store_id
 }
 
-# Fetch existing users
-data "aws_identitystore_user" "existing_users" {
-  for_each = {
-    for user_map in local.flattened_user_groups : user_map.user => user_map.user
-    if user_map.user != ""
-  }
-
-  identity_store_id = local.identity_store_id
-  filter {
-    attribute_path   = "UserName"
-    attribute_value  = each.key
-  }
-}
-
-# Handle the case where the user might not be found
-data "null_data_source" "default_user" {
-  inputs = {
-    id = null
-  }
-}
-
-locals {
-  users = merge(
-    { for k, v in data.aws_identitystore_user.existing_users : k => { id = v.id }},
-    { for k, v in data.aws_identitystore_user.existing_users : k => { id = try(v.id, data.null_data_source.default_user.inputs.id) }}
-  )
-}
-
 # Fetch existing groups
 data "aws_identitystore_group" "existing_groups" {
   for_each = {
@@ -75,7 +47,6 @@ data "aws_identitystore_group" "existing_groups" {
 resource "aws_identitystore_user" "users" {
   for_each = {
     for user_map in local.flattened_user_groups : user_map.user => user_map
-    if local.users[user_map.user].id == null
   }
 
   identity_store_id = local.identity_store_id
@@ -95,7 +66,6 @@ resource "aws_identitystore_user" "users" {
 resource "aws_identitystore_group" "groups" {
   for_each = {
     for user_map in local.flattened_user_groups : user_map.group => user_map.group
-    if try(data.aws_identitystore_group.existing_groups[user_map.group].id, null) == null
   }
 
   identity_store_id = local.identity_store_id
@@ -106,10 +76,9 @@ resource "aws_identitystore_group" "groups" {
 resource "aws_identitystore_group_membership" "memberships" {
   for_each = {
     for user_map in local.flattened_user_groups : "${user_map.group}-${user_map.user}" => user_map
-    if try(data.aws_identitystore_user.existing_users[user_map.user].id, null) != null && try(data.aws_identitystore_group.existing_groups[user_map.group].id, null) != null
   }
 
   identity_store_id = local.identity_store_id
   group_id          = data.aws_identitystore_group.existing_groups[each.value.group].id
-  member_id         = data.aws_identitystore_user.existing_users[each.value.user].id
+  member_id         = aws_identitystore_user.users[each.value.user].id
 }
