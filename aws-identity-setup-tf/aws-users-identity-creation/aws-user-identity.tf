@@ -76,7 +76,3 @@ resource "null_resource" "manage_users" {
     always_run = timestamp()
   }
 }
-
-output "debug_mappings" {
-  value = local.flattened_user_groups
-}
