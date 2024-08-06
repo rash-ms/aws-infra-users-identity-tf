@@ -1,7 +1,7 @@
-variable "env" {
-  description = "Environment (dev or prod)"
-  type        = string
-}
+# variable "env" {
+#   description = "Environment (dev or prod)"
+#   type        = string
+# }
 
 variable "yaml_path" {
   description = "Path to the YAML configuration file"
