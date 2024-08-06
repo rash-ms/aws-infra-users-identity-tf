@@ -54,15 +54,24 @@ data "aws_identitystore_group" "existing_groups" {
   }
 }
 
+# Filtered list of user-group mappings where the group exists
+locals {
+  existing_user_groups = [
+    for user_group in local.flattened_user_groups : user_group
+    if contains(data.aws_identitystore_group.existing_groups[*].id, try(data.aws_identitystore_group.existing_groups[user_group.group].id, null))
+  ]
+}
+
 # Attach users to groups
 resource "aws_identitystore_group_membership" "memberships" {
   for_each = {
-    for user_group in local.flattened_user_groups : "${user_group.group}-${user_group.user}" => user_group
+    for user_group in local.existing_user_groups : "${user_group.group}-${user_group.user}" => user_group
   }
 
   identity_store_id = local.identity_store_id
-  group_id          = try(data.aws_identitystore_group.existing_groups[each.value.group].id, null)
+  group_id          = data.aws_identitystore_group.existing_groups[each.value.group].id
   member_id         = aws_identitystore_user.users[each.value.user].id
+
   lifecycle {
     ignore_changes = [
       identity_store_id,
@@ -70,7 +79,10 @@ resource "aws_identitystore_group_membership" "memberships" {
       member_id,
     ]
   }
-  count = group_id != null ? 1 : 0
+}
+
+output "existing_users" {
+  value = aws_identitystore_user.users
 }
 
 output "existing_groups" {
