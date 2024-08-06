@@ -48,7 +48,7 @@ state-rm:
 reapply: state-rm apply
 
 init_remove:
-		cd $(TERRAFORM_DIR) && rm -rf .terraform
+		cd $(TERRAFORM_DIR) && rm -rf ./.terraform
 
 destroy:
 		cd $(TERRAFORM_DIR) && terraform destroy -auto-approve
