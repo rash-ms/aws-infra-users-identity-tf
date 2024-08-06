@@ -26,8 +26,6 @@ resource "null_resource" "check_and_create_users" {
       user_exists=$(aws identitystore list-users --identity-store-id ${data.aws_ssoadmin_instances.main.identity_store_ids[0]} --query "Users[?UserName=='${each.value.user}'].UserId" --output text)
       if [ -z "$user_exists" ]; then
         aws identitystore create-user --identity-store-id ${data.aws_ssoadmin_instances.main.identity_store_ids[0]} --user-name "${each.value.user}" --display-name "${each.value.user}" --name '{"FamilyName": "default", "GivenName": "${split("@", each.value.user)[0]}"}' --emails '[{"Primary": true, "Type": "work", "Value": "${each.value.user}"}]'
-      else
-        echo "User ${each.value.user} already exists"
       fi
     EOT
   }
@@ -40,27 +38,26 @@ resource "null_resource" "get_user_ids" {
   provisioner "local-exec" {
     command = <<EOT
       user_id=$(aws identitystore list-users --identity-store-id ${data.aws_ssoadmin_instances.main.identity_store_ids[0]} --query "Users[?UserName=='${each.value.user}'].UserId" --output text)
-      echo "$user_id" > ${path.module}/user_id_${each.value.user}.txt
+      echo "{\"user\": \"${each.value.user}\", \"user_id\": \"${user_id}\"}"
     EOT
+    on_failure = continue
   }
-}
 
-data "local_file" "user_ids" {
-  for_each = { for user_map in local.flattened_user_groups : user_map.user => user_map }
-  filename = "${path.module}/user_id_${each.key}.txt"
-  depends_on = [null_resource.get_user_ids]
+  triggers = {
+    always_run = timestamp()
+  }
 }
 
 locals {
   user_ids = {
-    for user in local.flattened_user_groups : 
-    user.user => chomp(data.local_file.user_ids[user.user].content)
+    for user_map in local.flattened_user_groups : 
+    user_map.user => chomp(data.local_file.user_ids[user_map.user].content)
   }
 }
 
 resource "null_resource" "add_users_to_group" {
   for_each = local.user_ids
-  depends_on = [data.local_file.user_ids]
+  depends_on = [null_resource.get_user_ids]
 
   provisioner "local-exec" {
     command = <<EOT
