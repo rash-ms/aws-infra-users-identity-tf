@@ -60,8 +60,13 @@ resource "null_resource" "manage_users" {
       echo "Group ID for ${each.value.group} is $group_id"
 
       # Ensure both IDs are correctly retrieved
-      if [ -z "$user_id" ] || [ -z "$group_id" ]; then
-        echo "Error: Missing user ID or group ID."
+      if [ -z "$user_id" ]; then
+        echo "Error: User ID could not be retrieved."
+        exit 1
+      fi
+
+      if [ -z "$group_id" ]; then
+        echo "Error: Group ID could not be retrieved."
         exit 1
       fi
 
@@ -72,7 +77,7 @@ resource "null_resource" "manage_users" {
       if [ -z "$membership_exists" ]; then
         echo "Adding user ${each.value.user} to group ${each.value.group}"
         # Add user to group if not already a member
-        aws identitystore create-group-membership --identity-store-id ${data.aws_ssoadmin_instances.main.identity_store_ids[0]} --group-id "GroupId=$group_id" --member-id "UserId=$user_id"
+        aws identitystore create-group-membership --identity-store-id ${data.aws_ssoadmin_instances.main.identity_store_ids[0]} --group-id "$group_id" --member-id "UserId=$user_id"
       else
         echo "User ${each.value.user} is already a member of group ${each.value.group}"
       fi
