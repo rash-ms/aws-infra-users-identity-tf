@@ -12,6 +12,7 @@
 #   ])
 # }
 
+
 locals {
   config = yamldecode(file(var.yaml_path))
 
@@ -25,7 +26,6 @@ locals {
     ]
   ])
 }
-
 
 data "aws_ssoadmin_instances" "main" {}
 
@@ -58,12 +58,18 @@ resource "null_resource" "manage_users" {
         exit 1
       fi
 
-      # Add user to group
-      aws identitystore create-group-membership --identity-store-id ${data.aws_ssoadmin_instances.main.identity_store_ids[0]} --group-id "$group_id" --member-id "UserId=$user_id"
+      # Check if the user is already a member of the group
+      membership_exists=$(aws identitystore list-group-memberships --identity-store-id ${data.aws_ssoadmin_instances.main.identity_store_ids[0]} --query "GroupMemberships[?GroupId=='$group_id' && MemberId.UserId=='$user_id'].GroupMembershipId" --output text)
+      if [ -z "$membership_exists" ]; then
+        # Add user to group if not already a member
+        aws identitystore create-group-membership --identity-store-id ${data.aws_ssoadmin_instances.main.identity_store_ids[0]} --group-id "$group_id" --member-id "UserId=$user_id"
+      else
+        echo "User ${each.value.user} is already a member of group ${each.value.group}"
+      fi
     EOT
 
     environment = {
-      AWS_REGION = "us-east-1" 
+      AWS_REGION = "us-east-1"  # Ensure the correct region is set
     }
 
     interpreter = ["sh", "-c"]
