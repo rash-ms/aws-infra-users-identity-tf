@@ -1,7 +1,3 @@
-provider "aws" {
-  region = "us-east-1"  # Replace with your desired region
-}
-
 locals {
   config = yamldecode(file(var.yaml_path))
 
@@ -23,6 +19,10 @@ locals {
   ]...)
 }
 
+data "aws_ssoadmin_instances" "main" {}
+
+data "aws_organizations_organization" "main" {}
+
 resource "null_resource" "create_users" {
   for_each = local.flattened_user_groups
 
@@ -33,9 +33,45 @@ resource "null_resource" "create_users" {
   }
 }
 
-data "aws_ssoadmin_instances" "main" {}
+resource "null_resource" "get_user_ids" {
+  for_each = local.flattened_user_groups
+  depends_on = [null_resource.create_users]
 
-data "aws_organizations_organization" "main" {}
+  provisioner "local-exec" {
+    command = <<EOT
+      aws identitystore list-users --identity-store-id ${data.aws_ssoadmin_instances.main.identity_store_ids[0]} --query "Users[?UserName=='${each.value.user}'].UserId" --output text > user_id_${each.key}.txt
+    EOT
+  }
+
+  provisioner "local-exec" {
+    command = "echo user_id_${each.key}=$(cat user_id_${each.key}.txt) >> user_ids.env"
+  }
+}
+
+data "local_file" "user_ids" {
+  filename = "${path.module}/user_ids.env"
+}
+
+resource "null_resource" "source_env" {
+  depends_on = [null_resource.get_user_ids]
+
+  provisioner "local-exec" {
+    command = "source ${data.local_file.user_ids.filename}"
+  }
+}
+
+resource "aws_ssoadmin_account_assignment" "assignments" {
+  for_each = local.flattened_user_groups
+  depends_on = [null_resource.source_env]
+
+  instance_arn       = data.aws_ssoadmin_instances.main.arns[0]
+  permission_set_arn = try(data.aws_ssoadmin_permission_set.all[each.value.permission_set].arn, "")
+  principal_type     = "USER"
+  target_id          = data.aws_organizations_organization.main.id
+  target_type        = "AWS_ACCOUNT"
+
+  principal_id = "user_id_${each.key}"
+}
 
 # Permission Sets
 data "aws_ssoadmin_permission_set" "all" {
@@ -44,17 +80,6 @@ data "aws_ssoadmin_permission_set" "all" {
   name         = local.group_to_permission_set[each.key]
 }
 
-resource "aws_ssoadmin_account_assignment" "assignments" {
-  for_each = local.flattened_user_groups
-
-  instance_arn       = data.aws_ssoadmin_instances.main.arns[0]
-  permission_set_arn = try(data.aws_ssoadmin_permission_set.all[each.value.permission_set].arn, "")
-  principal_type     = "USER"
-  target_id          = data.aws_organizations_organization.main.id
-  target_type        = "AWS_ACCOUNT"
-
-  principal_id = aws_identitystore_user.sso_users[each.key].id
-}
 
 
 
