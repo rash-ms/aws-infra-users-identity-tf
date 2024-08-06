@@ -1,7 +1,3 @@
-provider "aws" {
-  region = "us-east-1"  # Replace with your desired region
-}
-
 locals {
   config = yamldecode(file(var.yaml_path))
 
@@ -52,7 +48,7 @@ resource "null_resource" "manage_users" {
     EOT
 
     environment = {
-      AWS_REGION = "us-east-1"  # Ensure the correct region is set
+      AWS_REGION = "us-east-1" 
     }
 
     interpreter = ["sh", "-c"]
@@ -63,6 +59,3 @@ resource "null_resource" "manage_users" {
   }
 }
 
-output "debug_mappings" {
-  value = local.flattened_user_groups
-}
