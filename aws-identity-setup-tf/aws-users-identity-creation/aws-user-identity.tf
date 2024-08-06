@@ -63,22 +63,45 @@ resource "aws_identitystore_user" "users" {
 }
 
 resource "aws_identitystore_group" "groups" {
-  for_each = toset([for user_map in local.flattened_user_groups : user_map.group])
+  for_each = {
+    for user_map in local.flattened_user_groups : user_map.group => user_map.group
+    if length(try(data.aws_identitystore_group.existing_groups[user_map.group].id, [])) == 0
+  }
 
   identity_store_id = local.identity_store_id
-  display_name      = each.key
-  description       = "Group ${each.key}"
+  display_name      = each.value
+  description       = "Group ${each.value}"
 }
 
 resource "aws_identitystore_group_membership" "memberships" {
   for_each = {
     for user_map in local.flattened_user_groups : "${user_map.group}-${user_map.user}" => user_map
+    if length(try(data.aws_identitystore_user.existing_users[user_map.user].id, [])) > 0 && length(try(data.aws_identitystore_group.existing_groups[user_map.group].id, [])) > 0
   }
 
   identity_store_id = local.identity_store_id
-  group_id          = aws_identitystore_group.groups[each.value.group].id
-  member_id         = aws_identitystore_user.users[each.value.user].id
+  group_id          = data.aws_identitystore_group.existing_groups[each.value.group].id
+  member_id         = data.aws_identitystore_user.existing_users[each.value.user].id
 }
+
+
+# resource "aws_identitystore_group" "groups" {
+#   for_each = toset([for user_map in local.flattened_user_groups : user_map.group])
+
+#   identity_store_id = local.identity_store_id
+#   display_name      = each.key
+#   description       = "Group ${each.key}"
+# }
+
+# resource "aws_identitystore_group_membership" "memberships" {
+#   for_each = {
+#     for user_map in local.flattened_user_groups : "${user_map.group}-${user_map.user}" => user_map
+#   }
+
+#   identity_store_id = local.identity_store_id
+#   group_id          = aws_identitystore_group.groups[each.value.group].id
+#   member_id         = aws_identitystore_user.users[each.value.user].id
+# }
 
 
 
