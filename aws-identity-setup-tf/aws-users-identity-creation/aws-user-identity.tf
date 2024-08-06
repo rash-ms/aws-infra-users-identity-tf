@@ -27,7 +27,9 @@ resource "null_resource" "manage_users" {
       if [ -z "$user_id" ]; then
         user_id=$(aws identitystore create-user --identity-store-id ${data.aws_ssoadmin_instances.main.identity_store_ids[0]} --user-name "${each.value.user}" --display-name "${each.value.user}" --name '{"FamilyName": "default", "GivenName": "${split("@", each.value.user)[0]}"}' --emails '[{"Primary": true, "Type": "work", "Value": "${each.value.user}"}]' --query "User.UserId" --output text)
       fi
+      echo "User ID for ${each.value.user} is $user_id"
       group_id=$(aws identitystore list-groups --identity-store-id ${data.aws_ssoadmin_instances.main.identity_store_ids[0]} --query "Groups[?DisplayName=='${each.value.group}'].GroupId" --output text)
+      echo "Group ID for ${each.value.group} is $group_id"
       aws identitystore create-group-membership --identity-store-id ${data.aws_ssoadmin_instances.main.identity_store_ids[0]} --group-id $group_id --member-id $user_id
     EOT
 
