@@ -50,8 +50,8 @@ resource "null_resource" "get_user_ids" {
 
 locals {
   user_ids = {
-    for user_map in local.flattened_user_groups : 
-    user_map.user => chomp(data.local_file.user_ids[user_map.user].content)
+    for user_map in local.flattened_user_groups :
+    user_map.user => chomp(element(split("\n", data.local_file.user_ids[user_map.user].content), 0))
   }
 }
 
@@ -64,4 +64,12 @@ resource "null_resource" "add_users_to_group" {
       aws identitystore create-group-membership --identity-store-id ${data.aws_ssoadmin_instances.main.identity_store_ids[0]} --group-id ${lookup(local.config, each.value.group, null)} --member-id ${each.value}
     EOT
   }
+}
+
+output "debug_mappings" {
+  value = local.flattened_user_groups
+}
+
+output "user_ids" {
+  value = local.user_ids
 }
