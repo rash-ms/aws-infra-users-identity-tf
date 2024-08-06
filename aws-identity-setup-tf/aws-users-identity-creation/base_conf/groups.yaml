@@ -1,7 +1,7 @@
 groups:
   byt-data-eng-readonly:
     - admin@bagitek.com
-    - naimatoyewale@gmail.com
+    # - naimatoyewale@gmail.com
 
   byt-data-eng-fullAccess:
     - admin@bagitek.com
