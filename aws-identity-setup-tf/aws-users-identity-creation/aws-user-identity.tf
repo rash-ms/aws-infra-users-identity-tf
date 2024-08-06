@@ -41,31 +41,10 @@ resource "aws_identitystore_user" "users" {
   }
 }
 
-# Fetch existing groups
-data "aws_identitystore_group" "existing_groups" {
-  for_each = {
-    for group_name in local.groups_config.groups : group_name => group_name
-  }
-
-  identity_store_id = local.identity_store_id
-  filter {
-    attribute_path   = "DisplayName"
-    attribute_value  = each.key
-  }
-}
-
-# Filtered list of user-group mappings where the group exists
-locals {
-  existing_user_groups = [
-    for user_group in local.flattened_user_groups : user_group
-    if contains(data.aws_identitystore_group.existing_groups[*].id, try(data.aws_identitystore_group.existing_groups[user_group.group].id, null))
-  ]
-}
-
 # Attach users to groups
 resource "aws_identitystore_group_membership" "memberships" {
   for_each = {
-    for user_group in local.existing_user_groups : "${user_group.group}-${user_group.user}" => user_group
+    for user_group in local.flattened_user_groups : "${user_group.group}-${user_group.user}" => user_group
   }
 
   identity_store_id = local.identity_store_id
