@@ -1,7 +1,3 @@
-# byt-data-eng-readonly:
-#   - admin@bagitek.com
-
 byt-data-eng-readonly:
-  users:
-    - email: admin@bagitek.com
-      create: true
+  - admin@bagitek.com
+

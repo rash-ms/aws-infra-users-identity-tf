@@ -6,7 +6,6 @@ variable "env" {
 variable "yaml_path" {
   description = "Path to the YAML configuration file"
   type        = string
-  default     = "${path.module}/${var.env}.yaml"
 }
 
 provider "aws" {
@@ -17,44 +16,46 @@ data "aws_ssoadmin_instances" "main" {}
 
 locals {
   identity_store_id = data.aws_ssoadmin_instances.main.identity_store_ids[0]
-
   config = yamldecode(file(var.yaml_path))
 
-  # Flatten the user_groups into a list of maps, ensuring we handle null values and skip empty entries
+  # Flatten the user_groups into a list of maps
   flattened_user_groups = flatten([
-    for group_name, group_data in local.config : [
-      for user in coalesce(group_data.users, []) : {
+    for group_name, users in local.config : [
+      for user in users : {
         group = group_name
-        user  = user.email
-        create = user.create
+        user  = user
       }
-      if group_data.users != null
     ]
   ])
-
-  # Ensure unique names by adding environment prefix
-  users_with_env = [
-    for user_map in local.flattened_user_groups : {
-      group = "${var.env}-${user_map.group}"
-      user  = user_map.user
-      create = user_map.create
-    }
-  ]
 }
 
-# Output the identity store ID for debugging
-output "identity_store_id" {
-  value = local.identity_store_id
-}
-
-resource "aws_identitystore_user" "users" {
+# Fetch existing users
+data "aws_identitystore_user" "existing_users" {
   for_each = {
-    for user_map in local.users_with_env : user_map.user => user_map
-    if user_map.create == true
+    for user_map in local.flattened_user_groups : user_map.user => user_map.user
   }
 
   identity_store_id = local.identity_store_id
-  user_name         = "${var.env}-${each.value.user}"
+  filter {
+    attribute_path   = "UserName"
+    attribute_value  = each.key
+  }
+}
+
+# Output existing users for debugging
+output "existing_users" {
+  value = data.aws_identitystore_user.existing_users
+}
+
+# Create users if they don't exist
+resource "aws_identitystore_user" "users" {
+  for_each = {
+    for user_map in local.flattened_user_groups : user_map.user => user_map
+    if length(data.aws_identitystore_user.existing_users[user_map.user].filter) == 0
+  }
+
+  identity_store_id = local.identity_store_id
+  user_name         = each.value.user
   display_name      = each.value.user
   name {
     family_name = split("@", each.value.user)[0]
@@ -67,24 +68,26 @@ resource "aws_identitystore_user" "users" {
   }
 }
 
-resource "aws_identitystore_group" "groups" {
+# Fetch existing groups
+data "aws_identitystore_group" "existing_groups" {
   for_each = {
-    for user_map in local.users_with_env : user_map.group => user_map.group
-    if anytrue([for user in local.users_with_env : user.group == user_map.group && user.create == true])
+    for user_map in local.flattened_user_groups : user_map.group => user_map.group
   }
 
   identity_store_id = local.identity_store_id
-  display_name      = each.value
-  description       = "Group ${each.value}"
+  filter {
+    attribute_path   = "DisplayName"
+    attribute_value  = each.key
+  }
 }
 
+# Attach users to groups
 resource "aws_identitystore_group_membership" "memberships" {
   for_each = {
-    for user_map in local.users_with_env : "${user_map.group}-${user_map.user}" => user_map
-    if user_map.create == true
+    for user_map in local.flattened_user_groups : "${user_map.group}-${user_map.user}" => user_map
   }
 
   identity_store_id = local.identity_store_id
-  group_id          = aws_identitystore_group.groups[each.value.group].id
-  member_id         = aws_identitystore_user.users[each.value.user].id
+  group_id          = data.aws_identitystore_group.existing_groups[each.value.group].id
+  member_id         = try(data.aws_identitystore_user.existing_users[each.value.user].id, aws_identitystore_user.users[each.value.user].id)
 }
