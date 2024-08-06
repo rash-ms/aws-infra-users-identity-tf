@@ -21,7 +21,7 @@ locals {
         group = group_name
         user  = user
       }
-      if length(users) > 0
+      if users != null
     ]
   ])
 }
@@ -54,7 +54,7 @@ data "aws_identitystore_group" "existing_groups" {
 resource "aws_identitystore_user" "users" {
   for_each = {
     for user_map in local.flattened_user_groups : "${user_map.user}" => user_map
-    if length(data.aws_identitystore_user.existing_users[user_map.user].filter[0].attribute_value) == 0
+    if length(data.aws_identitystore_user.existing_users[user_map.user].filter) == 0
   }
 
   identity_store_id = local.identity_store_id
@@ -74,7 +74,7 @@ resource "aws_identitystore_user" "users" {
 resource "aws_identitystore_group" "groups" {
   for_each = {
     for user_map in local.flattened_user_groups : user_map.group => user_map.group
-    if length(data.aws_identitystore_group.existing_groups[user_map.group].filter[0].attribute_value) == 0
+    if length(data.aws_identitystore_group.existing_groups[user_map.group].filter) == 0
   }
 
   identity_store_id = local.identity_store_id
@@ -85,7 +85,7 @@ resource "aws_identitystore_group" "groups" {
 resource "aws_identitystore_group_membership" "memberships" {
   for_each = {
     for user_map in local.flattened_user_groups : "${user_map.group}-${user_map.user}" => user_map
-    if length(data.aws_identitystore_user.existing_users[user_map.user].filter[0].attribute_value) > 0 && length(data.aws_identitystore_group.existing_groups[user_map.group].filter[0].attribute_value) > 0
+    if length(data.aws_identitystore_user.existing_users[user_map.user].filter) > 0 && length(data.aws_identitystore_group.existing_groups[user_map.group].filter) > 0
   }
 
   identity_store_id = local.identity_store_id
