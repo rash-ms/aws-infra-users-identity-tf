@@ -45,6 +45,20 @@ data "aws_identitystore_user" "existing_users" {
   }
 }
 
+# Handle the case where the user might not be found
+data "null_data_source" "default_user" {
+  inputs = {
+    id = null
+  }
+}
+
+locals {
+  users = merge(
+    { for k, v in data.aws_identitystore_user.existing_users : k => { id = v.id }},
+    { for k, v in data.aws_identitystore_user.existing_users : k => { id = try(v.id, data.null_data_source.default_user.inputs.id) }}
+  )
+}
+
 # Fetch existing groups
 data "aws_identitystore_group" "existing_groups" {
   for_each = {
@@ -61,7 +75,7 @@ data "aws_identitystore_group" "existing_groups" {
 resource "aws_identitystore_user" "users" {
   for_each = {
     for user_map in local.flattened_user_groups : user_map.user => user_map
-    if try(data.aws_identitystore_user.existing_users[user_map.user].id, null) == null
+    if local.users[user_map.user].id == null
   }
 
   identity_store_id = local.identity_store_id
