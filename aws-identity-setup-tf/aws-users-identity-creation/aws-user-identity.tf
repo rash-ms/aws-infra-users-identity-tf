@@ -42,7 +42,6 @@ resource "aws_identitystore_user" "users" {
 }
 
 # Fetch existing groups
-# Fetch existing groups
 data "aws_identitystore_group" "existing_groups" {
   for_each = toset(keys(local.groups_config.groups))
 
@@ -53,10 +52,11 @@ data "aws_identitystore_group" "existing_groups" {
   }
 }
 
-# Attach users to groups
+# Attach users to 
+
 resource "aws_identitystore_group_membership" "memberships" {
   for_each = {
-    for user_group in local.flattened_user_groups : "${user_group.group}-${user_group.user}" => user_group
+    for user_group in local.flattened_user_groups : user_group.group => user_group
   }
 
   identity_store_id = local.identity_store_id
@@ -71,6 +71,24 @@ resource "aws_identitystore_group_membership" "memberships" {
     ]
   }
 }
+
+# resource "aws_identitystore_group_membership" "memberships" {
+#   for_each = {
+#     for user_group in local.flattened_user_groups : "${user_group.group}-${user_group.user}" => user_group
+#   }
+
+#   identity_store_id = local.identity_store_id
+#   group_id          = data.aws_identitystore_group.existing_groups[each.value.group].id
+#   member_id         = aws_identitystore_user.users[each.value.user].id
+
+#   lifecycle {
+#     ignore_changes = [
+#       identity_store_id,
+#       group_id,
+#       member_id,
+#     ]
+#   }
+# }
 
 output "created_users" {
   value = aws_identitystore_user.users
