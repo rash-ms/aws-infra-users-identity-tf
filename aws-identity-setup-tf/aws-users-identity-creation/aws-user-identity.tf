@@ -40,14 +40,14 @@ resource "null_resource" "get_user_ids" {
   provisioner "local-exec" {
     command = <<EOT
       user_id=$(aws identitystore list-users --identity-store-id ${data.aws_ssoadmin_instances.main.identity_store_ids[0]} --query "Users[?UserName=='${each.value.user}'].UserId" --output text)
-      echo "$user_id" > user_id_${each.value.user}.txt
+      echo "$user_id" > ${path.module}/user_id_${each.value.user}.txt
     EOT
   }
 }
 
 data "local_file" "user_ids" {
   for_each = { for user_map in local.flattened_user_groups : user_map.user => user_map }
-  filename = "user_id_${each.key}.txt"
+  filename = "${path.module}/user_id_${each.key}.txt"
   depends_on = [null_resource.get_user_ids]
 }
 
