@@ -69,10 +69,6 @@ output "debug_mappings" {
   value = local.flattened_user_groups
 }
 
-output "user_ids" {
-  value = local.user_ids
-}
-
 
 # provider "aws" {
 #   region = "us-east-1"  # Replace with your desired region
