@@ -24,20 +24,16 @@ locals {
   ])
 }
 
-# Create a null resource to fetch existing users and handle non-existence gracefully
-resource "null_resource" "check_user_existence" {
+# Fetch existing users
+data "aws_identitystore_user" "existing_users" {
   for_each = {
-    for user_map in local.flattened_user_groups : user_map.user => user_map
+    for user_map in local.flattened_user_groups : user_map.user => user_map.user
   }
 
-  provisioner "local-exec" {
-    command = "echo User ${each.key} not found"
-    when    = "create"
-    on_failure = "continue"
-  }
-
-  triggers = {
-    user = each.key
+  identity_store_id = local.identity_store_id
+  filter {
+    attribute_path   = "UserName"
+    attribute_value  = each.key
   }
 }
 
@@ -45,7 +41,7 @@ resource "null_resource" "check_user_existence" {
 resource "aws_identitystore_user" "users" {
   for_each = {
     for user_map in local.flattened_user_groups : user_map.user => user_map
-    if !contains(keys(null_resource.check_user_existence), user_map.user)
+    if try(data.aws_identitystore_user.existing_users[user_map.user].id, null) == null
   }
 
   identity_store_id = local.identity_store_id
@@ -83,7 +79,14 @@ resource "aws_identitystore_group_membership" "memberships" {
 
   identity_store_id = local.identity_store_id
   group_id          = data.aws_identitystore_group.existing_groups[each.value.group].id
-  member_id         = aws_identitystore_user.users[each.value.user].id
+  member_id         = try(
+                        data.aws_identitystore_user.existing_users[each.value.user].id,
+                        aws_identitystore_user.users[each.value.user].id
+                      )
+}
+
+output "existing_users" {
+  value = { for k, v in data.aws_identitystore_user.existing_users : k => try(v.id, "User not found") }
 }
 
 output "existing_groups" {
