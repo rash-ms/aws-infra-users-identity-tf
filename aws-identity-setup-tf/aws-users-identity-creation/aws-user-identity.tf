@@ -60,7 +60,7 @@ locals {
 # Attach users to groups
 resource "aws_identitystore_group_membership" "memberships" {
   for_each = {
-    for user_group in local.flattened_user_groups : user_group.group => user_group
+    for user_group in local.flattened_user_groups : "${user_group.group}-${user_group.user}" => user_group
   }
 
   identity_store_id = local.identity_store_id
