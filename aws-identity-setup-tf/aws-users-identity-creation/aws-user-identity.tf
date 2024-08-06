@@ -52,17 +52,20 @@ data "aws_identitystore_group" "existing_groups" {
   }
 }
 
-# Attach users to 
+# Extract the user ID from the full ID
+locals {
+  user_ids = { for k, v in aws_identitystore_user.users : k => split("/", v.id)[1] }
+}
 
+# Attach users to groups
 resource "aws_identitystore_group_membership" "memberships" {
   for_each = {
-    for user_group in local.flattened_user_groups : user_group.group => user_group
+    for user_group in local.flattened_user_groups : "${user_group.group}-${user_group.user}" => user_group
   }
 
   identity_store_id = local.identity_store_id
   group_id          = data.aws_identitystore_group.existing_groups[each.value.group].id
-  # member_id         = try(data.aws_identitystore_user.existing_users[each.value.user].id, aws_identitystore_user.users[each.value.user].id)
-  member_id         = aws_identitystore_user.users[each.value.user].id
+  member_id         = local.user_ids[each.value.user]
 
   lifecycle {
     ignore_changes = [
@@ -72,6 +75,27 @@ resource "aws_identitystore_group_membership" "memberships" {
     ]
   }
 }
+
+
+
+# resource "aws_identitystore_group_membership" "memberships" {
+#   for_each = {
+#     for user_group in local.flattened_user_groups : user_group.group => user_group
+#   }
+
+#   identity_store_id = local.identity_store_id
+#   group_id          = data.aws_identitystore_group.existing_groups[each.value.group].id
+#   # member_id         = try(data.aws_identitystore_user.existing_users[each.value.user].id, aws_identitystore_user.users[each.value.user].id)
+#   member_id         = aws_identitystore_user.users[each.value.user].id
+
+#   lifecycle {
+#     ignore_changes = [
+#       identity_store_id,
+#       group_id,
+#       member_id,
+#     ]
+#   }
+# }
 
 # resource "aws_identitystore_group_membership" "memberships" {
 #   for_each = {
