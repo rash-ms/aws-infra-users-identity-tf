@@ -24,7 +24,7 @@ locals {
   ])
 }
 
-# Fetch existing users
+# Fetch existing users with try block to handle cases where the user does not exist
 data "aws_identitystore_user" "existing_users" {
   for_each = {
     for user_map in local.flattened_user_groups : user_map.user => user_map.user
@@ -35,6 +35,11 @@ data "aws_identitystore_user" "existing_users" {
     attribute_path   = "UserName"
     attribute_value  = each.key
   }
+}
+
+# Output existing users for debugging
+output "existing_users" {
+  value = { for k, v in data.aws_identitystore_user.existing_users : k => try(v.id, "User not found") }
 }
 
 # Fetch existing groups
@@ -80,10 +85,6 @@ resource "aws_identitystore_group_membership" "memberships" {
   identity_store_id = local.identity_store_id
   group_id          = data.aws_identitystore_group.existing_groups[each.value.group].id
   member_id         = try(data.aws_identitystore_user.existing_users[each.value.user].id, aws_identitystore_user.users[each.value.user].id)
-}
-
-output "existing_users" {
-  value = { for k, v in data.aws_identitystore_user.existing_users : k => try(v.id, "User not found") }
 }
 
 output "existing_groups" {
