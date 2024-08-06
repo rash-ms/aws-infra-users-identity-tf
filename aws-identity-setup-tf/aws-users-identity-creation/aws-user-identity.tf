@@ -42,15 +42,14 @@ resource "aws_identitystore_user" "users" {
 }
 
 # Fetch existing groups
+# Fetch existing groups
 data "aws_identitystore_group" "existing_groups" {
-  for_each = {
-    for group_name in local.groups_config.groups : group_name => group_name
-  }
+  for_each = toset(keys(local.groups_config.groups))
 
   identity_store_id = local.identity_store_id
   filter {
     attribute_path   = "DisplayName"
-    attribute_value  = each.key
+    attribute_value  = each.value
   }
 }
 
@@ -61,7 +60,7 @@ resource "aws_identitystore_group_membership" "memberships" {
   }
 
   identity_store_id = local.identity_store_id
-  group_id          = try(data.aws_identitystore_group.existing_groups[each.value.group].id, null)
+  group_id          = data.aws_identitystore_group.existing_groups[each.value.group].id
   member_id         = aws_identitystore_user.users[each.value.user].id
 
   lifecycle {
