@@ -45,11 +45,6 @@ data "aws_identitystore_user" "existing_users" {
   }
 }
 
-# Output the existing users for debugging
-output "existing_users" {
-  value = { for k, v in data.aws_identitystore_user.existing_users : k => try(v.id, null) }
-}
-
 # Fetch existing groups
 data "aws_identitystore_group" "existing_groups" {
   for_each = {
@@ -63,14 +58,9 @@ data "aws_identitystore_group" "existing_groups" {
   }
 }
 
-# Output the existing groups for debugging
-output "existing_groups" {
-  value = { for k, v in data.aws_identitystore_group.existing_groups : k => try(v.id, null) }
-}
-
 resource "aws_identitystore_user" "users" {
   for_each = {
-    for user_map in local.flattened_user_groups : "${user_map.user}" => user_map
+    for user_map in local.flattened_user_groups : user_map.user => user_map
     if try(data.aws_identitystore_user.existing_users[user_map.user].id, null) == null
   }
 
