@@ -25,20 +25,27 @@ resource "null_resource" "manage_users" {
     command = <<EOT
       set -e
 
-      # Check and create user if it doesn't exist
+      # Check if the user exists
       user_id=$(aws identitystore list-users --identity-store-id ${data.aws_ssoadmin_instances.main.identity_store_ids[0]} --query "Users[?UserName=='${each.value.user}'].UserId" --output text)
       if [ -z "$user_id" ]; then
+        # Create the user if it doesn't exist
         user_id=$(aws identitystore create-user --identity-store-id ${data.aws_ssoadmin_instances.main.identity_store_ids[0]} --user-name "${each.value.user}" --display-name "${each.value.user}" --name '{"FamilyName": "default", "GivenName": "${split("@", each.value.user)[0]}"}' --emails '[{"Primary": true, "Type": "work", "Value": "${each.value.user}"}]' --query "User.UserId" --output text)
       fi
 
-      # Debugging output
+      # Debugging output for user_id
       echo "User ID for ${each.value.user} is $user_id"
 
       # Check and get group ID
       group_id=$(aws identitystore list-groups --identity-store-id ${data.aws_ssoadmin_instances.main.identity_store_ids[0]} --query "Groups[?DisplayName=='${each.value.group}'].GroupId" --output text)
       
-      # Debugging output
+      # Debugging output for group_id
       echo "Group ID for ${each.value.group} is $group_id"
+
+      # Ensure both IDs are correctly retrieved
+      if [ -z "$user_id" ] || [ -z "$group_id" ]; then
+        echo "Error: Missing user ID or group ID."
+        exit 1
+      fi
 
       # Add user to group
       aws identitystore create-group-membership --identity-store-id ${data.aws_ssoadmin_instances.main.identity_store_ids[0]} --group-id "$group_id" --member-id "$user_id"
