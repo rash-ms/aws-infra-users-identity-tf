@@ -1,7 +1,3 @@
-provider "aws" {
-  region = "us-east-1"
-}
-
 data "aws_ssoadmin_instances" "main" {}
 
 locals {
@@ -74,51 +70,4 @@ resource "aws_identitystore_group_membership" "memberships" {
       member_id,
     ]
   }
-}
-
-
-
-# resource "aws_identitystore_group_membership" "memberships" {
-#   for_each = {
-#     for user_group in local.flattened_user_groups : user_group.group => user_group
-#   }
-
-#   identity_store_id = local.identity_store_id
-#   group_id          = data.aws_identitystore_group.existing_groups[each.value.group].id
-#   # member_id         = try(data.aws_identitystore_user.existing_users[each.value.user].id, aws_identitystore_user.users[each.value.user].id)
-#   member_id         = aws_identitystore_user.users[each.value.user].id
-
-#   lifecycle {
-#     ignore_changes = [
-#       identity_store_id,
-#       group_id,
-#       member_id,
-#     ]
-#   }
-# }
-
-# resource "aws_identitystore_group_membership" "memberships" {
-#   for_each = {
-#     for user_group in local.flattened_user_groups : "${user_group.group}-${user_group.user}" => user_group
-#   }
-
-#   identity_store_id = local.identity_store_id
-#   group_id          = data.aws_identitystore_group.existing_groups[each.value.group].id
-#   member_id         = aws_identitystore_user.users[each.value.user].id
-
-#   lifecycle {
-#     ignore_changes = [
-#       identity_store_id,
-#       group_id,
-#       member_id,
-#     ]
-#   }
-# }
-
-output "created_users" {
-  value = aws_identitystore_user.users
-}
-
-output "group_memberships" {
-  value = aws_identitystore_group_membership.memberships
 }
