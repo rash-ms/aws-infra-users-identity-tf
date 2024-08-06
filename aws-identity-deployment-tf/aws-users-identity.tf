@@ -15,6 +15,6 @@ module "identity" {
 #   value = module.identity.existing_users
 # }
 
-# output "existing_groups" {
-#   value = module.identity.existing_groups
-# }
+output "existing_groups" {
+  value = module.identity.existing_groups
+}
