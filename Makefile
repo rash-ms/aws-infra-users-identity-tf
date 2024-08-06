@@ -9,20 +9,47 @@
 python_exec=$(shell command -v python3)
 # <Recipes>
 
+TERRAFORM_DIR = ./aws-identity-deployment-tf
+RESOURCE = 'module.prod_users.aws_identitystore_user.users["admin@bagitek.com"]'
+
 auth:
 		saml2aws login
+
+# set_env:
+# 		@echo execute eval $(saml2aws script)
+
+# init:
+# 		cd ./aws-identity-deployment-tf && terraform init -upgrade
+
+# plan:
+# 		cd ./aws-identity-deployment-tf && terraform plan
+
+# apply:
+# 		cd ./aws-identity-deployment-tf && terraform apply -auto-approve
+
 
 set_env:
 		@echo execute eval $(saml2aws script)
 
 init:
-		cd ./aws-identity-deployment-tf && terraform init -upgrade
+		cd $(TERRAFORM_DIR) && terraform init -upgrade
 
 plan:
-		cd ./aws-identity-deployment-tf && terraform plan
+		cd $(TERRAFORM_DIR) && terraform plan
 
 apply:
-		cd ./aws-identity-deployment-tf && terraform apply -auto-approve
+		cd $(TERRAFORM_DIR) && terraform apply -auto-approve
+
+state-rm:
+		cd $(TERRAFORM_DIR) && terraform state rm $(RESOURCE)
+
+reapply: state-rm apply
+
+init_remove:
+		cd $(TERRAFORM_DIR) && rm -dfr ./.terraform
+
+destroy:
+		cd $(TERRAFORM_DIR) && terraform destroy
 
 # init_aws_sso_admin:
 # 		cd ./tf-identity-setup/tf-identity-deployment/aws-sso-admin && terraform init -upgrade -var "PEOPLE_DEV=${PEOPLE_DEV}" -var "PEOPLE_STG=${PEOPLE_STG}" -var "PEOPLE_PROD=${PEOPLE_PROD}"
