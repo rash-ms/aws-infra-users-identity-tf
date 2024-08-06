@@ -1,16 +1,31 @@
+# locals {
+#   config = yamldecode(file(var.yaml_path))
+
+#   # Flatten the user_groups into a list of maps
+#   flattened_user_groups = flatten([
+#     for group_name, users in local.config : [
+#       for user in users : {
+#         group = group_name
+#         user  = user
+#       }
+#     ]
+#   ])
+# }
+
 locals {
   config = yamldecode(file(var.yaml_path))
 
-  # Flatten the user_groups into a list of maps
+  # Flatten the user_groups into a list of maps, ensuring we handle null values
   flattened_user_groups = flatten([
     for group_name, users in local.config : [
-      for user in users : {
+      for user in coalesce(users, []) : {
         group = group_name
         user  = user
       }
     ]
   ])
 }
+
 
 data "aws_ssoadmin_instances" "main" {}
 
