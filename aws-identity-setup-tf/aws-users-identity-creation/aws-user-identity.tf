@@ -24,34 +24,20 @@ locals {
   ])
 }
 
-# Fetch existing users with try block to handle cases where the user does not exist
-data "aws_identitystore_user" "existing_users" {
+# Create a null resource to fetch existing users and handle non-existence gracefully
+resource "null_resource" "check_user_existence" {
   for_each = {
-    for user_map in local.flattened_user_groups : user_map.user => user_map.user
+    for user_map in local.flattened_user_groups : user_map.user => user_map
   }
 
-  identity_store_id = local.identity_store_id
-  filter {
-    attribute_path   = "UserName"
-    attribute_value  = each.key
-  }
-}
-
-# Output existing users for debugging
-output "existing_users" {
-  value = { for k, v in data.aws_identitystore_user.existing_users : k => try(v.id, "User not found") }
-}
-
-# Fetch existing groups
-data "aws_identitystore_group" "existing_groups" {
-  for_each = {
-    for user_map in local.flattened_user_groups : user_map.group => user_map.group
+  provisioner "local-exec" {
+    command = "echo User ${each.key} not found"
+    when    = "create"
+    on_failure = "continue"
   }
 
-  identity_store_id = local.identity_store_id
-  filter {
-    attribute_path   = "DisplayName"
-    attribute_value  = each.key
+  triggers = {
+    user = each.key
   }
 }
 
@@ -59,7 +45,7 @@ data "aws_identitystore_group" "existing_groups" {
 resource "aws_identitystore_user" "users" {
   for_each = {
     for user_map in local.flattened_user_groups : user_map.user => user_map
-    if try(data.aws_identitystore_user.existing_users[user_map.user].id, null) == null
+    if !contains(keys(null_resource.check_user_existence), user_map.user)
   }
 
   identity_store_id = local.identity_store_id
@@ -76,6 +62,19 @@ resource "aws_identitystore_user" "users" {
   }
 }
 
+# Fetch existing groups
+data "aws_identitystore_group" "existing_groups" {
+  for_each = {
+    for user_map in local.flattened_user_groups : user_map.group => user_map.group
+  }
+
+  identity_store_id = local.identity_store_id
+  filter {
+    attribute_path   = "DisplayName"
+    attribute_value  = each.key
+  }
+}
+
 # Attach users to groups
 resource "aws_identitystore_group_membership" "memberships" {
   for_each = {
@@ -84,7 +83,7 @@ resource "aws_identitystore_group_membership" "memberships" {
 
   identity_store_id = local.identity_store_id
   group_id          = data.aws_identitystore_group.existing_groups[each.value.group].id
-  member_id         = try(data.aws_identitystore_user.existing_users[each.value.user].id, aws_identitystore_user.users[each.value.user].id)
+  member_id         = aws_identitystore_user.users[each.value.user].id
 }
 
 output "existing_groups" {
