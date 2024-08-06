@@ -37,10 +37,14 @@ resource "null_resource" "get_user_ids" {
 
   provisioner "local-exec" {
     command = <<EOT
-      user_id=$(aws identitystore list-users --identity-store-id ${data.aws_ssoadmin_instances.main.identity_store_ids[0]} --query "Users[?UserName=='${each.value.user}'].UserId" --output text)
-      echo "{\"user\": \"${each.value.user}\", \"user_id\": \"${user_id}\"}"
+      aws identitystore list-users --identity-store-id ${data.aws_ssoadmin_instances.main.identity_store_ids[0]} --query "Users[?UserName=='${each.value.user}'].UserId" --output text
     EOT
-    on_failure = continue
+
+    environment = {
+      AWS_REGION = "us-east-1"  # Ensure the correct region is set
+    }
+
+    interpreter = ["sh", "-c"]
   }
 
   triggers = {
@@ -48,10 +52,16 @@ resource "null_resource" "get_user_ids" {
   }
 }
 
+output "user_ids_output" {
+  value = {
+    for user, _ in null_resource.get_user_ids : user => jsondecode(null_resource.get_user_ids[user].provisioner[0].output).user_id
+  }
+}
+
 locals {
   user_ids = {
-    for user_map in local.flattened_user_groups :
-    user_map.user => chomp(element(split("\n", data.local_file.user_ids[user_map.user].content), 0))
+    for user_map in local.flattened_user_groups : 
+    user_map.user => lookup(output.user_ids_output, user_map.user, "")
   }
 }
 
@@ -63,6 +73,12 @@ resource "null_resource" "add_users_to_group" {
     command = <<EOT
       aws identitystore create-group-membership --identity-store-id ${data.aws_ssoadmin_instances.main.identity_store_ids[0]} --group-id ${lookup(local.config, each.value.group, null)} --member-id ${each.value}
     EOT
+
+    environment = {
+      AWS_REGION = "us-east-1"  # Ensure the correct region is set
+    }
+
+    interpreter = ["sh", "-c"]
   }
 }
 
