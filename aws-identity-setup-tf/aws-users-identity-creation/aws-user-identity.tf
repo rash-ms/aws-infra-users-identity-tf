@@ -4,7 +4,7 @@ variable "yaml_path" {
 }
 
 provider "aws" {
-  region = "us-east-1" 
+  region = "us-east-1"
 }
 
 data "aws_ssoadmin_instances" "main" {}
@@ -47,7 +47,7 @@ data "aws_identitystore_user" "existing_users" {
 
 # Output the existing users for debugging
 output "existing_users" {
-  value = data.aws_identitystore_user.existing_users
+  value = { for k, v in data.aws_identitystore_user.existing_users : k => try(v.id, null) }
 }
 
 # Fetch existing groups
@@ -65,13 +65,13 @@ data "aws_identitystore_group" "existing_groups" {
 
 # Output the existing groups for debugging
 output "existing_groups" {
-  value = data.aws_identitystore_group.existing_groups
+  value = { for k, v in data.aws_identitystore_group.existing_groups : k => try(v.id, null) }
 }
 
 resource "aws_identitystore_user" "users" {
   for_each = {
     for user_map in local.flattened_user_groups : "${user_map.user}" => user_map
-    if length(try(data.aws_identitystore_user.existing_users[user_map.user].id, [])) == 0
+    if try(data.aws_identitystore_user.existing_users[user_map.user].id, null) == null
   }
 
   identity_store_id = local.identity_store_id
@@ -91,7 +91,7 @@ resource "aws_identitystore_user" "users" {
 resource "aws_identitystore_group" "groups" {
   for_each = {
     for user_map in local.flattened_user_groups : user_map.group => user_map.group
-    if length(data.aws_identitystore_group.existing_groups[user_map.group].filter) == 0
+    if try(data.aws_identitystore_group.existing_groups[user_map.group].id, null) == null
   }
 
   identity_store_id = local.identity_store_id
@@ -102,7 +102,7 @@ resource "aws_identitystore_group" "groups" {
 resource "aws_identitystore_group_membership" "memberships" {
   for_each = {
     for user_map in local.flattened_user_groups : "${user_map.group}-${user_map.user}" => user_map
-    if length(data.aws_identitystore_user.existing_users[user_map.user].filter) > 0 && length(data.aws_identitystore_group.existing_groups[user_map.group].filter) > 0
+    if try(data.aws_identitystore_user.existing_users[user_map.user].id, null) != null && try(data.aws_identitystore_group.existing_groups[user_map.group].id, null) != null
   }
 
   identity_store_id = local.identity_store_id
