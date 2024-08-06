@@ -1,0 +1,6 @@
+groups:
+  byt-data-eng-readonly:
+    - admin@bagitek.com
+
+  byt-data-eng-fullAccess:
+    - admin@bagitek.com

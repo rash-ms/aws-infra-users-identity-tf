@@ -1,13 +1,22 @@
 provider "aws" {
-  region = "us-east-1"  # Replace with your desired region
+  region = "us-east-1"  
 }
 
-module "prod_users" {
-  source    = "../aws-identity-setup-tf/aws-users-identity-creation"
-  yaml_path = "../aws-identity-setup-tf/aws-users-identity-creation/base_conf/byt-aws-prod.yaml"
+variable "users_yaml_path" {
+  description = "Path to the users YAML configuration file"
+  type        = string
 }
 
-module "dev_users" {
+variable "groups_yaml_path" {
+  description = "Path to the groups YAML configuration file"
+  type        = string
+}
+
+
+module "identity" {
   source    = "../aws-identity-setup-tf/aws-users-identity-creation"
-  yaml_path = "../aws-identity-setup-tf/aws-users-identity-creation/base_conf/byt-aws-dev.yaml"
+  # users_yaml_path = "${path.module}/users.yaml"
+  # groups_yaml_path = "${path.module}/groups.yaml"
+  users_yaml_path = "../aws-identity-setup-tf/aws-users-identity-creation/base_conf/users.yaml"
+  groups_yaml_path = "../aws-identity-setup-tf/aws-users-identity-creation/base_conf/groups.yaml"
 }

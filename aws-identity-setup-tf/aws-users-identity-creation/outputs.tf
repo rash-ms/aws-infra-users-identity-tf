@@ -1,11 +1,9 @@
-# output "users" {
-#   value = aws_identitystore_user.users
-# }
+output "existing_users" {
+  description = "Existing users in the identity store"
+  value       = module.identity.existing_users
+}
 
-# output "groups" {
-#   value = aws_identitystore_group.groups
-# }
-
-# output "memberships" {
-#   value = aws_identitystore_group_membership.memberships
-# }
+output "existing_groups" {
+  description = "Existing groups in the identity store"
+  value       = module.identity.existing_groups
+}
