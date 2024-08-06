@@ -4,7 +4,7 @@ variable "yaml_path" {
 }
 
 provider "aws" {
-  region = "us-east-1"  # Replace with your desired region
+  region = "us-east-1" 
 }
 
 data "aws_ssoadmin_instances" "main" {}
