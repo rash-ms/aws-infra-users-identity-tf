@@ -100,25 +100,25 @@ resource "aws_organizations_account" "team_wrkspc_account" {
 data "aws_ssoadmin_instances" "main" {}
 
 
-resource "aws_identitystore_group" "team_group" {
-  for_each = local.policy_group_mapping
-
-  identity_store_id = tolist(data.aws_ssoadmin_instances.main.identity_store_ids)[0]
-  display_name      = each.value
-}
-
 # resource "aws_identitystore_group" "team_group" {
-#   for_each = local.group_mappings
-#   identity_store_id  = tolist(data.aws_ssoadmin_instances.main.identity_store_ids)[0]
-#   display_name = each.value.group
+#   for_each = local.policy_group_mapping
 
-#   # alternate_identifier {
-#   #   unique_attribute {
-#   #     attribute_path = "DisplayName"
-#   #     attribute_value = each.value.group
-#   #   }
-#   # }
+#   identity_store_id = tolist(data.aws_ssoadmin_instances.main.identity_store_ids)[0]
+#   display_name      = each.value
 # }
+
+resource "aws_identitystore_group" "team_group" {
+  for_each = local.group_mappings
+  identity_store_id  = tolist(data.aws_ssoadmin_instances.main.identity_store_ids)[0]
+  display_name = each.value.group
+
+  # alternate_identifier {
+  #   unique_attribute {
+  #     attribute_path = "DisplayName"
+  #     attribute_value = each.value.group
+  #   }
+  # }
+}
 
 resource "aws_ssoadmin_permission_set" "readonly_permission_set" {
   for_each     = local.readonly_permission_sets
