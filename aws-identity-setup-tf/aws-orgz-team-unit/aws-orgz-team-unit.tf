@@ -91,12 +91,18 @@ resource "aws_organizations_account" "team_wrkspc_account" {
 
 data "aws_ssoadmin_instances" "main" {}
 
+# resource "aws_identitystore_group" "team_group" {
+#   for_each = { for k, v in local.group_mappings : v.group => k }
+#   identity_store_id = tolist(data.aws_ssoadmin_instances.main.identity_store_ids)[0]
+#   display_name      = each.key
+# }
+
 resource "aws_identitystore_group" "team_group" {
-  for_each = { for k, v in local.group_mappings : v.group => k }
-  # for_each = local.group_mappings
+  for_each = local.group_mappings
   identity_store_id = tolist(data.aws_ssoadmin_instances.main.identity_store_ids)[0]
-  display_name      = each.key
+  display_name      = each.value.group
 }
+
 
 resource "aws_ssoadmin_permission_set" "readonly_permission_set" {
   instance_arn = data.aws_ssoadmin_instances.main.arns[0]
