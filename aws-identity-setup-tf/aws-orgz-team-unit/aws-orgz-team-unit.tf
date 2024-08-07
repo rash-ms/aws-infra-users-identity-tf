@@ -155,15 +155,13 @@ resource "aws_ssoadmin_permission_set_inline_policy" "readonly_inline_policy" {
 resource "aws_ssoadmin_permission_set" "full_access_permission_set" {
   for_each     = local.full_access_permission_sets
   instance_arn = data.aws_ssoadmin_instances.main.arns[0]
-  # name         = each.value.name
-  name         = "${each.key}_fullAccess"
+  name         = each.value.name
   description  = "Full access to AWS resources for ${each.key}"
   session_duration = "PT1H"
   relay_state  = "https://console.aws.amazon.com/"
 
   tags = {
-    # Name = each.value.name
-    Name = "${each.key}_fullAccess"
+    Name = each.value.name
   }
 }
 
@@ -221,7 +219,7 @@ resource "aws_ssoadmin_account_assignment" "full_access_assignment" {
   }
   instance_arn = data.aws_ssoadmin_instances.main.arns[0]
   # permission_set_arn = aws_ssoadmin_permission_set.full_access_permission_set[each.key].arn
-  permission_set_arn = aws_ssoadmin_permission_set.full_access_permission_set["${each.key}_fullAccess"].arn
+  permission_set_arn = aws_ssoadmin_permission_set.full_access_permission_set["${each.key}-FullAccess"].arn
   principal_id = local.group_ids[each.key]  # Principal ID of the group
   principal_type = "GROUP"
   target_id = aws_organizations_account.team_wrkspc_account[each.key].id
