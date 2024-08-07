@@ -1,38 +1,40 @@
 {
     "policies": {
-            "full_access_policy": {
-                "Version": "2012-10-17",
-                "Statement": [
-                    {
-                        "Effect": "Allow",
-                        "Action": "*",
-                        "Resource": "*"
-                    }
-                ]
-            },
-            "readonly_policy": {
-                "Version": "2012-10-17",
-                "Statement": [
-                    {
-                        "Effect": "Allow",
-                        "Action": [
-                            "ec2:Describe*",
-                            "s3:Get*",
-                            "s3:List*",
-                            "rds:Describe*",
-                            "iam:Get*",
-                            "iam:List*",
-                            "cloudwatch:Get*",
-                            "cloudwatch:List*",
-                            "cloudwatch:Describe*"
-                        ],
-                        "Resource": "*"
-                    }
-                ]
+        "full_access_policy": {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Action": "*",
+                    "Resource": "*"
+                }
+            ],
+            "group": {
+                "data-org-DEV": "byt-data-org-FullAccess"
             }
         },
-    "groups": {
-        "data-eng-DEV": "byt-data-org-FullAccess",
-        "data-eng-PROD": "byt-data-org-readonly"
+        "readonly_policy": {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Action": [
+                        "ec2:Describe*",
+                        "s3:Get*",
+                        "s3:List*",
+                        "rds:Describe*",
+                        "iam:Get*",
+                        "iam:List*",
+                        "cloudwatch:Get*",
+                        "cloudwatch:List*",
+                        "cloudwatch:Describe*"
+                    ],
+                    "Resource": "*"
+                }
+            ],
+            "group": {
+                "data-org-PROD": "byt-data-org-readonly"
+            }
+        }
     }
 }
