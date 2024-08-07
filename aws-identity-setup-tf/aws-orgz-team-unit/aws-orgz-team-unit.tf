@@ -83,19 +83,19 @@ resource "aws_organizations_organizational_unit" "team_env" {
   parent_id = aws_organizations_organizational_unit.team[each.value.team].id
 
   tags = {
-    Name = "byt-${each.value.team}-${each.value.env}"
+    Name = "BYT-${each.value.team}-${each.value.env}"
   }
 }
 
 resource "aws_organizations_account" "team_wrkspc_account" {
   for_each  = local.account_map
-  name      = "byt-${each.key}"
+  name      = "BYT-${each.key}"
   email     = local.group_mappings[each.key].email
   parent_id = aws_organizations_organizational_unit.team_env[each.key].id
   role_name = "OrganizationAccountAccessRole"
 
   tags = {
-    Name        = "byt-${each.key}",
+    Name        = "BYT-${each.key}",
     Team        = each.value.team,
     Environment = each.value.env
   }
