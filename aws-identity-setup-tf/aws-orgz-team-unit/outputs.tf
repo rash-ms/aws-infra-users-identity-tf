@@ -11,7 +11,7 @@ output "account_map" {
   value = local.account_map
 }
 
-output "group_ids" {
+output "team_group_ids" {
   value = {for k, v in aws_identitystore_group.team_group : k => v.group_id}
 }
 
