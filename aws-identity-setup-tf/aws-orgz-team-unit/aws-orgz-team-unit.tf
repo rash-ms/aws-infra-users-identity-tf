@@ -50,10 +50,10 @@ locals {
   #   group => aws_identitystore_group.team_group[group_name].group_id
   # }
 
-  group_ids = {
-    for group, group_name in local.policy_group_mapping :
-    group => split("/", aws_identitystore_group.team_group[group_name].id)[1]
-  }
+  # group_ids = {
+  #   for group, group_name in local.policy_group_mapping :
+  #   group => split("/", aws_identitystore_group.team_group[group_name].id)[1]
+  # }
 
 }
 
@@ -198,7 +198,7 @@ resource "aws_ssoadmin_account_assignment" "readonly_assignment" {
   }
   instance_arn = data.aws_ssoadmin_instances.main.arns[0]
   permission_set_arn = aws_ssoadmin_permission_set.readonly_permission_set[each.key].arn
-  principal_id = local.group_ids[each.key]  # Principal ID of the group
+  principal_id = "94681498-9001-7078-88bb-a9e7bee381e6" #local.group_ids[each.key]  # Principal ID of the group
   principal_type = "GROUP"
   target_id = aws_organizations_account.team_wrkspc_account[each.key].id
   target_type = "AWS_ACCOUNT"
@@ -210,7 +210,7 @@ resource "aws_ssoadmin_account_assignment" "full_access_assignment" {
   }
   instance_arn = data.aws_ssoadmin_instances.main.arns[0]
   permission_set_arn = aws_ssoadmin_permission_set.full_access_permission_set[each.key].arn
-  principal_id = local.group_ids[each.key]  # Principal ID of the group
+  principal_id = "e4088478-7071-70c2-83ed-e810e0ce55af" #local.group_ids[each.key]  # Principal ID of the group
   principal_type = "GROUP"
   target_id = aws_organizations_account.team_wrkspc_account[each.key].id
   target_type = "AWS_ACCOUNT"
