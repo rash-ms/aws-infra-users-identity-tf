@@ -31,7 +31,7 @@ locals {
 
   readonly_permission_sets = {
     for group, group_name in local.aws_policies.readonly_policy.group :
-    "${group}_readonly" => {
+    "${group}-readonly" => {
       name   = "byt-${group}-readonly"
       policy = jsonencode(local.aws_policies.readonly_policy)
     }
@@ -39,7 +39,7 @@ locals {
 
   full_access_permission_sets = {
     for group, group_name in local.aws_policies.FullAccess_policy.group :
-    "${group}_fullAccess_policy" => {
+    "${group}-fullAccess_policy" => {
       name   = "byt-${group}-FullAccess"
       policy = jsonencode(local.aws_policies.FullAccess_policy)
     }
@@ -204,7 +204,7 @@ resource "aws_ssoadmin_account_assignment" "readonly_assignment" {
   }
   instance_arn = data.aws_ssoadmin_instances.main.arns[0]
   # permission_set_arn = aws_ssoadmin_permission_set.readonly_permission_set[each.key].arn
-  permission_set_arn = aws_ssoadmin_permission_set.readonly_permission_set["${each.key}_readonly"].arn
+  permission_set_arn = aws_ssoadmin_permission_set.readonly_permission_set["${each.key}-readonly"].arn
   principal_id = local.group_ids[each.key]  # Principal ID of the group
   principal_type = "GROUP"
   target_id = aws_organizations_account.team_wrkspc_account[each.key].id
@@ -217,7 +217,7 @@ resource "aws_ssoadmin_account_assignment" "full_access_assignment" {
   }
   instance_arn = data.aws_ssoadmin_instances.main.arns[0]
   # permission_set_arn = aws_ssoadmin_permission_set.full_access_permission_set[each.key].arn
-  permission_set_arn = aws_ssoadmin_permission_set.full_access_permission_set["${each.key}_fullAccess"].arn
+  permission_set_arn = aws_ssoadmin_permission_set.full_access_permission_set["${each.key}-fullAccess"].arn
   principal_id = local.group_ids[each.key]  # Principal ID of the group
   principal_type = "GROUP"
   target_id = aws_organizations_account.team_wrkspc_account[each.key].id
