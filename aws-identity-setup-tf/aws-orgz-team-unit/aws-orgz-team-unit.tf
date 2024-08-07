@@ -52,7 +52,7 @@ locals {
 
   group_ids = {
     for key, value in local.policy_group_mapping :
-    key => split("/", data.aws_identitystore_group.team_group[value].id)[1]
+    key => split("/", aws_identitystore_group.team_group[value].id)[1]
   }
 
 }
@@ -114,7 +114,7 @@ data "aws_ssoadmin_instances" "main" {}
 
 resource "aws_identitystore_group" "team_group" {
   for_each = local.group_mappings
-  identity_store_id  = tolist(data.aws_ssoadmin_instances.main.identity_store_ids)[0]
+  identity_store_id  = tolist(aws_ssoadmin_instances.main.identity_store_ids)[0]
   display_name = each.value.group
 
   # alternate_identifier {
