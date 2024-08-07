@@ -1,6 +1,6 @@
 locals {
   aws_team_group_info = jsondecode(file("${path.module}/aws_team_group_info.json")).team_group_details
-  aws_policies        = jsondecode(file("${path.module}/aws_policies.json"))
+  aws_policies        = jsondecode(file("${path.module}/aws_policies.json")).policies
 
   team_env_pairs = flatten([
     for team in var.teams : [
