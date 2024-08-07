@@ -37,13 +37,13 @@ locals {
     }
   }
 
-  # full_access_permission_sets = {
-  #   for group, group_name in local.aws_policies.full_access_policy.group :
-  #   "${group}-full-access-policy" => {
-  #     name   = "byt-${group}-FullAccess"
-  #     policy = jsonencode(local.aws_policies.full_access_policy)
-  #   }
-  # }
+  full_access_permission_sets = {
+    for group, group_name in local.aws_policies.full_access_policy.group :
+    "${group}-full-access-policy" => {
+      name   = "byt-${group}-FullAccess"
+      policy = jsonencode(local.aws_policies.full_access_policy)
+    }
+  }
 
 
   group_ids = {
@@ -140,28 +140,25 @@ resource "aws_ssoadmin_account_assignment" "readonly_assignment" {
 }
 
 
-# resource "aws_ssoadmin_permission_set" "full_access_permission_set" {
-#   for_each     = local.full_access_permission_sets
-#   instance_arn = data.aws_ssoadmin_instances.main.arns[0]
-#   name         = each.value.name
-#   description  = "Full access to AWS resources for ${each.key}"
-#   session_duration = "PT1H"
-#   relay_state  = "https://console.aws.amazon.com/"
+resource "aws_ssoadmin_permission_set" "full_access_permission_set" {
+  for_each     = local.full_access_permission_sets
+  instance_arn = data.aws_ssoadmin_instances.main.arns[0]
+  name         = each.value.name
+  description  = "Full access to AWS resources for ${each.key}"
+  session_duration = "PT1H"
+  relay_state  = "https://console.aws.amazon.com/"
 
-#   tags = {
-#     Name = each.value.name
-#   }
-# }
+  tags = {
+    Name = each.value.name
+  }
+}
 
-# resource "aws_ssoadmin_permission_set_inline_policy" "full_access_inline_policy" {
-#   for_each             = aws_ssoadmin_permission_set.full_access_permission_set
-#   instance_arn         = data.aws_ssoadmin_instances.main.arns[0]
-#   permission_set_arn   = each.value.arn
-#   inline_policy        = local.full_access_permission_sets[each.key].policy
-# }
-
-
-
+resource "aws_ssoadmin_permission_set_inline_policy" "full_access_inline_policy" {
+  for_each             = aws_ssoadmin_permission_set.full_access_permission_set
+  instance_arn         = data.aws_ssoadmin_instances.main.arns[0]
+  permission_set_arn   = each.value.arn
+  inline_policy        = local.full_access_permission_sets[each.key].policy
+}
 
 # resource "aws_ssoadmin_account_assignment" "full_access_assignment" {
 #   for_each = {
