@@ -16,7 +16,7 @@ output "account_map" {
 # }
 
 output "team_group_ids" {
-  value = { for k, v in aws_identitystore_group.team_group : k => v.group_id }
+  value = { for k, v in data.aws_identitystore_group.team_group : k => v.group_id }
 }
 
 
