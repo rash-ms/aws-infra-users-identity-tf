@@ -1,6 +1,6 @@
 locals {
   aws_team_group_info = jsondecode(file("${path.module}/aws_team_group_info.json")).team_group_details
-  policies            = jsondecode(file("${path.module}/aws_policies.json"))
+  aws_policies        = jsondecode(file("${path.module}/aws_policies.json")).policies
 
   team_env_pairs = flatten([
     for team in var.teams : [
@@ -25,24 +25,24 @@ locals {
   }
 
   policy_group_mapping = merge(
-    local.policies.FullAccess_policy.groups,
-    local.policies.readonly_policy.groups
+    local.aws_policies.FullAccess_policy.groups,
+    local.aws_policies.readonly_policy.groups
   )
 
   readonly_permission_sets = {
-    for group, group_name in local.policies.readonly_policy.groups :
+    for group, group_name in local.aws_policies.readonly_policy.groups :
     "${group}_readonly" => {
       name   = "byt-${group}-readonly"
-      policy = jsonencode(local.policies.readonly_policy)
+      policy = jsonencode(local.aws_policies.readonly_policy)
     }
     # if contains(keys(details), "readonly_policy")
   }
 
   fullAccess_permission_sets = {
-    for group, group_name in local.policies.FullAccess_policy.groups :
+    for group, group_name in local.aws_policies.FullAccess_policy.groups :
     "${group}_fullAccess_policy" => {
       name   = "byt-${group}-FullAccess"
-      policy = jsonencode(local.policies.FullAccess_policy)
+      policy = jsonencode(local.aws_policies.FullAccess_policy)
     }
     # if contains(keys(details), "FullAccess_policy")
   }
