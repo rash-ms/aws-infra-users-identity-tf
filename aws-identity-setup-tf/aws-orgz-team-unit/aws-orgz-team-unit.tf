@@ -131,13 +131,13 @@ resource "aws_ssoadmin_permission_set" "readonly_permission_set" {
   # for_each     = local.readonly_permission_sets
   for_each     = local.readonly_groups
   instance_arn = data.aws_ssoadmin_instances.main.arns[0]
-  name         = each.value.name
+  name         = "readonly_permission_set" # each.value.name
   description  = "Read-only access to AWS resources for ${each.key}"
   session_duration = "PT1H"
   relay_state  = "https://console.aws.amazon.com/"
 
   tags = {
-    Name = each.value.name
+    Name = "readonly_permission_set" #each.value.name
   }
 }
 
@@ -153,13 +153,13 @@ resource "aws_ssoadmin_permission_set" "full_access_permission_set" {
   # for_each     = local.full_access_permission_sets
   for_each     = local.fullaccess_groups
   instance_arn = data.aws_ssoadmin_instances.main.arns[0]
-  name         = each.value.name
+  name         = "full_access_permission_set"  #each.value.name
   description  = "Full access to AWS resources for ${each.key}"
   session_duration = "PT1H"
   relay_state  = "https://console.aws.amazon.com/"
 
   tags = {
-    Name = each.value.name
+    Name = "full_access_permission_set" #each.value.name
   }
 }
 
