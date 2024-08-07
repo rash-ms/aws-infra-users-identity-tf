@@ -24,13 +24,10 @@ locals {
     }
   }
 
-  # policy_group_mapping = merge(
-  #   local.aws_policies.FullAccess_policy.groups,
-  #   local.aws_policies.readonly_policy.groups
-  # )
-
-  readonly_groups = local.aws_policies.readonly_policy.groups
-  fullaccess_groups = local.aws_policies.FullAccess_policy.groups
+  policy_group_mapping = merge(
+    local.aws_policies.FullAccess_policy.groups,
+    local.aws_policies.readonly_policy.groups
+  )
 
   readonly_permission_sets = {
     for group, group_name in local.aws_policies.readonly_policy.groups :
@@ -52,10 +49,11 @@ locals {
   #   for group, group_name in local.policy_group_mapping :
   #   group => aws_identitystore_group.team_group[group_name].group_id
   # }
-  # group_ids = {
-  #   for key, value in local.policy_group_mapping :
-  #   key => split("/", aws_identitystore_group.team_group[value].id)[1]
-  # }
+
+  group_ids = {
+    for key, value in local.policy_group_mapping :
+    key => split("/", data.aws_identitystore_group.team_group[value].id)[1]
+  }
 
 }
 
@@ -128,16 +126,15 @@ resource "aws_identitystore_group" "team_group" {
 }
 
 resource "aws_ssoadmin_permission_set" "readonly_permission_set" {
-  # for_each     = local.readonly_permission_sets
-  for_each     = local.readonly_groups
+  for_each     = local.readonly_permission_sets
   instance_arn = data.aws_ssoadmin_instances.main.arns[0]
-  name         = "readonly_permission_set" # each.value.name
+  name         = each.value.name
   description  = "Read-only access to AWS resources for ${each.key}"
   session_duration = "PT1H"
   relay_state  = "https://console.aws.amazon.com/"
 
   tags = {
-    Name = "readonly_permission_set" #each.value.name
+    Name = each.value.name
   }
 }
 
@@ -145,21 +142,19 @@ resource "aws_ssoadmin_permission_set_inline_policy" "readonly_inline_policy" {
   for_each             = aws_ssoadmin_permission_set.readonly_permission_set
   instance_arn         = data.aws_ssoadmin_instances.main.arns[0]
   permission_set_arn   = each.value.arn
-  inline_policy        = jsonencode(local.aws_policies.readonly_policy)
-  # inline_policy        = local.readonly_permission_sets[each.key].policy
+  inline_policy        = local.readonly_permission_sets[each.key].policy
 }
 
 resource "aws_ssoadmin_permission_set" "full_access_permission_set" {
-  # for_each     = local.full_access_permission_sets
-  for_each     = local.fullaccess_groups
+  for_each     = local.full_access_permission_sets
   instance_arn = data.aws_ssoadmin_instances.main.arns[0]
-  name         = "full_access_permission_set"  #each.value.name
+  name         = each.value.name
   description  = "Full access to AWS resources for ${each.key}"
   session_duration = "PT1H"
   relay_state  = "https://console.aws.amazon.com/"
 
   tags = {
-    Name = "full_access_permission_set" #each.value.name
+    Name = each.value.name
   }
 }
 
@@ -167,8 +162,7 @@ resource "aws_ssoadmin_permission_set_inline_policy" "fullAccess_inline_policy" 
   for_each             = aws_ssoadmin_permission_set.full_access_permission_set
   instance_arn         = data.aws_ssoadmin_instances.main.arns[0]
   permission_set_arn   = each.value.arn
-  inline_policy        = jsonencode(local.aws_policies.FullAccess_policy)
-  # inline_policy        = local.full_access_permission_sets[each.key].policy
+  inline_policy        = local.full_access_permission_sets[each.key].policy
 }
 
 
@@ -177,8 +171,7 @@ resource "aws_ssoadmin_account_assignment" "readonly_assignment" {
     for k, v in local.account_map : k => v if v.env == "PROD"
   }
   instance_arn       = data.aws_ssoadmin_instances.main.arns[0]
-  # permission_set_arn = aws_ssoadmin_permission_set.readonly_permission_set[each.key].arn
-  permission_set_arn = aws_ssoadmin_permission_set.readonly_permission_set[local.readonly_groups[each.key]].arn
+  permission_set_arn = aws_ssoadmin_permission_set.readonly_permission_set[each.key].arn
   principal_id       = split("/", aws_identitystore_group.team_group[local.group_mappings[each.key].group].id)[1]
   principal_type     = "GROUP"
   target_id          = aws_organizations_account.team_wrkspc_account[each.key].id
@@ -190,8 +183,7 @@ resource "aws_ssoadmin_account_assignment" "full_access_assignment" {
     for k, v in local.account_map : k => v if v.env == "DEV"
   }
   instance_arn       = data.aws_ssoadmin_instances.main.arns[0]
-  # permission_set_arn = aws_ssoadmin_permission_set.full_access_permission_set[each.key].arn
-  permission_set_arn = aws_ssoadmin_permission_set.full_access_permission_set[local.fullaccess_groups[each.key]].arn
+  permission_set_arn = aws_ssoadmin_permission_set.full_access_permission_set[each.key].arn
   principal_id       = split("/", aws_identitystore_group.team_group[local.group_mappings[each.key].group].id)[1]
   principal_type     = "GROUP"
   target_id          = aws_organizations_account.team_wrkspc_account[each.key].id
