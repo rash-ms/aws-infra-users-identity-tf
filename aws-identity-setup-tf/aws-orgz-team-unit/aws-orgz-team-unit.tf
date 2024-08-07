@@ -25,23 +25,23 @@ locals {
     "${pair.team}-${pair.env}" => pair
   }
 
-  readonly_permission_sets = {
-    for policy_name, details in local.policies :
-    group => {
-      name   = "byt-${group}-readonly"
-      policy = jsonencode(details.readonly_policy)
-    }
-    if contains(keys(details), "readonly_policy")
-  }
+  # readonly_permission_sets = {
+  #   for policy_name, details in local.policies :
+  #   group => {
+  #     name   = "byt-${group}-readonly"
+  #     policy = jsonencode(details.readonly_policy)
+  #   }
+  #   if contains(keys(details), "readonly_policy")
+  # }
 
-  full_access_permission_sets = {
-    for group, details in local.policies :
-    group => {
-      name   = "byt-${group}-fullAccess"
-      policy = jsonencode(details.full_access_policy)
-    }
-    if contains(keys(details), "full_access_policy")
-  }
+  # full_access_permission_sets = {
+  #   for group, details in local.policies :
+  #   group => {
+  #     name   = "byt-${group}-fullAccess"
+  #     policy = jsonencode(details.full_access_policy)
+  #   }
+  #   if contains(keys(details), "full_access_policy")
+  # }
 }
 
 data "aws_organizations_organization" "existing" {}
