@@ -198,28 +198,28 @@ resource "aws_ssoadmin_permission_set_inline_policy" "fullAccess_inline_policy" 
 
 
 
-# resource "aws_ssoadmin_account_assignment" "readonly_assignment" {
-#   for_each = {
-#     for k, v in local.account_map : k => v if v.env == "PROD"
-#   }
-#   instance_arn = data.aws_ssoadmin_instances.main.arns[0]
-#   # permission_set_arn = aws_ssoadmin_permission_set.readonly_permission_set[each.key].arn
-#   permission_set_arn = aws_ssoadmin_permission_set.readonly_permission_set["${each.key}-readonly"].arn
-#   principal_id = local.group_ids[each.key]  # Principal ID of the group
-#   principal_type = "GROUP"
-#   target_id = aws_organizations_account.team_wrkspc_account[each.key].id
-#   target_type = "AWS_ACCOUNT"
-# }
-
-resource "aws_ssoadmin_account_assignment" "full_access_assignment" {
+resource "aws_ssoadmin_account_assignment" "readonly_assignment" {
   for_each = {
-    for k, v in local.account_map : k => v if v.env == "DEV"
+    for k, v in local.account_map : k => v if v.env == "PROD"
   }
   instance_arn = data.aws_ssoadmin_instances.main.arns[0]
-  # permission_set_arn = aws_ssoadmin_permission_set.full_access_permission_set[each.key].arn
-  permission_set_arn = aws_ssoadmin_permission_set.full_access_permission_set["${each.key}-fullAccess"].arn
+  # permission_set_arn = aws_ssoadmin_permission_set.readonly_permission_set[each.key].arn
+  permission_set_arn = aws_ssoadmin_permission_set.readonly_permission_set["${each.key}-readonly"].arn
   principal_id = local.group_ids[each.key]  # Principal ID of the group
   principal_type = "GROUP"
   target_id = aws_organizations_account.team_wrkspc_account[each.key].id
   target_type = "AWS_ACCOUNT"
 }
+
+# resource "aws_ssoadmin_account_assignment" "full_access_assignment" {
+#   for_each = {
+#     for k, v in local.account_map : k => v if v.env == "DEV"
+#   }
+#   instance_arn = data.aws_ssoadmin_instances.main.arns[0]
+#   # permission_set_arn = aws_ssoadmin_permission_set.full_access_permission_set[each.key].arn
+#   permission_set_arn = aws_ssoadmin_permission_set.full_access_permission_set["${each.key}-fullAccess"].arn
+#   principal_id = local.group_ids[each.key]  # Principal ID of the group
+#   principal_type = "GROUP"
+#   target_id = aws_organizations_account.team_wrkspc_account[each.key].id
+#   target_type = "AWS_ACCOUNT"
+# }
