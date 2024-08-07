@@ -151,54 +151,6 @@ resource "aws_ssoadmin_permission_set_inline_policy" "readonly_inline_policy" {
   inline_policy        = local.readonly_permission_sets[each.key].policy
 }
 
-
-resource "aws_ssoadmin_permission_set" "full_access_permission_set" {
-  for_each     = local.full_access_permission_sets
-  instance_arn = data.aws_ssoadmin_instances.main.arns[0]
-  name         = each.value.name
-  description  = "Full access to AWS resources for ${each.key}"
-  session_duration = "PT1H"
-  relay_state  = "https://console.aws.amazon.com/"
-
-  tags = {
-    Name = each.value.name
-  }
-}
-
-resource "aws_ssoadmin_permission_set_inline_policy" "full_access_inline_policy" {
-  for_each             = aws_ssoadmin_permission_set.full_access_permission_set
-  instance_arn         = data.aws_ssoadmin_instances.main.arns[0]
-  permission_set_arn   = each.value.arn
-  inline_policy        = local.full_access_permission_sets[each.key].policy
-}
-
-
-# resource "aws_ssoadmin_account_assignment" "readonly_assignment" {
-#   for_each = {
-#     for k, v in local.account_map : k => v if v.env == "PROD"
-#   }
-#   instance_arn       = data.aws_ssoadmin_instances.main.arns[0]
-#   permission_set_arn = aws_ssoadmin_permission_set.readonly_permission_set[each.key].arn
-#   principal_id       = split("/", aws_identitystore_group.team_group[local.group_mappings[each.key].group].id)[1]
-#   principal_type     = "GROUP"
-#   target_id          = aws_organizations_account.team_wrkspc_account[each.key].id
-#   target_type        = "AWS_ACCOUNT"
-# }
-
-# resource "aws_ssoadmin_account_assignment" "full_access_assignment" {
-#   for_each = {
-#     for k, v in local.account_map : k => v if v.env == "DEV"
-#   }
-#   instance_arn       = data.aws_ssoadmin_instances.main.arns[0]
-#   permission_set_arn = aws_ssoadmin_permission_set.full_access_permission_set[each.key].arn
-#   principal_id       = split("/", aws_identitystore_group.team_group[local.group_mappings[each.key].group].id)[1]
-#   principal_type     = "GROUP"
-#   target_id          = aws_organizations_account.team_wrkspc_account[each.key].id
-#   target_type        = "AWS_ACCOUNT"
-# }
-
-
-
 resource "aws_ssoadmin_account_assignment" "readonly_assignment" {
   for_each = {
     for k, v in local.account_map : k => v if v.env == "PROD"
@@ -211,6 +163,29 @@ resource "aws_ssoadmin_account_assignment" "readonly_assignment" {
   target_id = aws_organizations_account.team_wrkspc_account[each.key].id
   target_type = "AWS_ACCOUNT"
 }
+
+
+# resource "aws_ssoadmin_permission_set" "full_access_permission_set" {
+#   for_each     = local.full_access_permission_sets
+#   instance_arn = data.aws_ssoadmin_instances.main.arns[0]
+#   name         = each.value.name
+#   description  = "Full access to AWS resources for ${each.key}"
+#   session_duration = "PT1H"
+#   relay_state  = "https://console.aws.amazon.com/"
+
+#   tags = {
+#     Name = each.value.name
+#   }
+# }
+
+# resource "aws_ssoadmin_permission_set_inline_policy" "full_access_inline_policy" {
+#   for_each             = aws_ssoadmin_permission_set.full_access_permission_set
+#   instance_arn         = data.aws_ssoadmin_instances.main.arns[0]
+#   permission_set_arn   = each.value.arn
+#   inline_policy        = local.full_access_permission_sets[each.key].policy
+# }
+
+
 
 
 # resource "aws_ssoadmin_account_assignment" "full_access_assignment" {
