@@ -149,7 +149,7 @@ resource "aws_ssoadmin_permission_set" "fullAccess_permission_set" {
 }
 
 resource "aws_ssoadmin_permission_set_inline_policy" "fullAccess_inline_policy" {
-  for_each             = aws_ssoadmin_permission_set.full_access_permission_set
+  for_each             = aws_ssoadmin_permission_set.fullAccess_permission_sets
   instance_arn         = data.aws_ssoadmin_instances.main.arns[0]
   permission_set_arn   = each.value.arn
   inline_policy        = local.fullAccess_permission_sets[each.key].policy
@@ -173,7 +173,7 @@ resource "aws_ssoadmin_account_assignment" "full_access_assignment" {
     for k, v in local.account_map : k => v if v.env == "DEV"
   }
   instance_arn = data.aws_ssoadmin_instances.main.arns[0]
-  permission_set_arn = aws_ssoadmin_permission_set.full_access_permission_set[each.key].arn
+  permission_set_arn = aws_ssoadmin_permission_set.fullAccess_permission_sets[each.key].arn
   principal_id = local.group_ids[each.key]  # Principal ID of the group
   principal_type = "GROUP"
   target_id = aws_organizations_account.team_wrkspc_account[each.key].id
