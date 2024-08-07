@@ -10,7 +10,7 @@
                 }
             ],
             "groups": {
-                "byt-data-org-FullAccess": "byt-data-org-FullAccess"
+                "data-org-DEV": "byt-data-org-FullAccess"
             }
         },
         "readonly_policy": {
@@ -33,7 +33,7 @@
                 }
             ],
             "groups": {
-                "byt-data-org-readonly": "byt-data-org-readonly"
+                "data-org-PROD": "byt-data-org-readonly"
             }
         }
     }
