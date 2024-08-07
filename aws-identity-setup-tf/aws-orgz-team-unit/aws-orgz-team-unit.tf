@@ -26,11 +26,11 @@ locals {
 
   # Policy group mapping 
   readonly_groups = {
-    for k, v in local.group_mappings : k => v if length(regex(".*-PROD$", k)) > 0
+    for k, v in local.group_mappings : k => v if can(regex(".*-PROD$", k))
   }
 
   full_access_groups = {
-    for k, v in local.group_mappings : k => v if length(regex(".*-DEV$", k)) > 0
+    for k, v in local.group_mappings : k => v if can(regex(".*-DEV$", k))
   }
 
   readonly_permission_set = {
