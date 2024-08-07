@@ -14,3 +14,8 @@ output "account_map" {
 output "group_ids" {
   value = {for k, v in aws_identitystore_group.team_group : k => v.group_id}
 }
+
+output "group_ids" {
+  value = { for group_name, display_name in local.policy_group_mapping :
+    group_name => aws_identitystore_group.team_group[display_name].group_id }
+}
