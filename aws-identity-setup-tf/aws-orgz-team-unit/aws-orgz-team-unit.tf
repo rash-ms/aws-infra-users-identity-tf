@@ -40,7 +40,7 @@ locals {
   full_access_permission_sets = {
     for group, group_name in local.aws_policies.full_access_policy.group :
     "${group}-full-access-policy" => {
-      name   = "byt-${group}-full_access"
+      name   = "byt-${group}-FullAccess"
       policy = jsonencode(local.aws_policies.full_access_policy)
     }
   }
