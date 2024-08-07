@@ -103,7 +103,7 @@ data "aws_ssoadmin_instances" "main" {}
 resource "aws_identitystore_group" "team_group" {
   for_each = local.policy_group_mapping
 
-  identity_store_id = tolist(data.aws_ssoadmin_instances.example.identity_store_ids)[0]
+  identity_store_id = tolist(data.aws_ssoadmin_instances.main.identity_store_ids)[0]
   display_name      = each.value
 }
 
