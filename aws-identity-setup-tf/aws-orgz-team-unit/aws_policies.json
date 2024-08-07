@@ -10,7 +10,7 @@
                 }
             ],
             "groups": {
-                "data-org-PROD": "byt-data-org-FullAccess"
+                "data-org-PROD": "e4088478-7071-70c2-83ed-e810e0ce55af"
             }
         },
         "readonly_policy": {
@@ -33,7 +33,7 @@
                 }
             ],
             "groups": {
-                "data-org-PROD": "byt-data-org-readonly"
+                "data-org-PROD": "94681498-9001-7078-88bb-a9e7bee381e6"
             }
         }
     }
