@@ -49,10 +49,10 @@ locals {
   #   for group, group_name in local.policy_group_mapping :
   #   group => aws_identitystore_group.team_group[group_name].group_id
   # }
-  group_ids = {
-    for key, value in local.policy_group_mapping :
-    key => split("/", aws_identitystore_group.team_group[value].id)[1]
-  }
+  # group_ids = {
+  #   for key, value in local.policy_group_mapping :
+  #   key => split("/", aws_identitystore_group.team_group[value].id)[1]
+  # }
 
 }
 
