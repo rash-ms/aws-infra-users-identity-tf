@@ -49,7 +49,7 @@ locals {
 
   group_ids = {
     for group, group_name in local.policy_group_mapping :
-    group => aws_identitystore_group.team_group[group].group_id
+    group => aws_identitystore_group.team_group[group_name].group_id
   }
 
 }
