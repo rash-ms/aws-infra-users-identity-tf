@@ -25,12 +25,12 @@ locals {
   }
 
   policy_group_mapping = merge(
-    local.aws_policies.FullAccess_policy.groups,
-    local.aws_policies.readonly_policy.groups
+    local.aws_policies.FullAccess_policy.group,
+    local.aws_policies.readonly_policy.group
   )
 
   readonly_permission_sets = {
-    for group, group_name in local.aws_policies.readonly_policy.groups :
+    for group, group_name in local.aws_policies.readonly_policy.group :
     "${group}_readonly" => {
       name   = "byt-${group}-readonly"
       policy = jsonencode(local.aws_policies.readonly_policy)
@@ -38,7 +38,7 @@ locals {
   }
 
   full_access_permission_sets = {
-    for group, group_name in local.aws_policies.FullAccess_policy.groups :
+    for group, group_name in local.aws_policies.FullAccess_policy.group :
     "${group}_fullAccess_policy" => {
       name   = "byt-${group}-FullAccess"
       policy = jsonencode(local.aws_policies.FullAccess_policy)
@@ -114,7 +114,7 @@ data "aws_ssoadmin_instances" "main" {}
 
 resource "aws_identitystore_group" "team_group" {
   for_each = local.group_mappings
-  identity_store_id  = tolist(aws_ssoadmin_instances.main.identity_store_ids)[0]
+  identity_store_id  = tolist(data.aws_ssoadmin_instances.main.identity_store_ids)[0]
   display_name = each.value.group
 
   # alternate_identifier {

@@ -9,7 +9,7 @@
                     "Resource": "*"
                 }
             ],
-            "groups": {
+            "group": {
                 "data-org-DEV": "byt-data-org-FullAccess"
             }
         },
@@ -32,7 +32,7 @@
                     "Resource": "*"
                 }
             ],
-            "groups": {
+            "group": {
                 "data-org-PROD": "byt-data-org-readonly"
             }
         }
