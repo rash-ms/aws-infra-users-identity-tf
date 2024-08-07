@@ -16,6 +16,6 @@ output "team_group_ids" {
 }
 
 output "group_ids" {
-  value = { for group, group_name in local.policy_group_mapping :
-    group_name => aws_identitystore_group.team_group[group_name].group_id }
+  value = { for k, v in local.policy_group_mapping :
+    k => aws_identitystore_group.team_group[v].group_id }
 }
