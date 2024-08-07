@@ -1,7 +1,6 @@
 # locals {
-#   aws_team_emails     = jsondecode(file("${path.module}/aws_team_emails.json")).emails
-#   policies            = jsondecode(file("${path.module}/policies.json"))
-#   groups              = local.policies.groups
+#   aws_team_group_info = jsondecode(file("${path.module}/aws_team_group_info.json")).team_group_details
+#   aws_policies        = jsondecode(file("${path.module}/aws_policies.json")).policies
 
 #   team_env_pairs = flatten([
 #     for team in var.teams : [
@@ -17,23 +16,42 @@
 #     "${pair.team}-${pair.env}" => pair
 #   }
 
-#   readonly_permission_sets = {
-#     for group, details in local.policies.policies :
-#     group => {
-#       name   = "byt-${group}-readonly"
-#       policy = jsonencode(details.readonly_policy)
+#   group_mappings = {
+#     for key, value in local.aws_team_group_info :
+#     key => {
+#       group = value.group,
+#       email = value.email
 #     }
-#     if contains(keys(details), "readonly_policy")
+#   }
+
+
+#   # Policy group mapping 
+#   policy_group_mapping = {
+#     "data-org-DEV"  = "byt-data-org-FullAccess",
+#     "data-org-PROD" = "byt-data-org-readonly"
+#   }
+
+#   readonly_permission_sets = {
+#     for group, group_name in local.policy_group_mapping :
+#     "${group}-readonly" => {
+#       name   = "${group}-readonly",
+#       policy = jsonencode(local.aws_policies.readonly_policy)
+#     }
 #   }
 
 #   full_access_permission_sets = {
-#     for group, details in local.policies.policies :
-#     group => {
-#       name   = "byt-${group}-fullAccess"
-#       policy = jsonencode(details.full_access_policy)
+#     for group, group_name in local.policy_group_mapping :
+#     "${group}-fullAccess" => {
+#       name   = "${group}-fullAccess",
+#       policy = jsonencode(local.aws_policies.FullAccess_policy)
 #     }
-#     if contains(keys(details), "full_access_policy")
 #   }
+
+#   group_ids = {
+#     for group, group_name in local.policy_group_mapping :
+#     group => split("/", aws_identitystore_group.team_group[group_name].id)[1]
+#   }
+
 # }
 
 # data "aws_organizations_organization" "existing" {}
@@ -69,7 +87,7 @@
 # resource "aws_organizations_account" "team_wrkspc_account" {
 #   for_each  = local.account_map
 #   name      = "BYT-${each.key}"
-#   email     = local.aws_team_emails[each.key]
+#   email     = local.group_mappings[each.key].email
 #   parent_id = aws_organizations_organizational_unit.team_env[each.key].id
 #   role_name = "OrganizationAccountAccessRole"
 
@@ -82,6 +100,13 @@
 
 
 # data "aws_ssoadmin_instances" "main" {}
+
+# resource "aws_identitystore_group" "team_group" {
+#   for_each = { for k, v in local.group_mappings : v.group => k }
+#   identity_store_id = tolist(data.aws_ssoadmin_instances.main.identity_store_ids)[0]
+#   display_name      = each.key
+# }
+
 
 # resource "aws_ssoadmin_permission_set" "readonly_permission_set" {
 #   for_each     = local.readonly_permission_sets
@@ -103,6 +128,20 @@
 #   inline_policy        = local.readonly_permission_sets[each.key].policy
 # }
 
+
+# resource "aws_ssoadmin_account_assignment" "readonly_assignment" {
+#   for_each = {
+#     for k, v in local.account_map : k => v if v.env == "PROD"
+#   }
+#   instance_arn = data.aws_ssoadmin_instances.main.arns[0]
+#   permission_set_arn = aws_ssoadmin_permission_set.readonly_permission_set["${each.key}-readonly"].arn
+#   principal_id = local.group_ids[each.key]  # Principal ID of the group
+#   principal_type = "GROUP"
+#   target_id = aws_organizations_account.team_wrkspc_account[each.key].id
+#   target_type = "AWS_ACCOUNT"
+# }
+
+
 # resource "aws_ssoadmin_permission_set" "full_access_permission_set" {
 #   for_each     = local.full_access_permission_sets
 #   instance_arn = data.aws_ssoadmin_instances.main.arns[0]
@@ -120,30 +159,19 @@
 #   for_each             = aws_ssoadmin_permission_set.full_access_permission_set
 #   instance_arn         = data.aws_ssoadmin_instances.main.arns[0]
 #   permission_set_arn   = each.value.arn
+#   # inline_policy        = each.value.policy
 #   inline_policy        = local.full_access_permission_sets[each.key].policy
 # }
 
-
-# resource "aws_ssoadmin_account_assignment" "readonly_assignment" {
-#   for_each = {
-#     for k, v in local.account_map : k => v if v.env == "PROD"
-#   }
-#   instance_arn = data.aws_ssoadmin_instances.main.arns[0]
-#   permission_set_arn = aws_ssoadmin_permission_set.readonly_permission_set["data-eng-PROD"].arn
-#   principal_id = local.groups["data-eng-PROD"]  # Principal ID of the group
-#   principal_type = "GROUP"
-#   target_id = aws_organizations_account.team_wrkspc_account[each.key].id
-#   target_type = "AWS_ACCOUNT"
-# }
 
 # resource "aws_ssoadmin_account_assignment" "full_access_assignment" {
 #   for_each = {
 #     for k, v in local.account_map : k => v if v.env == "DEV"
 #   }
-#   instance_arn = data.aws_ssoadmin_instances.main.arns[0]
-#   permission_set_arn = aws_ssoadmin_permission_set.full_access_permission_set["data-eng-DEV"].arn
-#   principal_id = local.groups["data-eng-DEV"]  # Principal ID of the group
-#   principal_type = "GROUP"
-#   target_id = aws_organizations_account.team_wrkspc_account[each.key].id
-#   target_type = "AWS_ACCOUNT"
+#   instance_arn       = data.aws_ssoadmin_instances.main.arns[0]
+#   permission_set_arn = aws_ssoadmin_permission_set.full_access_permission_set["${each.key}-fullAccess"].arn
+#   principal_id       = local.group_ids[each.key]  # Principal ID of the group
+#   principal_type     = "GROUP"
+#   target_id          = aws_organizations_account.team_wrkspc_account[each.key].id
+#   target_type        = "AWS_ACCOUNT"
 # }
