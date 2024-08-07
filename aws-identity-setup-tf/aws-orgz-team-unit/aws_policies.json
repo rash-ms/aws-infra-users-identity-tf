@@ -1,6 +1,6 @@
 {
     "policies": {
-        "full_access_policy": {
+        "FullAccess_policy": {
             "Version": "2012-10-17",
             "Statement": [
                 {
@@ -8,10 +8,7 @@
                     "Action": "*",
                     "Resource": "*"
                 }
-            ],
-            "group": {
-                "data-org-DEV": "byt-data-org-FullAccess"
-            }
+            ]
         },
         "readonly_policy": {
             "Version": "2012-10-17",
@@ -31,10 +28,7 @@
                     ],
                     "Resource": "*"
                 }
-            ],
-            "group": {
-                "data-org-PROD": "byt-data-org-readonly"
-            }
+            ]
         }
     }
 }
