@@ -10,3 +10,7 @@ output "team_wrkspc_account_ids" {
 output "account_map" {
   value = local.account_map
 }
+
+output "group_ids" {
+  value = {for k, v in aws_identitystore_group.team_group : k => v.group_id}
+}
