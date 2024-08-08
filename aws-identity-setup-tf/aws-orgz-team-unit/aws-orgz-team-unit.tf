@@ -32,7 +32,6 @@ locals {
       ]
     ])
 
-  # Dynamically generate permission sets based on flattened policies
   permission_sets = {
     for policy in local.flat_policies :
     "${policy.policy_name}-${policy.key}" => {
@@ -89,7 +88,6 @@ resource "aws_organizations_organizational_unit" "team_env" {
 resource "aws_organizations_account" "team_wrkspc_account" {
   for_each  = local.account_map
   name      = "BYT-${each.key}"
-  # email     = local.group_mappings[each.key].email
   email     = lookup(local.group_mappings, each.key).email
   parent_id = aws_organizations_organizational_unit.team_env[each.key].id
   role_name = "OrganizationAccountAccessRole"
@@ -109,8 +107,6 @@ resource "aws_identitystore_group" "team_group" {
   identity_store_id = tolist(data.aws_ssoadmin_instances.main.identity_store_ids)[0]
   display_name      = "${each.value.group}"
 }
-
-
 
 resource "aws_ssoadmin_permission_set" "policy_permission_set" {
   for_each = local.permission_sets
@@ -155,26 +151,3 @@ resource "aws_ssoadmin_account_assignment" "policy_assignment" {
   target_id          = aws_organizations_account.team_wrkspc_account[each.key].id
   target_type        = "AWS_ACCOUNT"
 }
-
-
-
-# resource "aws_ssoadmin_account_assignment" "readonly_assignment" {
-#   for_each = { for k, v in local.group_mappings : k => v if length(regexall(".*-PROD$", k)) > 0 }
-#   instance_arn       = data.aws_ssoadmin_instances.main.arns[0]
-#   permission_set_arn = aws_ssoadmin_permission_set.readonly_permission_set.arn
-#   principal_id       = local.group_ids[each.value.group]
-#   principal_type     = "GROUP"
-#   target_id          = aws_organizations_account.team_wrkspc_account[each.key].id
-#   target_type        = "AWS_ACCOUNT"
-# }
-
-# resource "aws_ssoadmin_account_assignment" "full_access_assignment" {
-#   for_each = { for k, v in local.group_mappings : k => v if length(regexall(".*-DEV$", k)) > 0 }
-#   instance_arn       = data.aws_ssoadmin_instances.main.arns[0]
-#   permission_set_arn = aws_ssoadmin_permission_set.full_access_permission_set.arn
-#   principal_id       = local.group_ids[each.value.group]
-#   principal_type     = "GROUP"
-#   target_id          = aws_organizations_account.team_wrkspc_account[each.key].id
-#   target_type        = "AWS_ACCOUNT"
-# }
-
