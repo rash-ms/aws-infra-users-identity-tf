@@ -22,14 +22,6 @@ locals {
   }
 
   # Dynamically generate permission set based on policies
-  # permission_sets = {
-  #   for policy_name, policy in local.aws_team_group_info.attach_group_policies : 
-  #   policy_name => {
-  #     name = "byt-${policy_name}",
-  #     policy = jsonencode(local.aws_policies[policy_name])
-  #   }
-  # }
-
   flat_policies = flatten([
       for policy_name, policy_details in local.aws_team_group_info.attach_group_policies : [
         for key, value in policy_details : {
@@ -48,27 +40,6 @@ locals {
       policy = jsonencode(policy.policy)
     }
   }
-
-  # flat_policies = [
-  #   for policy_name, policy_details in local.aws_team_group_info.attach_group_policies : [
-  #     for key, value in policy_details : {
-  #       policy_name = policy_name,
-  #       key         = key,
-  #       policy      = local.aws_policies[policy_name]
-  #   }
-  # ]
-  # ]
-
-  # # Dynamically generate permission sets based on flattened policies
-  # permission_sets = {
-  #   for policy in local.flat_policies :
-  #   "${policy.policy_name}-${policy.key}" => {
-  #     name   = "byt-${policy.policy_name}",
-  #     policy = jsonencode(policy.policy)
-  #   }
-  # }
-
-
 
   team_env_pairs = flatten([
     for team in var.teams : [
@@ -139,6 +110,8 @@ resource "aws_identitystore_group" "team_group" {
   display_name      = "${each.value.group}-group"
 }
 
+
+
 resource "aws_ssoadmin_permission_set" "policy_permission_set" {
   for_each = local.permission_sets
 
@@ -161,38 +134,31 @@ resource "aws_ssoadmin_permission_set_inline_policy" "policy_permission_set" {
 }
 
 
-# resource "aws_ssoadmin_permission_set" "full_access_permission_set" {
-#   instance_arn = data.aws_ssoadmin_instances.main.arns[0]
-#   name         = local.full_access_permission_set.name
-#   description  = "Full access for DEV"
-#   session_duration = "PT1H"
-#   relay_state  = "https://console.aws.amazon.com/"
+locals {
+  group_ids = {
+    for group_name, original_key in local.reverse_group_mappings :
+    group_name => split("/", aws_identitystore_group.team_group[original_key].id)[1]
+  }
+}
 
-#   tags = {
-#     Name = local.full_access_permission_set.name
-#   }
-# }
+resource "aws_ssoadmin_account_assignment" "policy_assignment" {
+  for_each           = local.group_mappings
+  instance_arn       = data.aws_ssoadmin_instances.main.arns[0]
 
-# resource "aws_ssoadmin_permission_set_inline_policy" "full_access_inline_policy" {
-#   instance_arn         = data.aws_ssoadmin_instances.main.arns[0]
-#   permission_set_arn   = aws_ssoadmin_permission_set.full_access_permission_set.arn
-#   inline_policy        = local.full_access_permission_set.policy
-# }
+  # Reference the permission set ARN using the correct key
+  # permission_set_arn = aws_ssoadmin_permission_set.policy_permission_set[
+  #   "full-access-policy-${each.key}"].arn
+  permission_set_arn = aws_ssoadmin_permission_set.policy_permission_set[
+    "${lookup({for p in local.flat_policies : p.key => p.policy_name}, each.key)}-${each.key}"
+  ].arn
+
+  principal_id       = local.group_ids[each.value.group]
+  principal_type     = "GROUP"
+  target_id          = aws_organizations_account.team_wrkspc_account[each.key].id
+  target_type        = "AWS_ACCOUNT"
+}
 
 
-# # locals {
-# #   group_ids = {
-# #     for group, display_name in local.group_mappings :
-# #     group => split("/", aws_identitystore_group.team_group[display_name].id)[1]
-# #   }
-# # }
-
-# locals {
-#   group_ids = {
-#     for group_name, original_key in local.reverse_group_mappings :
-#     group_name => split("/", aws_identitystore_group.team_group[original_key].id)[1]
-#   }
-# }
 
 # resource "aws_ssoadmin_account_assignment" "readonly_assignment" {
 #   for_each = { for k, v in local.group_mappings : k => v if length(regexall(".*-PROD$", k)) > 0 }
