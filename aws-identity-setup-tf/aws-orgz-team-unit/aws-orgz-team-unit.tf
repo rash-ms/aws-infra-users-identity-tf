@@ -147,7 +147,7 @@ resource "aws_ssoadmin_account_assignment" "policy_assignment" {
 
   # Reference the permission set ARN using the correct key
   permission_set_arn = aws_ssoadmin_permission_set.policy_permission_set[
-    "${lookup(local.group_policies, each.key, "default")}-${each.key}"
+    "${lookup(local.group_policies, "readonly-access-policy", "default")}-${each.key}"
   ].arn
   # permission_set_arn = aws_ssoadmin_permission_set.policy_permission_set[each.value.group].arn
 
