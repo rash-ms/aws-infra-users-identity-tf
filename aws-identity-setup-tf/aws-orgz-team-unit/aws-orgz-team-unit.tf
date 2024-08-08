@@ -2,6 +2,34 @@ locals {
   aws_team_group_info = jsondecode(file("${path.module}/aws_team_group_info.json")).team_group_details
   aws_policies        = jsondecode(file("${path.module}/aws_policies.json")).policies
 
+  emails = local.aws_team_group_info.emails
+
+  group_policies = merge(
+    local.aws_team_group_info.attach_group_policies.full_access_policy,
+    local.aws_team_group_info.attach_group_policies.readonly_access_policy
+  )
+
+  group_mappings = {
+    for key, value in local.group_policies :
+    key => {
+      group = group,
+      email = local.emails[key]
+    }
+  }
+
+   reverse_group_mappings = {
+    for k, v in local.group_mappings : v.group => k
+  }
+
+  # Dynamically generate permission set based on policies
+  permission_set = {
+    for policy_name, policy in local.aws_team_group_info.atttach_group_policies :
+    policy_name => {
+      name = "byt-${policy_name}",
+      policy = jsonencode(local.aws_policies[policy_name])
+    }
+  }
+
   team_env_pairs = flatten([
     for team in var.teams : [
       for env in var.workspace : {
@@ -14,37 +42,6 @@ locals {
   account_map = {
     for pair in local.team_env_pairs :
     "${pair.team}-${pair.env}" => pair
-  }
-
-  group_mappings = {
-    for key, value in local.aws_team_group_info :
-    key => {
-      group = value.group,
-      email = value.email
-    }
-  }
-
-   reverse_group_mappings = {
-    for k, v in local.group_mappings : v.group => k
-  }
-
-  # Policy group mapping 
-  readonly_groups = {
-    for k, v in local.group_mappings : k => v if can(regex(".*-PROD$", k))
-  }
-
-  full_access_groups = {
-    for k, v in local.group_mappings : k => v if can(regex(".*-DEV$", k))
-  }
-
-  readonly_permission_set = {
-    name   = "byt-readonly",
-    policy = jsonencode(local.aws_policies.readonly_policy)
-  }
-
-  full_access_permission_set = {
-    name   = "byt-fullAccess",
-    policy = jsonencode(local.aws_policies.FullAccess_policy)
   }
 }
 
@@ -81,7 +78,8 @@ resource "aws_organizations_organizational_unit" "team_env" {
 resource "aws_organizations_account" "team_wrkspc_account" {
   for_each  = local.account_map
   name      = "BYT-${each.key}"
-  email     = local.group_mappings[each.key].email
+  # email     = local.group_mappings[each.key].email
+  email     = lookup(local.group_mappings, each.key).email
   parent_id = aws_organizations_organizational_unit.team_env[each.key].id
   role_name = "OrganizationAccountAccessRole"
 
