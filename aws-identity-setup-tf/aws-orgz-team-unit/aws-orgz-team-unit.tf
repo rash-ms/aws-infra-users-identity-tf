@@ -22,13 +22,53 @@ locals {
   }
 
   # Dynamically generate permission set based on policies
+  # permission_sets = {
+  #   for policy_name, policy in local.aws_team_group_info.attach_group_policies : 
+  #   policy_name => {
+  #     name = "byt-${policy_name}",
+  #     policy = jsonencode(local.aws_policies[policy_name])
+  #   }
+  # }
+
+  flat_policies = flatten([
+      for policy_name, policy_details in local.aws_team_group_info.attach_group_policies : [
+        for key, value in policy_details : {
+          policy_name = policy_name,
+          key         = key,
+          policy      = local.aws_policies[policy_name]
+        }
+      ]
+    ])
+
+  # Dynamically generate permission sets based on flattened policies
   permission_sets = {
-    for policy_name, policy in local.aws_team_group_info.attach_group_policies : 
-    policy_name => {
-      name = "byt-${policy_name}",
-      policy = jsonencode(local.aws_policies[policy_name])
+    for policy in local.flat_policies :
+    "${policy.policy_name}-${policy.key}" => {
+      name   = "byt-${policy.policy_name}",
+      policy = jsonencode(policy.policy)
     }
   }
+
+  # flat_policies = [
+  #   for policy_name, policy_details in local.aws_team_group_info.attach_group_policies : [
+  #     for key, value in policy_details : {
+  #       policy_name = policy_name,
+  #       key         = key,
+  #       policy      = local.aws_policies[policy_name]
+  #   }
+  # ]
+  # ]
+
+  # # Dynamically generate permission sets based on flattened policies
+  # permission_sets = {
+  #   for policy in local.flat_policies :
+  #   "${policy.policy_name}-${policy.key}" => {
+  #     name   = "byt-${policy.policy_name}",
+  #     policy = jsonencode(policy.policy)
+  #   }
+  # }
+
+
 
   team_env_pairs = flatten([
     for team in var.teams : [
@@ -117,7 +157,8 @@ resource "aws_ssoadmin_permission_set_inline_policy" "policy_permission_set" {
   for_each             = aws_ssoadmin_permission_set.policy_permission_set
   instance_arn         = data.aws_ssoadmin_instances.main.arns[0]
   permission_set_arn   = each.value.arn
-  inline_policy        = each.value.policy
+  inline_policy        = local.permission_sets[each.key].policy
+  # inline_policy        = each.value.policy
 }
 
 
