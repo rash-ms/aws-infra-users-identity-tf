@@ -22,7 +22,7 @@ locals {
   }
 
   # Dynamically generate permission set based on policies
-  permission_set = {
+  permission_sets = {
     for policy_name, policy in local.aws_team_group_info.attach_group_policies : 
     policy_name => {
       name = "byt-${policy_name}",
@@ -91,15 +91,7 @@ resource "aws_organizations_account" "team_wrkspc_account" {
 }
 
 
-
-
 data "aws_ssoadmin_instances" "main" {}
-
-# resource "aws_identitystore_group" "team_group" {
-#   for_each = { for k, v in local.group_mappings : v.group => k }
-#   identity_store_id = tolist(data.aws_ssoadmin_instances.main.identity_store_ids)[0]
-#   display_name      = each.key
-# }
 
 resource "aws_identitystore_group" "team_group" {
   for_each = local.group_mappings
@@ -107,24 +99,26 @@ resource "aws_identitystore_group" "team_group" {
   display_name      = "${each.value.group}-group"
 }
 
+resource "aws_ssoadmin_permission_set" "policy_permission_set" {
+  for_each = local.permission_sets
 
-# resource "aws_ssoadmin_permission_set" "readonly_permission_set" {
-#   instance_arn = data.aws_ssoadmin_instances.main.arns[0]
-#   name         = local.readonly_permission_set.name
-#   description  = "Read-only access for PROD"
-#   session_duration = "PT1H"
-#   relay_state  = "https://console.aws.amazon.com/"
+  instance_arn = data.aws_ssoadmin_instances.main.arns[0]
+  name         = each.value.name
+  description  = "${each.key} access"
+  session_duration = "PT1H"
+  relay_state  = "https://console.aws.amazon.com/"
 
-#   tags = {
-#     Name = local.readonly_permission_set.name
-#   }
-# }
+  tags = {
+    Name = each.value.name
+  }
+}
 
-# resource "aws_ssoadmin_permission_set_inline_policy" "readonly_inline_policy" {
-#   instance_arn         = data.aws_ssoadmin_instances.main.arns[0]
-#   permission_set_arn   = aws_ssoadmin_permission_set.readonly_permission_set.arn
-#   inline_policy        = local.readonly_permission_set.policy
-# }
+resource "aws_ssoadmin_permission_set_inline_policy" "policy_permission_set" {
+  for_each             = aws_ssoadmin_permission_set.policy_permission_set
+  instance_arn         = data.aws_ssoadmin_instances.main.arns[0]
+  permission_set_arn   = each.value.arn
+  inline_policy        = each.value.policy
+}
 
 
 # resource "aws_ssoadmin_permission_set" "full_access_permission_set" {
