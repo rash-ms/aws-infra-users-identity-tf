@@ -7,9 +7,9 @@ output "team_wrkspc_account_ids" {
 }
 
 
-output "team_group_ids" {
-  value = { for k, v in aws_identitystore_group.team_group : k => split("/", v.id)[1] }
-}
+# output "team_group_ids" {
+#   value = { for k, v in aws_identitystore_group.team_group : k => split("/", v.id)[1] }
+# }
 
 output "account_map" {
   value = local.account_map
