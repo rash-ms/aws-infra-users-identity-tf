@@ -5,8 +5,8 @@ locals {
   emails = local.aws_team_group_info.emails
 
   group_policies = merge(
-    local.aws_team_group_info.attach_group_policies.full_access_policy,
-    local.aws_team_group_info.attach_group_policies.readonly_access_policy
+    local.aws_team_group_info.attach_group_policies.full-access-policy,
+    local.aws_team_group_info.attach_group_policies.readonly-access-policy
   )
 
   group_mappings = {
@@ -158,7 +158,6 @@ resource "aws_ssoadmin_permission_set_inline_policy" "policy_permission_set" {
   instance_arn         = data.aws_ssoadmin_instances.main.arns[0]
   permission_set_arn   = each.value.arn
   inline_policy        = local.permission_sets[each.key].policy
-  # inline_policy        = each.value.policy
 }
 
 
