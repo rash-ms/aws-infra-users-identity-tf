@@ -174,13 +174,15 @@ resource "aws_ssoadmin_account_assignment" "policy_assignment" {
   for_each = local.group_mappings
   instance_arn       = data.aws_ssoadmin_instances.main.arns[0]
 
-  permission_set_arn = aws_ssoadmin_permission_set.policy_permission_set[
-    "${local.permission_sets[each.name]}"].arn
+  # Reference the permission set ARN using the correct key
+  permission_set_arn = aws_ssoadmin_permission_set.policy_permission_set[each.value.group].arn
+
   principal_id       = local.group_ids[each.value.group]
   principal_type     = "GROUP"
   target_id          = aws_organizations_account.team_wrkspc_account[each.key].id
   target_type        = "AWS_ACCOUNT"
 }
+
 
 
 # resource "aws_ssoadmin_account_assignment" "readonly_assignment" {
