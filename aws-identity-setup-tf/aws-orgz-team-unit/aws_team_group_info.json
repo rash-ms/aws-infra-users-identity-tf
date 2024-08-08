@@ -5,10 +5,10 @@
         "data-org-PROD":  "aws-byt-dataorg-prod@bagitek.com"
       },
     "attach_group_policies":{
-        "full_access_policy":{
+        "full-access-policy":{
             "data-org-DEV":  "byt-data-org-FullAccess-group"
         },
-        "readonly_access_policy" :{
+        "readonly-access-policy" :{
             "data-org-PROD":"byt-data-org-readonly-group"
         }
     }

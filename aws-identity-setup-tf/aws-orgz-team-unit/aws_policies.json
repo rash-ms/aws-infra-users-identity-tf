@@ -1,6 +1,6 @@
 {
     "policies": {
-        "full_access_policy": {
+        "full-access-policy": {
             "Version": "2012-10-17",
             "Statement": [
                 {
@@ -10,7 +10,7 @@
                 }
             ]
         },
-        "readonly_access_policy": {
+        "readonly-access-policy": {
             "Version": "2012-10-17",
             "Statement": [
                 {
