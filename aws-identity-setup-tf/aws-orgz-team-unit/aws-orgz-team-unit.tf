@@ -10,7 +10,7 @@ locals {
   )
 
   group_mappings = {
-    for key, value in local.group_policies :
+    for key, group in local.group_policies :
     key => {
       group = group,
       email = local.emails[key]
@@ -23,7 +23,7 @@ locals {
 
   # Dynamically generate permission set based on policies
   permission_set = {
-    for policy_name, policy in local.aws_team_group_info.atttach_group_policies :
+    for policy_name, policy in local.aws_team_group_info.attach_group_policies : 
     policy_name => {
       name = "byt-${policy_name}",
       policy = jsonencode(local.aws_policies[policy_name])
