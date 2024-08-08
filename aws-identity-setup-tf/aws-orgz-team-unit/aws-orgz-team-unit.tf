@@ -149,7 +149,8 @@ resource "aws_ssoadmin_account_assignment" "policy_assignment" {
   # permission_set_arn = aws_ssoadmin_permission_set.policy_permission_set[
   #   "full-access-policy-${each.key}"].arn
   permission_set_arn = aws_ssoadmin_permission_set.policy_permission_set[
-    "${lookup(local.group_policies, each.key)}-${each.key}"].arn
+    "${local.flat_policies[each.key].policy_name}-${each.key}"
+  ].arn
 
   principal_id       = local.group_ids[each.value.group]
   principal_type     = "GROUP"
