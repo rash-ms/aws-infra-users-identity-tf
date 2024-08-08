@@ -107,7 +107,7 @@ data "aws_ssoadmin_instances" "main" {}
 resource "aws_identitystore_group" "team_group" {
   for_each = local.group_mappings
   identity_store_id = tolist(data.aws_ssoadmin_instances.main.identity_store_ids)[0]
-  display_name      = "${each.value.group}-group"
+  display_name      = "${each.value.group}"
 }
 
 
@@ -146,8 +146,6 @@ resource "aws_ssoadmin_account_assignment" "policy_assignment" {
   instance_arn       = data.aws_ssoadmin_instances.main.arns[0]
 
   # Reference the permission set ARN using the correct key
-  # permission_set_arn = aws_ssoadmin_permission_set.policy_permission_set[
-  #   "full-access-policy-${each.key}"].arn
   permission_set_arn = aws_ssoadmin_permission_set.policy_permission_set[
     "${lookup({for p in local.flat_policies : p.key => p.policy_name}, each.key)}-${each.key}"
   ].arn
