@@ -142,13 +142,14 @@ locals {
 }
 
 resource "aws_ssoadmin_account_assignment" "policy_assignment" {
-  for_each = local.group_mappings
+  for_each           = local.group_mappings
   instance_arn       = data.aws_ssoadmin_instances.main.arns[0]
 
   # Reference the permission set ARN using the correct key
+  # permission_set_arn = aws_ssoadmin_permission_set.policy_permission_set[
+  #   "full-access-policy-${each.key}"].arn
   permission_set_arn = aws_ssoadmin_permission_set.policy_permission_set[
-    "full-access-policy-${each.key}"].arn
-  # permission_set_arn = aws_ssoadmin_permission_set.policy_permission_set[each.value.group].arn
+    "${lookup(local.group_policies, each.key)}-${each.key}"].arn
 
   principal_id       = local.group_ids[each.value.group]
   principal_type     = "GROUP"
