@@ -179,3 +179,4 @@ resource "aws_organizations_account" "team_wrkspc_account" {
 #   target_id          = aws_organizations_account.team_wrkspc_account[each.key].id
 #   target_type        = "AWS_ACCOUNT"
 # }
+
