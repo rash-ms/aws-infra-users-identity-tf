@@ -161,6 +161,30 @@ resource "aws_ssoadmin_permission_set_inline_policy" "policy_permission_set" {
 }
 
 
+locals {
+  group_ids = {
+    for group_name, original_key in local.reverse_group_mappings :
+    group_name => split("/", aws_identitystore_group.team_group[original_key].id)[1]
+  }
+}
+
+resource "aws_ssoadmin_account_assignment" "policy_assignment" {
+  for_each = local.group_mappings
+  instance_arn       = data.aws_ssoadmin_instances.main.arns[0]
+
+  permission_set_arn = lookup(
+    aws_ssoadmin_permission_set.policy_permission_set, 
+    "${local.group_policies[each.key]}",
+    aws_ssoadmin_permission_set.policy_permission_set["default"].arn
+  )
+
+  principal_id       = local.group_ids[each.value.group]
+  principal_type     = "GROUP"
+  target_id          = aws_organizations_account.team_wrkspc_account[each.key].id
+  target_type        = "AWS_ACCOUNT"
+}
+
+
 # resource "aws_ssoadmin_permission_set" "full_access_permission_set" {
 #   instance_arn = data.aws_ssoadmin_instances.main.arns[0]
 #   name         = local.full_access_permission_set.name
