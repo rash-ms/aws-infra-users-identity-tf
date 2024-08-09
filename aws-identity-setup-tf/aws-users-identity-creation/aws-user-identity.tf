@@ -38,20 +38,20 @@ resource "aws_identitystore_user" "users" {
 }
 
 # Fetch existing groups
-data "aws_identitystore_group" "existing_groups" {
-  for_each = toset(keys(local.groups_config.groups))
+# data "aws_identitystore_group" "existing_groups" {
+#   for_each = toset(keys(local.groups_config.groups))
 
-  identity_store_id = local.identity_store_id
-  filter {
-    attribute_path   = "DisplayName"
-    attribute_value  = each.value
-  }
-}
+#   identity_store_id = local.identity_store_id
+#   filter {
+#     attribute_path   = "DisplayName"
+#     attribute_value  = each.value
+#   }
+# }
 
-# Extract the user ID from the full ID
-locals {
-  user_ids = { for k, v in aws_identitystore_user.users : k => split("/", v.id)[1] }
-}
+# # Extract the user ID from the full ID
+# locals {
+#   user_ids = { for k, v in aws_identitystore_user.users : k => split("/", v.id)[1] }
+# }
 
 # Attach users to groups
 # resource "aws_identitystore_group_membership" "memberships" {
