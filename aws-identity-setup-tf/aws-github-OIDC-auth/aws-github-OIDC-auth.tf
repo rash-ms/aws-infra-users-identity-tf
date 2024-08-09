@@ -2,6 +2,13 @@ variable "alias" {
   type = string
 }
 
+variable "deployment_details" {
+  type = map(object({
+    role_name      = string
+    policy_arn     = string
+    assume_role_arn = string
+  }))
+}
 
 provider "aws" {
   alias  = var.alias

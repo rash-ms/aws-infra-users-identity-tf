@@ -22,6 +22,6 @@ variable "deployment_details" {
   }))
 }
 
-variable "alias" {
-  type = string
-}
+# variable "alias" {
+#   type = string
+# }
