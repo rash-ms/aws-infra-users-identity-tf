@@ -23,7 +23,16 @@ init:
 plan:
 		cd $(TERRAFORM_DIR) && terraform plan
 
-apply:
+# apply:
+# 		cd $(TERRAFORM_DIR) && terraform apply -auto-approve
+
+state-rm:
+		cd $(TERRAFORM_DIR) && terraform state rm module.iam_deployment.aws_iam_openid_connect_provider.github_oidc_deployment["develop-deployment-byt_data_eng_dev"]
+		cd $(TERRAFORM_DIR) && terraform state rm module.iam_deployment.aws_iam_openid_connect_provider.github_oidc_deployment["main-deployment-byt_data_eng_prod"]
+		cd $(TERRAFORM_DIR) && terraform state rm module.iam_deployment.aws_iam_openid_connect_provider.github_oidc_byt_prod["byt_data_eng_dev"]
+		cd $(TERRAFORM_DIR) && terraform state rm module.iam_deployment.aws_iam_openid_connect_provider.github_oidc_byt_dev["byt_data_eng_prod"]
+
+apply: state-rm
 		cd $(TERRAFORM_DIR) && terraform apply -auto-approve
 
 init_remove:
