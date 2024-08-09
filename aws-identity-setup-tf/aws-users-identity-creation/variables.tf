@@ -8,7 +8,7 @@ variable "groups_yaml_path" {
   type        = string
 }
 
-variable "group_ids" {
-  type        = map(string)
-  description = "Map of group names to their respective group IDs."
-}
+# variable "group_ids" {
+#   type        = map(string)
+#   description = "Map of group names to their respective group IDs."
+# }
