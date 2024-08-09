@@ -1,7 +1,6 @@
 module "aws-team-orgz-unit" {
   source              = "../aws-identity-setup-tf/aws-orgz-team-unit"
-
-  identity_store_id = data.aws_ssoadmin_instances.main.identity_store_ids[0]
+  
   teams               = var.teams 
   workspace           = var.workspace
 
