@@ -9,7 +9,7 @@
 python_exec=$(shell command -v python3)
 # <Recipes>
 
-TERRAFORM_DIR = ./aws-identity-deployment-tf
+TERRAFORM_DIR = ../aws-identity-deployment-tf
 
 auth:
 		saml2aws login
