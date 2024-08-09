@@ -1,8 +1,14 @@
+# module "iam_deployment" {
+#   source = "../aws-identity-setup-tf/aws-github-OIDC-auth"
+# }
+
+
 module "aws-github-OIDC-auth" {
   source                  = "../aws-identity-setup-tf/aws-github-OIDC-auth"
   github_action_name      = var.github_action_name
   github_action_role_tags = var.github_action_role_tags
 }
+
 
 
 variable "github_action_name" {
