@@ -12,11 +12,6 @@ module "iam_deployment" {
 }
 
 
-# variable "alias" {
-#   type = string
-# }
-
-
 # module "aws-github-OIDC-auth" {
 #   source                  = "../aws-identity-setup-tf/aws-github-OIDC-auth"
 #   github_action_name      = var.github_action_name

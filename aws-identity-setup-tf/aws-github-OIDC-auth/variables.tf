@@ -14,13 +14,13 @@
 #   }
 # }
 
-variable "deployment_details" {
-  type = map(object({
-    role_name      = string
-    policy_arn     = string
-    assume_role_arn = string
-  }))
-}
+# variable "deployment_details" {
+#   type = map(object({
+#     role_name      = string
+#     policy_arn     = string
+#     assume_role_arn = string
+#   }))
+# }
 
 # variable "alias" {
 #   type = string
