@@ -21,3 +21,7 @@ provider "aws" {
     role_arn = var.deployment_details.assume_role_arn
   }
 }
+
+variable "alias" {
+  type = string
+}
