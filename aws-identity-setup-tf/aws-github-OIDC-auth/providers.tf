@@ -14,14 +14,3 @@
 #   }
 # }
 
-provider "aws" {
-  alias  = var.alias
-  region = "us-east-1"
-  assume_role {
-    role_arn = var.deployment_details.assume_role_arn
-  }
-}
-
-variable "alias" {
-  type = string
-}
