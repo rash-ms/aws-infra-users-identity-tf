@@ -1,11 +1,3 @@
-provider "aws" {
-  alias = var.alias
-  region = "us-east-1"
-  assume_role {
-    role_arn = var.deployment_details.assume_role_arn
-  }
-}
-
 resource "aws_iam_openid_connect_provider" "github_oidc" {
   provider = aws[var.alias]
 
