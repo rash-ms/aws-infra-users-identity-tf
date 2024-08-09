@@ -1,8 +1,8 @@
 groups:
-  byt-data-eng-readonly-group:                          # Data Engineering Team
+  byt-data-org-readonly-group:                          # Data Engineering Team
     - admin@bagitek.com
     # - naimatoyewale@gmail.com
 
-  byt-data-eng-fullAccess-group:
+  byt-data-org-FullAccess-group:
     - admin@bagitek.com
     # - naimatoyewale@gmail.com
