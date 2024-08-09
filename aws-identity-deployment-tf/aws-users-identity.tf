@@ -1,6 +1,6 @@
-provider "aws" {
-  region = "us-east-1"  
-}
+# provider "aws" {
+#   region = "us-east-1"  
+# }
 
 module "identity" {
   source    = "../aws-identity-setup-tf/aws-users-identity-creation"
