@@ -20,3 +20,4 @@ variable "workspace" {
   type        = list(string)
   default     = ["PROD", "DEV"]
 }
+

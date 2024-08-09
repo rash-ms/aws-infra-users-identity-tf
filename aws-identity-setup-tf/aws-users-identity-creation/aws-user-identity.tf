@@ -1,6 +1,7 @@
 data "aws_ssoadmin_instances" "main" {}
 
 locals {
+  group_ids = module.aws-team-orgz-unit.team_group_ids
   identity_store_id = data.aws_ssoadmin_instances.main.identity_store_ids[0]
 
   users_config = yamldecode(file(var.users_yaml_path))
@@ -60,7 +61,7 @@ resource "aws_identitystore_group_membership" "memberships" {
   }
 
   identity_store_id = local.identity_store_id
-  group_id          = data.aws_identitystore_group.existing_groups[each.value.group].id
+  group_id          = local.group_ids[each.value.group]
   member_id         = local.user_ids[each.value.user]
 
   lifecycle {
@@ -71,3 +72,22 @@ resource "aws_identitystore_group_membership" "memberships" {
     ]
   }
 }
+
+# # Attach users to groups
+# resource "aws_identitystore_group_membership" "memberships" {
+#   for_each = {
+#     for user_group in local.flattened_user_groups : "${user_group.group}-${user_group.user}" => user_group
+#   }
+
+#   identity_store_id = local.identity_store_id
+#   group_id          = data.aws_identitystore_group.existing_groups[each.value.group].id
+#   member_id         = local.user_ids[each.value.user]
+
+#   lifecycle {
+#     ignore_changes = [
+#       identity_store_id,
+#       group_id,
+#       member_id,
+#     ]
+#   }
+# }
