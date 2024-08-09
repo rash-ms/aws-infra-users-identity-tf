@@ -6,16 +6,16 @@ module "identity" {
   source    = "../aws-identity-setup-tf/aws-users-identity-creation"
   # users_yaml_path = "${path.module}/users.yaml"
   # groups_yaml_path = "${path.module}/groups.yaml"
-  # 
+  group_ids = module.aws-team-orgz-unit.team_group_ids
   users_yaml_path = "../aws-identity-setup-tf/aws-users-identity-creation/base_conf/users.yaml"
   groups_yaml_path = "../aws-identity-setup-tf/aws-users-identity-creation/base_conf/groups.yaml"
 }
 
 
-# variable "group_ids" {
-#   type        = map(string)
-#   description = "Map of group names to their respective group IDs."
-# }
+variable "group_ids" {
+  type        = map(string)
+  description = "Map of group names to their respective group IDs."
+}
 
 # output "team_group_ids" {
 #   description = "Map of team group names to their respective group IDs."
