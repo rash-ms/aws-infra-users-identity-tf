@@ -11,6 +11,7 @@ python_exec=$(shell command -v python3)
 
 TERRAFORM_DIR = ./aws-identity-deployment-tf
 
+TERRAFORM_DIRS = ./aws-identity-deployment-tf/**
 auth:
 		saml2aws login
 
@@ -29,12 +30,13 @@ plan:
 state-rm:
 		@echo "Current Directory: $(shell pwd)"
 		@echo "Terraform Directory: $(TERRAFORM_DIR)"
-		cd ./aws-identity-deployment-tf && terraform state rm "module.iam_deployment.aws_iam_openid_connect_provider.github_oidc_deployment"
-		cd ./aws-identity-deployment-tf && terraform state rm "module.iam_deployment.aws_iam_openid_connect_provider.github_oidc_byt_prod"
-		cd ./aws-identity-deployment-tf && terraform state rm "module.iam_deployment.aws_iam_openid_connect_provider.github_oidc_byt_dev"
+		cd $(TERRAFORM_DIR) && terraform state rm "module.iam_deployment.aws_iam_openid_connect_provider.github_oidc_deployment[\"develop-deployment-byt_data_eng_dev\"]"
+		cd $(TERRAFORM_DIR) && terraform state rm "module.iam_deployment.aws_iam_openid_connect_provider.github_oidc_deployment[\"prod-deployment-byt_data_eng_prod\"]"
+		cd $(TERRAFORM_DIR) && terraform state rm "module.iam_deployment.aws_iam_openid_connect_provider.github_oidc_byt_prod[\"byt_data_eng_dev\"]"
+		cd $(TERRAFORM_DIR) && terraform state rm "module.iam_deployment.aws_iam_openid_connect_provider.github_oidc_byt_dev[\"byt_data_eng_prod\"]"
 
 apply: state-rm
-		cd ./aws-identity-deployment-tf && terraform apply -auto-approve
+		cd $(TERRAFORM_DIR) && terraform apply -auto-approve
 
 init_remove:
 		cd $(TERRAFORM_DIR) && rm -rf ./.terraform
