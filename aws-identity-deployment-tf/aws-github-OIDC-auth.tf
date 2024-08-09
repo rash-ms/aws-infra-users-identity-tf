@@ -1,14 +1,5 @@
-locals {
-  deployments = jsondecode(file("${path.module}/github-deployment.json"))
-}
-
 module "iam_deployment" {
-  for_each = local.deployments
-
   source = "../aws-identity-setup-tf/aws-github-OIDC-auth"
-
-  alias = keys(each.value)[0]
-  deployment_details = lookup(each.value, keys(each.value)[0], {})
 }
 
 
