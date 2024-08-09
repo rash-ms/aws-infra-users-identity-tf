@@ -60,7 +60,7 @@ resource "aws_identitystore_group_membership" "memberships" {
   }
 
   identity_store_id = local.identity_store_id
-  group_id          = var.group_ids[each.value.group]  # Use the group_ids from the module output
+  group_id          = var.group_ids[each.value.group]
   member_id         = local.user_ids[each.value.user]
 
   # lifecycle {

@@ -22,8 +22,7 @@ variable "group_ids" {
 }
 
 output "team_group_ids" {
-  description = "Map of team group names to their respective group IDs."
-  value = { for k, v in aws_identitystore_group.team_group : k => v.group_id }
+  value = {for k, v in aws_identitystore_group.team_group : k => v.group_id}
 }
 
 
