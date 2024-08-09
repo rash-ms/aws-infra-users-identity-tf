@@ -20,18 +20,8 @@ provider "aws" {
   region = "us-east-1"
 }
 
-# Check if the OIDC provider already exists
-data "aws_iam_openid_connect_provider" "existing_oidc" {
+resource "aws_iam_openid_connect_provider" "github_oidc_deployment" {
   for_each = { for config in local.dynamic_configs : "${config.deployment_name}-${config.alias}" => config }
-
-  url = "https://token.actions.githubusercontent.com"
-}
-
-# Create the OIDC provider only if it doesn't exist
-resource "aws_iam_openid_connect_provider" "github_oidc" {
-  for_each = { for config in local.dynamic_configs : "${config.deployment_name}-${config.alias}" => config }
-
-  count = length(data.aws_iam_openid_connect_provider.existing_oidc[each.key].arn) == 0 ? 1 : 0
 
   client_id_list  = ["sts.amazonaws.com"]
   url             = "https://token.actions.githubusercontent.com"
@@ -40,7 +30,6 @@ resource "aws_iam_openid_connect_provider" "github_oidc" {
   provider = aws.default
 }
 
-# Create the IAM roles based on the dynamic configurations
 resource "aws_iam_role" "roles" {
   for_each = { for config in local.dynamic_configs : "${config.deployment_name}-${config.alias}" => config }
 
@@ -51,8 +40,7 @@ resource "aws_iam_role" "roles" {
     Statement = [{
       Effect = "Allow",
       Principal = {
-        Federated = data.aws_iam_openid_connect_provider.existing_oidc[each.key].arn != "" ? data.aws_iam_openid_connect_provider.existing_oidc[each.key].arn : null
-
+        Federated = aws_iam_openid_connect_provider.github_oidc_deployment[each.key].arn
       },
       Action = "sts:AssumeRoleWithWebIdentity",
       Condition = {
@@ -67,7 +55,6 @@ resource "aws_iam_role" "roles" {
   provider = aws.default
 }
 
-# Attach the policies to the IAM roles
 resource "aws_iam_role_policy_attachment" "policy_attachment" {
   for_each = { for config in local.dynamic_configs : "${config.deployment_name}-${config.alias}" => config }
 
@@ -76,47 +63,3 @@ resource "aws_iam_role_policy_attachment" "policy_attachment" {
 
   provider = aws.default
 }
-
-# resource "aws_iam_openid_connect_provider" "github_oidc_deployment" {
-#   for_each = { for config in local.dynamic_configs : "${config.deployment_name}-${config.alias}" => config }
-
-#   client_id_list  = ["sts.amazonaws.com"]
-#   url             = "https://token.actions.githubusercontent.com"
-#   thumbprint_list = ["1b511abead59c6ce207077c0bf0e0043b1382612"]
-
-#   provider = aws.default
-# }
-
-# resource "aws_iam_role" "roles" {
-#   for_each = { for config in local.dynamic_configs : "${config.deployment_name}-${config.alias}" => config }
-
-#   name = each.value.role_name
-
-#   assume_role_policy = jsonencode({
-#     Version = "2012-10-17",
-#     Statement = [{
-#       Effect = "Allow",
-#       Principal = {
-#         Federated = aws_iam_openid_connect_provider.github_oidc_deployment[each.key].arn
-#       },
-#       Action = "sts:AssumeRoleWithWebIdentity",
-#       Condition = {
-#         StringEquals = {
-#           "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com",
-#           "token.actions.githubusercontent.com:sub" = "repo:rash-ms/${replace(each.value.deployment_name, "-deployment", "")}/*"
-#         }
-#       }
-#     }]
-#   })
-
-#   provider = aws.default
-# }
-
-# resource "aws_iam_role_policy_attachment" "policy_attachment" {
-#   for_each = { for config in local.dynamic_configs : "${config.deployment_name}-${config.alias}" => config }
-
-#   role       = aws_iam_role.roles[each.key].name
-#   policy_arn = each.value.policy_arn
-
-#   provider = aws.default
-# }
