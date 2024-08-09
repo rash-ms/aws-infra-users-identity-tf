@@ -100,7 +100,7 @@ resource "aws_organizations_organizational_unit" "team_env" {
 # }
 
 
-# data "aws_ssoadmin_instances" "main" {}
+data "aws_ssoadmin_instances" "main" {}
 
 # resource "aws_identitystore_group" "team_group" {
 #   for_each = local.group_mappings
