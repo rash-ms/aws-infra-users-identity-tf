@@ -12,9 +12,9 @@ module "iam_deployment" {
 }
 
 
-variable "alias" {
-  type = string
-}
+# variable "alias" {
+#   type = string
+# }
 
 
 # module "aws-github-OIDC-auth" {
