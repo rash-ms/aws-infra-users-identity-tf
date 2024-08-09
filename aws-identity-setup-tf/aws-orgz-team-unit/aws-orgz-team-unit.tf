@@ -85,69 +85,69 @@ resource "aws_organizations_organizational_unit" "team_env" {
   }
 }
 
-# resource "aws_organizations_account" "team_wrkspc_account" {
-#   for_each  = local.account_map
-#   name      = "BYT-${each.key}"
-#   email     = lookup(local.group_mappings, each.key).email
-#   parent_id = aws_organizations_organizational_unit.team_env[each.key].id
-#   role_name = "OrganizationAccountAccessRole"
+resource "aws_organizations_account" "team_wrkspc_account" {
+  for_each  = local.account_map
+  name      = "BYT-${each.key}"
+  email     = lookup(local.group_mappings, each.key).email
+  parent_id = aws_organizations_organizational_unit.team_env[each.key].id
+  role_name = "OrganizationAccountAccessRole"
 
-#   tags = {
-#     Name        = "BYT-${each.key}",
-#     Team        = each.value.team,
-#     Environment = each.value.env
-#   }
-# }
+  tags = {
+    Name        = "BYT-${each.key}",
+    Team        = each.value.team,
+    Environment = each.value.env
+  }
+}
 
 
 data "aws_ssoadmin_instances" "main" {}
 
-# resource "aws_identitystore_group" "team_group" {
-#   for_each = local.group_mappings
-#   identity_store_id = tolist(data.aws_ssoadmin_instances.main.identity_store_ids)[0]
-#   display_name      = "${each.value.group}"
-# }
+resource "aws_identitystore_group" "team_group" {
+  for_each = local.group_mappings
+  identity_store_id = tolist(data.aws_ssoadmin_instances.main.identity_store_ids)[0]
+  display_name      = "${each.value.group}"
+}
 
-# resource "aws_ssoadmin_permission_set" "policy_permission_set" {
-#   for_each = local.permission_sets
+resource "aws_ssoadmin_permission_set" "policy_permission_set" {
+  for_each = local.permission_sets
 
-#   instance_arn = data.aws_ssoadmin_instances.main.arns[0]
-#   name         = each.value.name
-#   description  = "${each.key} access"
-#   session_duration = "PT1H"
-#   relay_state  = "https://console.aws.amazon.com/"
+  instance_arn = data.aws_ssoadmin_instances.main.arns[0]
+  name         = each.value.name
+  description  = "${each.key} access"
+  session_duration = "PT1H"
+  relay_state  = "https://console.aws.amazon.com/"
 
-#   tags = {
-#     Name = each.value.name
-#   }
-# }
+  tags = {
+    Name = each.value.name
+  }
+}
 
-# resource "aws_ssoadmin_permission_set_inline_policy" "policy_permission_set" {
-#   for_each             = aws_ssoadmin_permission_set.policy_permission_set
-#   instance_arn         = data.aws_ssoadmin_instances.main.arns[0]
-#   permission_set_arn   = each.value.arn
-#   inline_policy        = local.permission_sets[each.key].policy
-# }
+resource "aws_ssoadmin_permission_set_inline_policy" "policy_permission_set" {
+  for_each             = aws_ssoadmin_permission_set.policy_permission_set
+  instance_arn         = data.aws_ssoadmin_instances.main.arns[0]
+  permission_set_arn   = each.value.arn
+  inline_policy        = local.permission_sets[each.key].policy
+}
 
 
-# locals {
-#   group_ids = {
-#     for group_name, original_key in local.reverse_group_mappings :
-#     group_name => split("/", aws_identitystore_group.team_group[original_key].id)[1]
-#   }
-# }
+locals {
+  group_ids = {
+    for group_name, original_key in local.reverse_group_mappings :
+    group_name => split("/", aws_identitystore_group.team_group[original_key].id)[1]
+  }
+}
 
-# resource "aws_ssoadmin_account_assignment" "policy_assignment" {
-#   for_each           = local.group_mappings
-#   instance_arn       = data.aws_ssoadmin_instances.main.arns[0]
+resource "aws_ssoadmin_account_assignment" "policy_assignment" {
+  for_each           = local.group_mappings
+  instance_arn       = data.aws_ssoadmin_instances.main.arns[0]
 
-#   # Reference the permission set ARN using the correct key
-#   permission_set_arn = aws_ssoadmin_permission_set.policy_permission_set[
-#     "${lookup({for p in local.flat_policies : p.key => p.policy_name}, each.key)}-${each.key}"
-#   ].arn
+  # Reference the permission set ARN using the correct key
+  permission_set_arn = aws_ssoadmin_permission_set.policy_permission_set[
+    "${lookup({for p in local.flat_policies : p.key => p.policy_name}, each.key)}-${each.key}"
+  ].arn
 
-#   principal_id       = local.group_ids[each.value.group]
-#   principal_type     = "GROUP"
-#   target_id          = aws_organizations_account.team_wrkspc_account[each.key].id
-#   target_type        = "AWS_ACCOUNT"
-# }
+  principal_id       = local.group_ids[each.value.group]
+  principal_type     = "GROUP"
+  target_id          = aws_organizations_account.team_wrkspc_account[each.key].id
+  target_type        = "AWS_ACCOUNT"
+}
