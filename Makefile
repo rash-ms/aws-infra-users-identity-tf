@@ -11,7 +11,6 @@ python_exec=$(shell command -v python3)
 
 TERRAFORM_DIR = ./aws-identity-deployment-tf
 
-TERRAFORM_DIRS = ./aws-identity-deployment-tf/*
 auth:
 		saml2aws login
 
@@ -29,10 +28,10 @@ plan:
 
 state-rm:
 		@echo "Current Directory: $(shell pwd)"
-		@echo "Terraform Directory: $(TERRAFORM_DIRS)"
-		cd $(TERRAFORM_DIRS) && terraform state rm "module.iam_deployment.aws_iam_openid_connect_provider.github_oidc_deployment
-		cd $(TERRAFORM_DIRS) && terraform state rm "module.iam_deployment.aws_iam_openid_connect_provider.github_oidc_byt_prod
-		cd $(TERRAFORM_DIRS) && terraform state rm "module.iam_deployment.aws_iam_openid_connect_provider.github_oidc_byt_dev
+		@echo "Terraform Directory: $(TERRAFORM_DIR)"
+		cd $(TERRAFORM_DIR) && terraform state rm "module.iam_deployment.aws_iam_openid_connect_provider.github_oidc_deployment"
+		cd $(TERRAFORM_DIR) && terraform state rm "module.iam_deployment.aws_iam_openid_connect_provider.github_oidc_byt_prod"
+		cd $(TERRAFORM_DIR) && terraform state rm "module.iam_deployment.aws_iam_openid_connect_provider.github_oidc_byt_dev"
 
 apply: state-rm
 		cd $(TERRAFORM_DIR) && terraform apply -auto-approve
