@@ -54,13 +54,32 @@ locals {
 }
 
 # Attach users to groups
+# resource "aws_identitystore_group_membership" "memberships" {
+#   for_each = {
+#     for user_group in local.flattened_user_groups : "${user_group.group}-${user_group.user}" => user_group
+#   }
+
+#   identity_store_id = local.identity_store_id
+#   group_id          = var.group_ids[each.value.group]
+#   member_id         = local.user_ids[each.value.user]
+
+#   # lifecycle {
+#   #   ignore_changes = [
+#   #     identity_store_id,
+#   #     group_id,
+#   #     member_id,
+#   #   ]
+#   # }
+# }
+
+# Attach users to groups
 resource "aws_identitystore_group_membership" "memberships" {
   for_each = {
     for user_group in local.flattened_user_groups : "${user_group.group}-${user_group.user}" => user_group
   }
 
   identity_store_id = local.identity_store_id
-  group_id          = var.group_ids[each.value.group]
+  group_id          = data.aws_identitystore_group.existing_groups[each.value.group].id
   member_id         = local.user_ids[each.value.user]
 
   # lifecycle {
@@ -71,22 +90,3 @@ resource "aws_identitystore_group_membership" "memberships" {
   #   ]
   # }
 }
-
-# # Attach users to groups
-# resource "aws_identitystore_group_membership" "memberships" {
-#   for_each = {
-#     for user_group in local.flattened_user_groups : "${user_group.group}-${user_group.user}" => user_group
-#   }
-
-#   identity_store_id = local.identity_store_id
-#   group_id          = data.aws_identitystore_group.existing_groups[each.value.group].id
-#   member_id         = local.user_ids[each.value.user]
-
-#   lifecycle {
-#     ignore_changes = [
-#       identity_store_id,
-#       group_id,
-#       member_id,
-#     ]
-#   }
-# }
