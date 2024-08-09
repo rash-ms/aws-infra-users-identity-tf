@@ -29,12 +29,12 @@ plan:
 state-rm:
 		@echo "Current Directory: $(shell pwd)"
 		@echo "Terraform Directory: $(TERRAFORM_DIR)"
-		cd $(TERRAFORM_DIR) && terraform state rm "module.iam_deployment.aws_iam_openid_connect_provider.github_oidc_deployment"
-		cd $(TERRAFORM_DIR) && terraform state rm "module.iam_deployment.aws_iam_openid_connect_provider.github_oidc_byt_prod"
-		cd $(TERRAFORM_DIR) && terraform state rm "module.iam_deployment.aws_iam_openid_connect_provider.github_oidc_byt_dev"
+		cd ./aws-identity-deployment-tf && terraform state rm "module.iam_deployment.aws_iam_openid_connect_provider.github_oidc_deployment"
+		cd ./aws-identity-deployment-tf && terraform state rm "module.iam_deployment.aws_iam_openid_connect_provider.github_oidc_byt_prod"
+		cd ./aws-identity-deployment-tf && terraform state rm "module.iam_deployment.aws_iam_openid_connect_provider.github_oidc_byt_dev"
 
 apply: state-rm
-		cd $(TERRAFORM_DIR) && terraform apply -auto-approve
+		cd ./aws-identity-deployment-tf && terraform apply -auto-approve
 
 init_remove:
 		cd $(TERRAFORM_DIR) && rm -rf ./.terraform
