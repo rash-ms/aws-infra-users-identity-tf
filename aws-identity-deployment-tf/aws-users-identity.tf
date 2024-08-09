@@ -16,20 +16,10 @@ module "identity" {
 }
 
 
-variable "group_ids" {
-  type        = map(string)
-  description = "Map of group names to their respective group IDs."
-}
+# output "created_users" {
+#   value = module.identity.created_users
+# }
 
-output "team_group_ids" {
-  value = {for k, v in aws_identitystore_group.team_group : k => v.group_id}
-}
-
-
-output "created_users" {
-  value = module.identity.created_users
-}
-
-output "group_memberships" {
-  value = module.identity.group_memberships
-}
+# output "group_memberships" {
+#   value = module.identity.group_memberships
+# }

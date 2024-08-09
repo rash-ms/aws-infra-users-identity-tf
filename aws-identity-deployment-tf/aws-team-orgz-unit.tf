@@ -22,7 +22,3 @@ variable "workspace" {
   type        = list(string)
   default     = ["PROD", "DEV"]
 }
-
-output "team_group_ids" {
-  value = {for k, v in aws_identitystore_group.team_group : k => v.group_id}
-}
