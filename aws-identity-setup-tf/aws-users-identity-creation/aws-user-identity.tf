@@ -63,13 +63,13 @@ resource "aws_identitystore_group_membership" "memberships" {
   group_id          = var.group_ids[each.value.group]  # Use the group_ids from the module output
   member_id         = local.user_ids[each.value.user]
 
-  lifecycle {
-    ignore_changes = [
-      identity_store_id,
-      group_id,
-      member_id,
-    ]
-  }
+  # lifecycle {
+  #   ignore_changes = [
+  #     identity_store_id,
+  #     group_id,
+  #     member_id,
+  #   ]
+  # }
 }
 
 # # Attach users to groups
