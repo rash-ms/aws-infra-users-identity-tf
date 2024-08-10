@@ -1,16 +1,15 @@
-# provider "aws" {
-#   alias  = "byt_data_eng_dev"
-#   region = "us-east-1"
-#   assume_role {
-#     role_arn ="arn:aws:iam::022499035350:role/byt-data-org-dev-role"
-#   }
-# }
+provider "aws" {
+  alias  = "dev"
+  region = "us-east-1"
+  assume_role {
+    role_arn = local.deployments["develop-deployment"].byt_data_eng_dev.assume_role_arn
+  }
+}
 
-# provider "aws" {
-#   alias  = "byt_data_eng_prod"
-#   region = "us-east-1"
-#   assume_role {
-#     role_arn ="arn:aws:iam::022499035568:role/byt-data-org-prod-role"
-#   }
-# }
-
+provider "aws" {
+  alias  = "prod"
+  region = "us-east-1"
+  assume_role {
+    role_arn = local.deployments["main-deployment"].byt_data_eng_prod.assume_role_arn
+  }
+}
