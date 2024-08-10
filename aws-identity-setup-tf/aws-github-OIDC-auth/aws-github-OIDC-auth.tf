@@ -1,6 +1,6 @@
 locals {
   deployments = jsondecode(file("${path.module}/github-deployment.json"))
-  
+
   # Flatten the deployments structure for easier iteration
   dynamic_configs = flatten([
     for deployment_name, deployment_details in local.deployments : [
@@ -10,15 +10,11 @@ locals {
         role_name       = details.role_name
         policy_arn      = details.policy_arn
         assume_role_arn = details.assume_role_arn
+        provider_alias  = deployment_name == "develop-deployment" ? "dev" : "prod"
       }
     ]
   ])
 }
-
-# provider "aws" {
-#   alias  = "default"
-#   region = "us-east-1"
-# }
 
 provider "aws" {
   alias  = "dev"
@@ -43,12 +39,7 @@ resource "aws_iam_openid_connect_provider" "github_oidc_deployment" {
   url             = "https://token.actions.githubusercontent.com"
   thumbprint_list = ["1b511abead59c6ce207077c0bf0e0043b1382612"]
 
-  providers = {
-    dev  = aws.dev
-    prod = aws.prod
-  }
-
-  provider = each.value.deployment_name == "develop-deployment" ? aws.dev : aws.prod
+  provider = aws[each.value.provider_alias]
 }
 
 resource "aws_iam_role" "roles" {
@@ -73,7 +64,7 @@ resource "aws_iam_role" "roles" {
     }]
   })
 
-  provider = each.value.deployment_name == "develop-deployment" ? aws.dev : aws.prod
+  provider = aws[each.value.provider_alias]
 }
 
 resource "aws_iam_role_policy_attachment" "policy_attachment" {
@@ -82,8 +73,26 @@ resource "aws_iam_role_policy_attachment" "policy_attachment" {
   role       = aws_iam_role.roles[each.key].name
   policy_arn = each.value.policy_arn
 
-  provider = each.value.deployment_name == "develop-deployment" ? aws.dev : aws.prod
+  provider = aws[each.value.provider_alias]
 }
+
+
+# locals {
+#   deployments = jsondecode(file("${path.module}/github-deployment.json"))
+  
+#   # Flatten the deployments structure for easier iteration
+#   dynamic_configs = flatten([
+#     for deployment_name, deployment_details in local.deployments : [
+#       for alias, details in deployment_details : {
+#         deployment_name = deployment_name
+#         alias           = alias
+#         role_name       = details.role_name
+#         policy_arn      = details.policy_arn
+#         assume_role_arn = details.assume_role_arn
+#       }
+#     ]
+#   ])
+# }
 
 
 # resource "aws_iam_openid_connect_provider" "github_oidc_deployment" {
@@ -98,6 +107,11 @@ resource "aws_iam_role_policy_attachment" "policy_attachment" {
 #   # lifecycle {
 #   #   ignore_changes = all
 #   # }
+# }
+
+# provider "aws" {
+#   alias  = "default"
+#   region = "us-east-1"
 # }
 
 # resource "aws_iam_role" "roles" {
