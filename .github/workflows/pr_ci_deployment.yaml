@@ -4,11 +4,8 @@ on:
   pull_request:
     branches: [ main ]
     path:
-    - 'users-identity/users-identity-us/people-prod.json'
-    - 'users-identity/users-identity-us/people-stg.json'
-    - 'users-identity/users-identity-us/people-dev.json'
     - 'aws-identity-setup-tf/**'
-    - '.github/workflows/pr_add_user_us.yaml'
+    - '.github/workflows/pr_ci_deployment.yaml'
 
 env:
   AWS_REGION: us-east-1
