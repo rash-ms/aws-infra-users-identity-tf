@@ -71,7 +71,10 @@
                         "sns:List*",
                         "sns:Subscribe",
                         "sns:Publish",
-                        "sns:Unsubscribe"
+                        "sns:Unsubscribe",
+                        "sns:CreateTopic",
+                        "sns:DeleteTopic",
+                        "sns:CreateSubscription"
                     ],
                     "Resource": "*"
                 },
@@ -92,9 +95,6 @@
                         "emr:TerminateCluster",
                         "emr:DeleteSecurityConfiguration",
                         "emr:DeleteCluster",
-                        "sns:CreateTopic",
-                        "sns:DeleteTopic",
-                        "sns:CreateSubscription",
                         "kinesis:DeleteStream",
                         "ecs:DeleteCluster",
                         "ecs:DeleteService",
@@ -123,7 +123,15 @@
                         "iam:List*",
                         "cloudwatch:Get*",
                         "cloudwatch:List*",
-                        "cloudwatch:Describe*"
+                        "cloudwatch:Describe*",
+                        "sns:Get*",
+                        "sns:List*",
+                        "sns:Subscribe",
+                        "sns:Publish",
+                        "sns:Unsubscribe",
+                        "sns:CreateTopic",
+                        "sns:DeleteTopic",
+                        "sns:CreateSubscription"
                     ],
                     "Resource": "*"
                 }
