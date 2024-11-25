@@ -23,7 +23,7 @@
                         "lambda:List*",
                         "logs:Get*",
                         "logs:Describe*",
-                        "logs:FilterLogEvents",,
+                        "logs:FilterLogEvents",
                         "logs:CreateLogGroup",
                         "logs:CreateLogStream",
                         "logs:PutLogEvents",
