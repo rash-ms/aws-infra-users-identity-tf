@@ -24,6 +24,11 @@
                         "logs:Get*",
                         "logs:Describe*",
                         "logs:FilterLogEvents",
+                        "logs:CreateLogGroup",
+                        "logs:CreateLogStream",
+                        "logs:PutLogEvents",
+                        "logs:DescribeLogGroups",
+                        "logs:DeleteLogGroup",
                         "cloudwatch:Get*",
                         "cloudwatch:List*",
                         "cloudwatch:Describe*",
@@ -123,7 +128,12 @@
                         "iam:List*",
                         "cloudwatch:Get*",
                         "cloudwatch:List*",
-                        "cloudwatch:Describe*"
+                        "cloudwatch:Describe*",
+                        "logs:CreateLogGroup",
+                        "logs:CreateLogStream",
+                        "logs:PutLogEvents",
+                        "logs:DescribeLogGroups",
+                        "logs:DeleteLogGroup"
                     ],
                     "Resource": "*"
                 }
