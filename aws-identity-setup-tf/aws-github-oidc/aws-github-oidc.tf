@@ -7,18 +7,50 @@ provider "aws" {
   region = "us-east-1"
 }
 
+# resource "aws_iam_openid_connect_provider" "github_oidc" {
+#   for_each = { for account in local.accounts : account.account_id => account }
+
+#   url             = "https://token.actions.githubusercontent.com"
+#   client_id_list  = ["sts.amazonaws.com"]
+#   thumbprint_list = ["6938fd4d98bab03faadb97b34396831e3780aea1"]
+
+#   lifecycle {
+#     ignore_changes = [url, client_id_list, thumbprint_list]
+#   }
+ 
+# }
+
+# # Pre-check if the OIDC provider exists
+# data "aws_iam_openid_connect_provider" "existing_oidc" {
+#   url = "https://token.actions.githubusercontent.com"
+# }
+
+# # Create the OIDC provider if it doesn't exist
+# resource "aws_iam_openid_connect_provider" "github_oidc" {
+#   count = length(data.aws_iam_openid_connect_provider.existing_oidc.arn) > 0 ? 0 : 1
+
+#   url             = "https://token.actions.githubusercontent.com"
+#   client_id_list  = ["sts.amazonaws.com"]
+#   thumbprint_list = ["6938fd4d98bab03faadb97b34396831e3780aea1"]
+
+#   lifecycle {
+#     ignore_changes = [url, client_id_list, thumbprint_list]
+#   }
+# }
+
+locals {
+  oidc_provider_arn = try(data.aws_iam_openid_connect_provider.github_oidc.arn, null)
+}
+
 resource "aws_iam_openid_connect_provider" "github_oidc" {
-  for_each = { for account in local.accounts : account.account_id => account }
+  count = local.oidc_provider_arn == null ? 1 : 0
 
   url             = "https://token.actions.githubusercontent.com"
   client_id_list  = ["sts.amazonaws.com"]
   thumbprint_list = ["6938fd4d98bab03faadb97b34396831e3780aea1"]
-
-  lifecycle {
-    ignore_changes = [url, client_id_list, thumbprint_list]
-  }
-  
 }
+
+
 
 resource "aws_iam_role" "github_role" {
   for_each = { for account in local.accounts : account.account_id => account }
