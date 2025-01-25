@@ -79,7 +79,10 @@
                         "sns:CreateSubscription",
                         "sns:Subscribe",
                         "sns:Publish",
-                        "sns:Unsubscribe"
+                        "sns:Unsubscribe",
+                        "sns:CreateTopic",
+                        "sns:DeleteTopic",
+                        "sns:CreateSubscription"
                     ],
                     "Resource": "*"
                 },
@@ -137,6 +140,12 @@
                         "sns:Subscribe",
                         "sns:Publish",
                         "sns:Unsubscribe",
+                        "sns:Subscribe",
+                        "sns:Publish",
+                        "sns:Unsubscribe",
+                        "sns:CreateTopic",
+                        "sns:DeleteTopic",
+                        "sns:CreateSubscription",
                         "logs:CreateLogGroup",
                         "logs:CreateLogStream",
                         "logs:PutLogEvents",
