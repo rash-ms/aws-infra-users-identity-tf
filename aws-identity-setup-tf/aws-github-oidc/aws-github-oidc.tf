@@ -15,13 +15,14 @@ resource "aws_iam_openid_connect_provider" "github_oidc" {
   thumbprint_list = ["6938fd4d98bab03faadb97b34396831e3780aea1"]
  
 
-  lifecycle {
-    prevent_destroy = true # Prevent accidental deletion
-    ignore_changes = [url, client_id_list, thumbprint_list]
-  }
+  # lifecycle {
+  #   prevent_destroy = true 
+  #   ignore_changes = [url, client_id_list, thumbprint_list]
+  # }
 
 }
 
+  # depends_on = [aws_iam_role.github_role]
   # lifecycle {
   #   ignore_changes = [url, client_id_list, thumbprint_list]
   # }
