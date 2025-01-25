@@ -24,6 +24,11 @@
                         "logs:Get*",
                         "logs:Describe*",
                         "logs:FilterLogEvents",
+                        "logs:CreateLogGroup",
+                        "logs:CreateLogStream",
+                        "logs:PutLogEvents",
+                        "logs:DescribeLogGroups",
+                        "logs:DeleteLogGroup",
                         "cloudwatch:Get*",
                         "cloudwatch:List*",
                         "cloudwatch:Describe*",
@@ -131,7 +136,12 @@
                         "sns:CreateSubscription",
                         "sns:Subscribe",
                         "sns:Publish",
-                        "sns:Unsubscribe"
+                        "sns:Unsubscribe",
+                        "logs:CreateLogGroup",
+                        "logs:CreateLogStream",
+                        "logs:PutLogEvents",
+                        "logs:DescribeLogGroups",
+                        "logs:DeleteLogGroup"
                     ],
                     "Resource": "*"
                 }
