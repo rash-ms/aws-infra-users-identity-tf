@@ -20,18 +20,12 @@ provider "aws" {
 # }
 
 
-# Pre-check for an existing OIDC provider
-data "aws_iam_openid_connect_provider" "existing_github_oidc" {
-  for_each = { for account in local.accounts : account.account_id => account }
-
-  url = "https://token.actions.githubusercontent.com"
-}
-
 # Create OIDC provider only if it doesn't exist
 resource "aws_iam_openid_connect_provider" "github_oidc" {
-  for_each = { for account in local.accounts : account.account_id => account }
-
-  count = try(length(data.aws_iam_openid_connect_provider.existing_github_oidc[each.key].arn) > 0, false) ? 0 : 1
+  for_each = {
+    for account in local.accounts : account.account_id => account
+    if try(data.aws_iam_openid_connect_provider.github_oidc[account.account_id].arn, null) == null
+  }
 
   url             = "https://token.actions.githubusercontent.com"
   client_id_list  = ["sts.amazonaws.com"]
@@ -39,6 +33,23 @@ resource "aws_iam_openid_connect_provider" "github_oidc" {
 
   lifecycle {
     ignore_changes = [url, client_id_list, thumbprint_list]
+  }
+}
+
+# Pre-check for existing OIDC provider
+data "aws_iam_openid_connect_provider" "github_oidc" {
+  for_each = { for account in local.accounts : account.account_id => account }
+
+  url = "https://token.actions.githubusercontent.com"
+}
+
+locals {
+  oidc_provider_arns = {
+    for account_id, account in local.accounts :
+    account_id => try(
+      data.aws_iam_openid_connect_provider.github_oidc[account_id].arn,
+      aws_iam_openid_connect_provider.github_oidc[account_id].arn
+    )
   }
 }
 
@@ -55,7 +66,8 @@ resource "aws_iam_role" "github_role" {
       {
         Effect = "Allow",
         Principal = {
-          Federated = aws_iam_openid_connect_provider.github_oidc[each.key].arn
+          # Federated = aws_iam_openid_connect_provider.github_oidc[each.key].arn
+          Federated = local.oidc_provider_arns[each.key]
         },
         Action = "sts:AssumeRoleWithWebIdentity",
         Condition = {
