@@ -54,7 +54,7 @@ resource "aws_iam_role" "roles_dev" {
       Condition = {
         StringEquals = {
           "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com",
-          "token.actions.githubusercontent.com:sub" = "repo:rash-ms/develop/*"
+          "token.actions.githubusercontent.com:sub" = "repo:rash-ms/*"
         }
       }
     }]
@@ -79,7 +79,7 @@ resource "aws_iam_role" "roles_prod" {
       Condition = {
         StringEquals = {
           "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com",
-          "token.actions.githubusercontent.com:sub" = "repo:rash-ms/main/*"
+          "token.actions.githubusercontent.com:sub" = "repo:rash-ms/*"
         }
       }
     }]
