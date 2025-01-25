@@ -16,15 +16,15 @@ resource "aws_iam_openid_connect_provider" "github_oidc" {
  
   depends_on = [aws_iam_role.github_role]
 
+}
+
   # lifecycle {
   #   ignore_changes = [url, client_id_list, thumbprint_list]
   # }
-  
-}
-
-
-
-
+  #   lifecycle {
+  #   prevent_destroy = true # Prevent accidental deletion
+  #   ignore_changes = [url, client_id_list, thumbprint_list]
+  # }
 
 resource "aws_iam_role" "github_role" {
   for_each = { for account in local.accounts : account.account_id => account }
