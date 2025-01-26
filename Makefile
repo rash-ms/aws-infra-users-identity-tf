@@ -11,12 +11,16 @@
 # Python executable
 python_exec=$(shell command -v python3)
 
-# Base directory for Terraform modules
-# TERRAFORM_DIR = ./aws-identity-deployment-tf
-TERRAFORM_DIR = ./aws-identity-setup-tf
 
-# Get a list of module subdirectories dynamically
-MODULES = $(shell find $(TERRAFORM_DIR) -mindepth 1 -maxdepth 1 -type d)
+# TERRAFORM_DIR = ./aws-identity-setup-tf
+# MODULES = $(shell find $(TERRAFORM_DIR) -mindepth 1 -maxdepth 1 -type d)
+
+# Base directory for Terraform configuration
+TERRAFORM_DIR = ./aws-identity-deployment-tf
+
+# Extract module sources from .tf files
+MODULES = $(shell grep -hroP 'source\s*=\s*"\K[^"]+' $(TERRAFORM_DIR) | sort | uniq)
+
 
 auth:
 		saml2aws login
@@ -68,8 +72,6 @@ init:
 		fi; \
 		cd - > /dev/null; \
 	done
-
-
 
 plan:
 	@echo "Planning Terraform modules..."
