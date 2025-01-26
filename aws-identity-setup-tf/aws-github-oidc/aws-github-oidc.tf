@@ -49,6 +49,7 @@ resource "aws_iam_role" "github_role" {
   })
 }
 
+
 # Attach AdministratorAccess policy to the IAM role
 resource "aws_iam_role_policy_attachment" "attach_admin_policy" {
   role       = aws_iam_role.github_role.name
