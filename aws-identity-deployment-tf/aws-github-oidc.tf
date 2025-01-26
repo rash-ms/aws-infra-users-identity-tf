@@ -4,7 +4,7 @@ module "iam_oidc_deployment" {
 }
 
 module "iam_oidc_deployment" {
-  source = "../aws-identity-setup-tf/_aws-github-oidc"
+  source = "../aws-identity-setup-tf/clone_aws-github-oidc"
   environment = var.environment
 }
 
