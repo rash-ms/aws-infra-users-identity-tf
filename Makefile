@@ -67,3 +67,4 @@ tf_lint_without_write:
 install_python_deps:
 	$(shell command -v python3) -m pip install --upgrade pip
 	pip install -r ./scripts/temp_install_scripts/requirements.txt
+
