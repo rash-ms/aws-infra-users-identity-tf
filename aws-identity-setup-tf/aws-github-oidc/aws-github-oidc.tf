@@ -12,9 +12,14 @@ provider "aws" {
 locals {
   env = var.environment
   account_mapping = {
-    dev  = "022499035350" # AWS Account ID for Dev
-    prod = "022499035568" # AWS Account ID for Prod
+    dev : "022499035350"  # AWS Dev
+    prod : "022499035568" # AWS Prod
   }
+}
+
+variable "environment" {
+  description = "Environment to deploy to (dev or prod)"
+  type        = string
 }
 
 # OIDC provider resource
