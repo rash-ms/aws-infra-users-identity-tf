@@ -12,7 +12,8 @@
 python_exec=$(shell command -v python3)
 
 # Base directory for Terraform modules
-TERRAFORM_DIR = ./aws-identity-deployment-tf
+# TERRAFORM_DIR = ./aws-identity-deployment-tf
+TERRAFORM_DIR = ./aws-identity-setup-tf
 
 # Get a list of module subdirectories dynamically
 MODULES = $(shell find $(TERRAFORM_DIR) -mindepth 1 -maxdepth 1 -type d)
@@ -67,4 +68,3 @@ tf_lint_without_write:
 install_python_deps:
 	$(shell command -v python3) -m pip install --upgrade pip
 	pip install -r ./scripts/temp_install_scripts/requirements.txt
-
