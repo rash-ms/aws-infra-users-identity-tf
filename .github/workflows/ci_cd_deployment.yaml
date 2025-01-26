@@ -1,11 +1,13 @@
-name: cicd_add_user_us
+name: Terraform Deployment
 
 on:
   push:
-    branches: [ main ]
-    path:
-    - 'aws-identity-setup-tf/**'
-    - '.github/workflows/ci_cd_deployment.yaml'
+    branches: 
+      - main      # Trigger for the prod environment
+      - dev       # Trigger for the dev environment
+    paths:
+      - 'aws-identity-setup-tf/**'   # Monitor Terraform directory
+      - '.github/workflows/ci_cd_deployment.yaml'  # Monitor changes to workflow
 
 env:
   AWS_REGION: us-east-1
@@ -15,16 +17,25 @@ permissions:
   contents: read
 
 jobs:
-  build:
-    if: "!contains(github.event.head_commit.message, 'skip ci')"
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Git clone the repository
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v1.3.2
+      - name: Set environment variables
+        run: |
+          if [ "${{ github.ref_name }}" == "main" ]; then
+            echo "TF_VAR_environment=prod" >> $GITHUB_ENV
+          else
+            echo "TF_VAR_environment=dev" >> $GITHUB_ENV
+          fi
+
+      - name: Set up Terraform CLI
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.4 
 
       - name: Configure AWS credentials with secrets
         id: configure_aws_secrets
@@ -34,14 +45,26 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
+      - name: Set up AWS CLI Profile
+        run: |
+          mkdir -p ~/.aws
+          echo "[shared-services]" > ~/.aws/credentials
+          echo "aws_access_key_id = ${{ secrets.AWS_ACCESS_KEY_ID }}" >> ~/.aws/credentials
+          echo "aws_secret_access_key = ${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> ~/.aws/credentials
+          echo "[profile shared-services]" > ~/.aws/config
+          echo "region = us-east-1" >> ~/.aws/config
+
       - name: Install CI Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install build-essential
+          sudo apt-get install -y build-essential
           make install_python_deps
-
-      - name: AWS STS GetCallerIdentity and Init, Apply Terraform
-        run: |
-          aws sts get-caller-identity
-          make init
-          make apply
+    
+      - name: Run Terraform Init
+        run: make init
+  
+      - name: Run Terraform Plan
+        run: make plan
+  
+      - name: Run Terraform Apply
+        run: make apply

@@ -82,7 +82,17 @@
                         "sns:Unsubscribe",
                         "sns:CreateTopic",
                         "sns:DeleteTopic",
-                        "sns:CreateSubscription"
+                        "sns:CreateSubscription",
+
+                        "iam:GetOpenIDConnectProvider",
+                        "iam:CreateOpenIDConnectProvider",
+                        "iam:UpdateOpenIDConnectProviderThumbprint",
+                        "iam:DeleteOpenIDConnectProvider",
+                        "iam:PassRole",
+                        "iam:AttachRolePolicy",
+                        "iam:CreateRole",
+                        "iam:DeleteRole",
+                        "iam:UpdateAssumeRolePolicy"
                     ],
                     "Resource": "*"
                 },
@@ -150,7 +160,17 @@
                         "logs:CreateLogStream",
                         "logs:PutLogEvents",
                         "logs:DescribeLogGroups",
-                        "logs:DeleteLogGroup"
+                        "logs:DeleteLogGroup",
+
+                        "iam:GetOpenIDConnectProvider",
+                        "iam:CreateOpenIDConnectProvider",
+                        "iam:UpdateOpenIDConnectProviderThumbprint",
+                        "iam:DeleteOpenIDConnectProvider",
+                        "iam:PassRole",
+                        "iam:AttachRolePolicy",
+                        "iam:CreateRole",
+                        "iam:DeleteRole",
+                        "iam:UpdateAssumeRolePolicy"
                     ],
                     "Resource": "*"
                 }
