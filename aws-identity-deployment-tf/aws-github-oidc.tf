@@ -3,10 +3,6 @@ module "iam_oidc_deployment" {
   environment = var.environment
 }
 
-module "iam_oidc_deployment" {
-  source = "../aws-identity-setup-tf/clone_aws-github-oidc"
-  environment = var.environment
-}
 
 variable "environment" {
   description = "Environment to deploy to (dev or prod)"
