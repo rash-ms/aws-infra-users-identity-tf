@@ -12,8 +12,8 @@ provider "aws" {
 locals {
   env = var.environment
   account_mapping = {
-    dev : "022499035350"  # AWS Dev
-    prod : "022499035568" # AWS Prod
+    dev  = "022499035350" # AWS Dev
+    prod = "022499035568" # AWS Prod
   }
 }
 
