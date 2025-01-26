@@ -12,8 +12,8 @@ provider "aws" {
 locals {
   env = var.environment
   account_mapping = {
-    dev  = "022499035350" # AWS Dev
-    prod = "022499035568" # AWS Prod
+    dev  = "022499035350" # AWS Account Dev
+    prod = "022499035568" # AWS Account Prod
   }
 }
 
@@ -63,3 +63,4 @@ resource "aws_iam_role_policy_attachment" "attach_admin_policy" {
   role       = aws_iam_role.github_role.name
   policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
 }
+
