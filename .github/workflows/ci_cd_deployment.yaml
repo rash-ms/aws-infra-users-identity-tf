@@ -49,12 +49,9 @@ jobs:
       - name: AWS STS GetCallerIdentity and Init, Plan Terraform
         run: |
           aws sts get-caller-identity
-          make init
-          echo "Running linter, if the job fails here, all you have to do is run make tf_lint_with_write commit and push"
+          terraform init
           echo "========"
-          make tf_lint_without_write
-          echo "========"
-          make plan
+          terraform plan
           echo "========"
 
       - name: AWS STS GetCallerIdentity and Init, Apply Terraform
