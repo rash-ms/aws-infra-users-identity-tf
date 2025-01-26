@@ -7,12 +7,12 @@ provider "aws" {
   }
 }
 
-# Local variables for account mapping
-locals {
-  env = var.environment
-  account_mapping = {
-    dev : "022499035350" # AWS Dev
-    prod : "022499035568" # AWS Prod
-  }
-}
+# # Local variables for account mapping
+# locals {
+#   env = var.environment
+#   account_mapping = {
+#     dev : "022499035350" # AWS Dev
+#     prod : "022499035568" # AWS Prod
+#   }
+# }
 
