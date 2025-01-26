@@ -17,44 +17,44 @@ locals {
   }
 }
 
-resource "aws_iam_user" "example_user" {
-  provider = aws.assumed
-  name     = "example-user"
-}
+# resource "aws_iam_user" "example_user" {
+#   provider = aws.assumed
+#   name     = "example-user"
+# }
 
-resource "aws_iam_policy" "example_policy" {
-  provider = aws.assumed
-  name     = "example-policy"
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect   = "Allow"
-        Action   = ["s3:*"]
-        Resource = ["*"]
-      }
-    ]
-  })
-}
+# resource "aws_iam_policy" "example_policy" {
+#   provider = aws.assumed
+#   name     = "example-policy"
+#   policy = jsonencode({
+#     Version = "2012-10-17"
+#     Statement = [
+#       {
+#         Effect   = "Allow"
+#         Action   = ["s3:*"]
+#         Resource = ["*"]
+#       }
+#     ]
+#   })
+# }
 
-resource "aws_iam_role" "example_role" {
-  provider = aws.assumed
-  name     = "example-role"
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Principal = {
-          Service = "ec2.amazonaws.com"
-        }
-        Action = "sts:AssumeRole"
-      }
-    ]
-  })
-}
+# resource "aws_iam_role" "example_role" {
+#   provider = aws.assumed
+#   name     = "example-role"
+#   assume_role_policy = jsonencode({
+#     Version = "2012-10-17"
+#     Statement = [
+#       {
+#         Effect = "Allow"
+#         Principal = {
+#           Service = "ec2.amazonaws.com"
+#         }
+#         Action = "sts:AssumeRole"
+#       }
+#     ]
+#   })
+# }
 
-variable "environment" {
-  description = "Environment to deploy to (dev or prod)"
-  type        = string
-}
+# variable "environment" {
+#   description = "Environment to deploy to (dev or prod)"
+#   type        = string
+# }
