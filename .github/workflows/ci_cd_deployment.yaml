@@ -1,11 +1,13 @@
-name: cicd_add_user_us
+name: Terraform Deployment
 
 on:
   push:
-    branches: [ main ]
-    path:
-    - 'aws-identity-setup-tf/**'
-    - '.github/workflows/ci_cd_deployment.yaml'
+    branches: 
+      - main      # Trigger for the prod environment
+      - dev       # Trigger for the dev environment
+    paths:
+      - 'aws-identity-setup-tf/**'   # Monitor Terraform directory
+      - '.github/workflows/ci_cd_deployment.yaml'  # Monitor changes to workflow
 
 env:
   AWS_REGION: us-east-1
@@ -15,16 +17,21 @@ permissions:
   contents: read
 
 jobs:
-  build:
-    if: "!contains(github.event.head_commit.message, 'skip ci')"
+  deploy:
+    if: "!contains(github.event.head_commit.message, 'skip ci')" # Skip CI on specific commit messages
     runs-on: ubuntu-latest
 
     steps:
-      - name: Git clone the repository
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v1.3.2
+      - name: Set environment variables
+        run: |
+          if [ "${{ github.ref_name }}" == "main" ]; then
+            echo "TF_VAR_environment=prod" >> $GITHUB_ENV
+          else
+            echo "TF_VAR_environment=dev" >> $GITHUB_ENV
+          fi
 
       - name: Configure AWS credentials with secrets
         id: configure_aws_secrets
@@ -37,11 +44,19 @@ jobs:
       - name: Install CI Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install build-essential
+          sudo apt-get install -y build-essential
           make install_python_deps
 
-      - name: AWS STS GetCallerIdentity and Init, Apply Terraform
-        run: |
-          aws sts get-caller-identity
-          make init
-          make apply
+      # - name: Verify AWS Identity
+      #   run: aws sts get-caller-identity
+
+      - name: Initialize Terraform
+        run: make init
+
+      - name: Terraform Plan
+        run: make plan
+
+      - name: Terraform Apply
+        run: make apply
+
+

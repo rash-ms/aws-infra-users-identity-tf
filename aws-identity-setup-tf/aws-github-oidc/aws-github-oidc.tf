@@ -1,30 +1,31 @@
-# Assume the role dynamically for this resource
-data "aws_caller_identity" "current" {
-  provider = aws.assume_role
-}
-
 provider "aws" {
-  alias  = "assume_role"
-  region = var.region
-
+  region  = "us-east-1"
+  profile = "shared-services"
   assume_role {
-    role_arn     = var.assume_role_arn
+    role_arn     = "arn:aws:iam::${lookup(local.account_mapping, local.env)}:role/terraform-role"
     session_name = "terraform-session"
   }
 }
 
-# Create the OIDC Provider
+# Local variables for account mapping
+locals {
+  env = var.environment
+  account_mapping = {
+    dev  = "022499035350" # AWS Account ID for Dev
+    prod = "022499035568" # AWS Account ID for Prod
+  }
+}
+
+# OIDC provider resource
 resource "aws_iam_openid_connect_provider" "github_oidc" {
-  provider        = aws.assume_role
   url             = "https://token.actions.githubusercontent.com"
   client_id_list  = ["sts.amazonaws.com"]
   thumbprint_list = ["6938fd4d98bab03faadb97b34396831e3780aea1"]
 }
 
-# Create the IAM Role
+# IAM role for GitHub Actions
 resource "aws_iam_role" "github_role" {
-  provider = aws.assume_role
-  name     = "GitHubActionsRole-${var.account_id}"
+  name = "GitHubActionsRole-${local.env}"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
@@ -40,7 +41,7 @@ resource "aws_iam_role" "github_role" {
             "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
           },
           StringLike = {
-            "token.actions.githubusercontent.com:sub": var.repo_sub
+            "token.actions.githubusercontent.com:sub": "repo:rash-ms/*"
           }
         }
       }
@@ -48,9 +49,17 @@ resource "aws_iam_role" "github_role" {
   })
 }
 
-output "role_name" {
-  value = aws_iam_role.github_role.name
+# Attach AdministratorAccess policy to the IAM role
+resource "aws_iam_role_policy_attachment" "attach_admin_policy" {
+  role       = aws_iam_role.github_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
 }
+
+# Input variable for the environment
+variable "env" {
+  type = string
+}
+
 
 
 
