@@ -38,13 +38,33 @@ debug:
 # 	)
 
 # Terraform Commands for All Modules
+# init:
+# 	@echo "Initializing Terraform modules..."
+# 	@for module in $(MODULES); do \
+# 		echo "Running terraform init in $$module"; \
+# 		cd $$module && terraform init -upgrade || exit 1; \
+# 		cd - > /dev/null; \
+# 	done
+
 init:
 	@echo "Initializing Terraform modules..."
 	@for module in $(MODULES); do \
-		echo "Running terraform init in $$module"; \
-		cd $$module && terraform init -upgrade || exit 1; \
+		echo "Processing module: $$module"; \
+		module_name=$$(basename $$module); \
+		if [ "$$module_name" = "aws-orgz-team-unit" ] || [ "$$module_name" = "aws-users-identity-creation" ]; then \
+			echo "Running terraform init -upgrade for $$module_name"; \
+			cd $$module && terraform init -upgrade || exit 1; \
+		else \
+			echo "Running terraform init with backend config for $$module_name"; \
+			cd $$module && terraform init \
+				-backend-config="bucket=byt-infra-user-identity-backend" \
+				-backend-config="key=aws-orgz-team-unit/$${ENVIRONMENT}/$$module_name.tfstate" \
+				-backend-config="region=us-east-1" || exit 1; \
+		fi; \
 		cd - > /dev/null; \
 	done
+
+
 
 plan:
 	@echo "Planning Terraform modules..."
