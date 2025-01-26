@@ -32,6 +32,11 @@ jobs:
             echo "TF_VAR_environment=dev" >> $GITHUB_ENV
           fi
 
+      - name: Set up Terraform CLI
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.4 
+
       - name: Configure AWS credentials with secrets
         id: configure_aws_secrets
         uses: aws-actions/configure-aws-credentials@v2
@@ -45,15 +50,12 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y build-essential
           make install_python_deps
-
-      - name: AWS STS GetCallerIdentity and Init, Plan Terraform
-        run: |
-          aws sts get-caller-identity
-          terraform init
-          echo "========"
-          terraform plan
-          echo "========"
-
-      - name: AWS STS GetCallerIdentity and Init, Apply Terraform
-        run: |
-          make apply
+    
+      - name: Run Terraform Init
+        run: make init
+  
+      - name: Run Terraform Plan
+        run: make plan
+  
+      - name: Run Terraform Apply
+        run: make apply
