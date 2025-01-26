@@ -1,7 +1,6 @@
 # Data Infra MakeFile
 
 # <Special Targets>
-# Reference: https://www.gnu.org/software/make/manual/html_node/Special-Targets.html
 .EXPORT_ALL_VARIABLES:
 .ONESHELL:
 # </Special Targets>
@@ -9,51 +8,53 @@
 # Mark targets as phony
 .PHONY: init plan apply destroy init_remove auth set_env tf_lint_with_write tf_lint_without_write install_python_deps
 
+# Python executable
 python_exec=$(shell command -v python3)
 
 # Base directory for Terraform modules
 TERRAFORM_DIR = ./aws-identity-deployment-tf
-# TERRAFORM_DIR = ./aws-identity-setup-tf
 
 # Get a list of module subdirectories dynamically
-MODULES = $(shell find $(TERRAFORM_DIR) -mindepth 1 -maxdepth 1 -type d)
+MODULES = $(shell find $(TERRAFORM_DIR) -mindepth 1 -maxdepth 1 -type d || echo "./dummy")
 
-# Authentication
-auth:
-	@saml2aws login
-
-set_env:
-	@echo "Exporting environment variables"
-	@eval $$(saml2aws script)
+# Debugging target to print modules
+debug:
+	@echo "Modules: $(MODULES)"
+	@$(foreach module, $(MODULES), echo "Found module: $(module)";)
 
 # Terraform Commands for All Modules
 init:
+	@echo "Initializing Terraform modules..."
 	@$(foreach module, $(MODULES), \
-		echo "Initializing $(module)"; \
+		echo "Running terraform init in $(module)"; \
 		(cd $(module) && terraform init -upgrade); \
 	)
 
 plan:
+	@echo "Planning Terraform modules..."
 	@$(foreach module, $(MODULES), \
-		echo "Planning $(module)"; \
+		echo "Running terraform plan in $(module)"; \
 		(cd $(module) && terraform plan); \
 	)
 
 apply:
+	@echo "Applying Terraform modules..."
 	@$(foreach module, $(MODULES), \
-		echo "Applying $(module)"; \
+		echo "Running terraform apply in $(module)"; \
 		(cd $(module) && terraform apply -auto-approve); \
 	)
 
 destroy:
+	@echo "Destroying Terraform modules..."
 	@$(foreach module, $(MODULES), \
-		echo "Destroying $(module)"; \
+		echo "Running terraform destroy in $(module)"; \
 		(cd $(module) && terraform destroy -auto-approve); \
 	)
 
 init_remove:
+	@echo "Removing .terraform directories..."
 	@$(foreach module, $(MODULES), \
-		echo "Removing .terraform directory from $(module)"; \
+		echo "Removing .terraform in $(module)"; \
 		(cd $(module) && rm -rf .terraform); \
 	)
 
@@ -66,5 +67,5 @@ tf_lint_without_write:
 
 # Install Python Dependencies
 install_python_deps:
-	$(shell command -v python3) -m pip install --upgrade pip
+	$(python_exec) -m pip install --upgrade pip
 	pip install -r ./scripts/temp_install_scripts/requirements.txt
