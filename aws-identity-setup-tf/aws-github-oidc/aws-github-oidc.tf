@@ -1,5 +1,5 @@
 provider "aws" {
-  alias   = "assumed"
+  #   alias   = "assumed"
   region  = "us-east-1"
   profile = "shared-services"
   assume_role {
@@ -24,7 +24,7 @@ variable "environment" {
 
 # OIDC provider resource
 resource "aws_iam_openid_connect_provider" "github_oidc" {
-  provider        = aws.assumed
+  #   provider        = aws.assumed
   url             = "https://token.actions.githubusercontent.com"
   client_id_list  = ["sts.amazonaws.com"]
   thumbprint_list = ["6938fd4d98bab03faadb97b34396831e3780aea1"]
@@ -32,8 +32,8 @@ resource "aws_iam_openid_connect_provider" "github_oidc" {
 
 # IAM role for GitHub Actions
 resource "aws_iam_role" "github_role" {
-  provider = aws.assumed
-  name     = "GitHubActionsRole-${local.env}"
+  #   provider = aws.assumed
+  name = "GitHubActionsRole-${local.env}"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
@@ -59,7 +59,7 @@ resource "aws_iam_role" "github_role" {
 
 # Attach AdministratorAccess policy to the IAM role
 resource "aws_iam_role_policy_attachment" "attach_admin_policy" {
-  provider   = aws.assumed
+  #   provider   = aws.assumed
   role       = aws_iam_role.github_role.name
   policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
 }
