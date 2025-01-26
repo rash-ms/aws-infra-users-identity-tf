@@ -9,6 +9,9 @@ on:
       - 'aws-identity-setup-tf/**'   # Monitor Terraform directory
       - '.github/workflows/ci_cd_deployment.yaml'  # Monitor changes to workflow
       - '**/Makefile'   
+      - '**/*.tf'
+      - '**/*.yaml'
+      - '**/*.yml'
 
 env:
   AWS_REGION: us-east-1
