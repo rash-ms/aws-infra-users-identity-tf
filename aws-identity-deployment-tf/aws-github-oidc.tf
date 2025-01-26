@@ -10,6 +10,7 @@ variable "environment" {
 }
 
 
+
 # # Load accounts from JSON file
 # locals {
 #   accounts = jsondecode(file("${path.module}/accounts.json"))
