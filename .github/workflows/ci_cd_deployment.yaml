@@ -66,5 +66,5 @@ jobs:
       - name: Run Terraform Plan
         run: make plan
   
-      - name: Run Terraform Apply
-        run: make apply
+      # - name: Run Terraform Apply
+      #   run: make apply
