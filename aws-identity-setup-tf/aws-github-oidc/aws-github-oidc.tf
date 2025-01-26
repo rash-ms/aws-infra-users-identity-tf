@@ -1,48 +1,13 @@
-# locals {
-#   # Directly parse the JSON file
-#   accounts = jsondecode(file("${path.module}/account_github_oidc.json"))
-# }
-
-# module "aws_oidc_providers" {
-#   for_each = {
-#     for account in local.accounts : account.account_id => {
-#       account_id = account.account_id,
-#       region     = account.region,
-#       role_name  = "byt-data-org-${account.environment}-role",
-#       repo_sub   = account.repo_sub
-#     }
-#   }
-
-#   source     = "./modules/aws_oidc_provider"
-#   account_id = each.value.account_id
-#   region     = each.value.region
-#   role_name  = each.value.role_name
-#   repo_sub   = each.value.repo_sub
-# }
-
-
-provider "aws" {
-  alias  = "module_provider"
-  region = var.region
-
-  assume_role {
-    role_arn     = "arn:aws:iam::${var.account_id}:role/${var.role_name}"
-    session_name = "terraform-session"
-  }
-}
-
-# Create the OIDC Provider
+# OIDC Provider
 resource "aws_iam_openid_connect_provider" "github_oidc" {
-  provider        = aws.module_provider
   url             = "https://token.actions.githubusercontent.com"
   client_id_list  = ["sts.amazonaws.com"]
   thumbprint_list = ["6938fd4d98bab03faadb97b34396831e3780aea1"]
 }
 
-# Create the IAM Role
+# IAM Role
 resource "aws_iam_role" "github_role" {
-  provider = aws.module_provider
-  name     = "GitHubActionsRole-${var.account_id}"
+  name = "GitHubActionsRole-${var.account_id}"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
@@ -65,6 +30,12 @@ resource "aws_iam_role" "github_role" {
     ]
   })
 }
+
+# Outputs
+output "role_name" {
+  value = aws_iam_role.github_role.name
+}
+
 
 
 

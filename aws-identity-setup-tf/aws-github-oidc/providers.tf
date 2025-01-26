@@ -13,3 +13,7 @@
 #     role_arn = local.deployments["main-deployment"].byt_data_eng_prod.assume_role_arn
 #   }
 # }
+
+# providers = {
+#   aws = aws
+# }

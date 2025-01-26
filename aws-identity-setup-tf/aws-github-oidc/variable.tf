@@ -1,4 +1,3 @@
-# Variables
 variable "account_id" {
   description = "The AWS Account ID for the target account"
   type        = string
