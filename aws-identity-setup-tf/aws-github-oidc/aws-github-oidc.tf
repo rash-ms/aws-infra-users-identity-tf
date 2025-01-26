@@ -55,16 +55,6 @@ resource "aws_iam_role_policy_attachment" "attach_admin_policy" {
   policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
 }
 
-# Input variable for the environment
-variable "env" {
-  type = string
-}
-
-
-
-
-
-
 
 # provider "aws" {
 #   region = "us-east-1"
