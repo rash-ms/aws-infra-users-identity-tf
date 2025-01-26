@@ -28,6 +28,7 @@ set_env:
 debug:
 	@echo "Modules: $(MODULES)"
 	@$(foreach module, $(MODULES), echo "Found module: $(module)";)
+	@echo "Environment detected: $(TF_VAR_environment)"
 
 # Terraform Commands for All Modules
 # init:
@@ -58,7 +59,7 @@ init:
 			echo "Running terraform init with backend config for $$module_name"; \
 			cd $$module && terraform init \
 				-backend-config="bucket=byt-infra-user-identity-backend" \
-				-backend-config="key=aws-orgz-team-unit/$${ENVIRONMENT}/$$module_name.tfstate" \
+				-backend-config="key=aws-orgz-team-unit/$(TF_VAR_environment)/$$module_name.tfstate" \
 				-backend-config="region=us-east-1" || exit 1; \
 		fi; \
 		cd - > /dev/null; \
