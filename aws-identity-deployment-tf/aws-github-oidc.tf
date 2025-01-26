@@ -4,7 +4,7 @@ module "iam_oidc_deployment" {
 }
 
 
-variable "environment" {
-  description = "Environment to deploy to (dev or prod)"
-  type        = string
-}
+# variable "environment" {
+#   description = "Environment to deploy to (dev or prod)"
+#   type        = string
+# }
