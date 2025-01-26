@@ -24,3 +24,10 @@ module "aws_oidc_providers" {
   role_name  = each.value.role_name
   repo_sub   = each.value.repo_sub
 }
+
+resource "aws_iam_role_policy_attachment" "attach_admin_policy" {
+  for_each = { for account in local.accounts : account.account_id => account }
+
+  role       = module.aws_oidc_providers[each.key].role_name
+  policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
+}

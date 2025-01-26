@@ -1,7 +1,7 @@
-locals {
-  # Directly parse the JSON file
-  accounts = jsondecode(file("${path.module}/account_github_oidc.json"))
-}
+# locals {
+#   # Directly parse the JSON file
+#   accounts = jsondecode(file("${path.module}/account_github_oidc.json"))
+# }
 
 # module "aws_oidc_providers" {
 #   for_each = {
@@ -66,12 +66,6 @@ resource "aws_iam_role" "github_role" {
   })
 }
 
-resource "aws_iam_role_policy_attachment" "attach_admin_policy" {
-  for_each = { for account in local.accounts : account.account_id => account }
-
-  role       = module.aws_oidc_providers[each.key].role_name
-  policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
-}
 
 
 # provider "aws" {
