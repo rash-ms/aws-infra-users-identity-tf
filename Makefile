@@ -6,10 +6,10 @@
 .ONESHELL:
 # </Special Targets>
 
-# .PHONY: init plan apply destroy init_remove
+# Mark targets as phony
+.PHONY: init plan apply destroy init_remove auth set_env tf_lint_with_write tf_lint_without_write install_python_deps
 
 python_exec=$(shell command -v python3)
-# <Recipes>
 
 # Base directory for Terraform modules
 TERRAFORM_DIR = ./aws-identity-deployment-tf
