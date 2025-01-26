@@ -1,6 +1,6 @@
 provider "aws" {
-  alias  = "assumed"
-  region = "us-east-1"
+  alias   = "assumed"
+  region  = "us-east-1"
   profile = "shared-services"
   assume_role {
     role_arn     = "arn:aws:iam::${lookup(local.account_mapping, var.environment)}:role/terraform-role"
@@ -25,7 +25,7 @@ resource "aws_iam_user" "example_user" {
 resource "aws_iam_policy" "example_policy" {
   provider = aws.assumed
   name     = "example-policy"
-  policy   = jsonencode({
+  policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
@@ -52,4 +52,9 @@ resource "aws_iam_role" "example_role" {
       }
     ]
   })
+}
+
+variable "environment" {
+  description = "Environment to deploy to (dev or prod)"
+  type        = string
 }
