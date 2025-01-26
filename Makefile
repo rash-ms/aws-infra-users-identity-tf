@@ -1,3 +1,16 @@
+# Data Infra MakeFile
+
+# <Special Targets>
+# Reference: https://www.gnu.org/software/make/manual/html_node/Special-Targets.html
+.EXPORT_ALL_VARIABLES:
+.ONESHELL:
+# </Special Targets>
+
+.PHONY: init plan apply destroy init_remove
+
+python_exec=$(shell command -v python3)
+# <Recipes>
+
 # Base directory for Terraform modules
 TERRAFORM_DIR = ./aws-identity-deployment-tf
 
