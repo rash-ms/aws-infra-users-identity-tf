@@ -46,13 +46,17 @@ jobs:
           sudo apt-get install -y build-essential
           make install_python_deps
 
-      - name: Initialize Terraform
-        run: make init
+      - name: AWS STS GetCallerIdentity and Init, Plan Terraform
+        run: |
+          aws sts get-caller-identity
+          make init
+          echo "Running linter, if the job fails here, all you have to do is run make tf_lint_with_write commit and push"
+          echo "========"
+          make tf_lint_without_write
+          echo "========"
+          make plan
+          echo "========"
 
-      - name: Terraform Plan
-        run: make plan
-
-      - name: Terraform Apply
-        run: make apply
-
-
+      - name: AWS STS GetCallerIdentity and Init, Apply Terraform
+        run: |
+          make apply
