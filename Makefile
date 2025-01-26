@@ -6,7 +6,7 @@
 .ONESHELL:
 # </Special Targets>
 
-.PHONY: init plan apply destroy init_remove
+# .PHONY: init plan apply destroy init_remove
 
 python_exec=$(shell command -v python3)
 # <Recipes>
