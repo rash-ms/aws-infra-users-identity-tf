@@ -19,7 +19,7 @@ set_env:
 
 init:
 		cd $(TERRAFORM_DIR) && terraform init -upgrade
-
+		
 plan:
 		cd $(TERRAFORM_DIR) && terraform plan
 
