@@ -17,3 +17,8 @@ variable "repo_sub" {
   description = "The repository sub used in the IAM role condition"
   type        = string
 }
+
+variable "assume_role_arn" {
+  description = "The ARN of the role to assume for cross-account access"
+  type        = string
+}

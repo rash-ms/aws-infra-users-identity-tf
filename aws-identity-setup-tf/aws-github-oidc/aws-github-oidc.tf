@@ -1,17 +1,21 @@
-# Provider configuration (dynamically assumes role for each account)
+# Assume the role dynamically for this resource
+data "aws_caller_identity" "current" {
+  provider = aws.assume_role
+}
+
 provider "aws" {
-  alias  = "module_provider"
+  alias  = "assume_role"
   region = var.region
 
   assume_role {
-    role_arn     = "arn:aws:iam::${var.account_id}:role/${var.role_name}"
+    role_arn     = var.assume_role_arn
     session_name = "terraform-session"
   }
 }
 
 # Create the OIDC Provider
 resource "aws_iam_openid_connect_provider" "github_oidc" {
-  provider        = aws.module_provider
+  provider        = aws.assume_role
   url             = "https://token.actions.githubusercontent.com"
   client_id_list  = ["sts.amazonaws.com"]
   thumbprint_list = ["6938fd4d98bab03faadb97b34396831e3780aea1"]
@@ -19,7 +23,7 @@ resource "aws_iam_openid_connect_provider" "github_oidc" {
 
 # Create the IAM Role
 resource "aws_iam_role" "github_role" {
-  provider = aws.module_provider
+  provider = aws.assume_role
   name     = "GitHubActionsRole-${var.account_id}"
 
   assume_role_policy = jsonencode({
@@ -44,10 +48,10 @@ resource "aws_iam_role" "github_role" {
   })
 }
 
-# Outputs
 output "role_name" {
   value = aws_iam_role.github_role.name
 }
+
 
 
 
