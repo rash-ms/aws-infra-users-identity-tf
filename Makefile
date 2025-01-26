@@ -15,7 +15,13 @@ python_exec=$(shell command -v python3)
 TERRAFORM_DIR = ./aws-identity-deployment-tf
 
 # Get a list of module subdirectories dynamically
-MODULES = $(shell find $(TERRAFORM_DIR) -mindepth 1 -maxdepth 1 -type d || echo "./dummy")
+MODULES = $(shell find $(TERRAFORM_DIR) -mindepth 1 -maxdepth 1 -type d)
+
+auth:
+		saml2aws login
+
+set_env:
+		@echo execute eval $(saml2aws script)
 
 # Debugging target to print modules
 debug:
