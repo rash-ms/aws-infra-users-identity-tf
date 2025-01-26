@@ -17,11 +17,11 @@ locals {
   }
 }
 
-# # # Input variable for environment
-# # variable "environment" {
-# #   type        = string
-# #   description = "The environment to deploy (e.g., dev or prod)"
-# # }
+# Input variable for environment
+variable "environment" {
+  type        = string
+  description = "The environment to deploy (e.g., dev or prod)"
+}
 
 # # OIDC provider resource
 # resource "aws_iam_openid_connect_provider" "github_oidc" {
