@@ -30,17 +30,14 @@ debug:
 # 		(cd $(module) && terraform init -upgrade); \
 # 	)
 
+# Terraform Commands for All Modules
 init:
 	@echo "Initializing Terraform modules..."
-	@$(foreach module, $(MODULES), \
-		echo "Running terraform init in $(module)"; \
-		if [ -d $(module) ]; then \
-			cd $(module) && terraform init -upgrade || exit 1; \
-		else \
-			echo "Directory $(module) does not exist"; \
-		fi; \
-	)
-
+	@for module in $(MODULES); do \
+		echo "Running terraform init in $$module"; \
+		cd $$module && terraform init -upgrade || exit 1; \
+		cd - > /dev/null; \
+	done
 
 plan:
 	@echo "Planning Terraform modules..."
