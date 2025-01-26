@@ -56,6 +56,52 @@ resource "aws_iam_role_policy_attachment" "attach_admin_policy" {
   policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
 }
 
+# OIDC-specific IAM policy
+resource "aws_iam_policy" "oidc_policy" {
+  name        = "OIDCProviderPermissions"
+  description = "Permissions to manage OIDC providers"
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "iam:GetOpenIDConnectProvider",
+          "iam:CreateOpenIDConnectProvider",
+          "iam:UpdateOpenIDConnectProviderThumbprint",
+          "iam:DeleteOpenIDConnectProvider"
+        ],
+        Resource = "arn:aws:iam::*:oidc-provider/*"
+      },
+      {
+        Effect = "Allow",
+        Action = [
+          "iam:PassRole",
+          "iam:AttachRolePolicy",
+          "iam:CreateRole",
+          "iam:DeleteRole",
+          "iam:UpdateAssumeRolePolicy"
+        ],
+        Resource = "arn:aws:iam::*:role/*"
+      }
+    ]
+  })
+}
+
+# Attach OIDC policy to the terraform-role
+resource "aws_iam_role_policy_attachment" "attach_oidc_policy_to_terraform_role" {
+  role       = "terraform-role"
+  policy_arn = aws_iam_policy.oidc_policy.arn
+}
+
+
+# # Attach AdministratorAccess policy to the IAM role
+# resource "aws_iam_role_policy_attachment" "attach_admin_policy" {
+#   role       = aws_iam_role.github_role.name
+#   policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
+# }
+
 
 # provider "aws" {
 #   region = "us-east-1"
