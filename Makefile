@@ -23,12 +23,24 @@ debug:
 	@$(foreach module, $(MODULES), echo "Found module: $(module)";)
 
 # Terraform Commands for All Modules
+# init:
+# 	@echo "Initializing Terraform modules..."
+# 	@$(foreach module, $(MODULES), \
+# 		echo "Running terraform init in $(module)"; \
+# 		(cd $(module) && terraform init -upgrade); \
+# 	)
+
 init:
 	@echo "Initializing Terraform modules..."
 	@$(foreach module, $(MODULES), \
 		echo "Running terraform init in $(module)"; \
-		(cd $(module) && terraform init -upgrade); \
+		if [ -d $(module) ]; then \
+			cd $(module) && terraform init -upgrade || exit 1; \
+		else \
+			echo "Directory $(module) does not exist"; \
+		fi; \
 	)
+
 
 plan:
 	@echo "Planning Terraform modules..."
