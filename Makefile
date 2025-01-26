@@ -53,10 +53,6 @@ init:
 		echo "Processing module: $$module"; \
 		module_name=$$(basename $$module); \
 		if [ "$$module_name" = "aws-orgz-team-unit" ] || [ "$$module_name" = "aws-users-identity-creation" ]; then \
-			echo "Running terraform init -upgrade for $$module_name"; \
-			cd $$module && terraform init -upgrade || exit 1; \
-
-		if [ "$$module_name" = "aws-orgz-team-unit" ] || [ "$$module_name" = "aws-users-identity-creation" ]; then \
 			echo "Running terraform init with backend config for $$module_name"; \
 			cd $$module && terraform init \
 				-backend-config="bucket=byt-infra-user-identity-backend" \
