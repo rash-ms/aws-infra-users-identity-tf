@@ -5,7 +5,7 @@ locals {
   emails = local.aws_team_group_info.emails
 
   group_policies = merge(
-    local.aws_team_group_info.attach_group_policies.full-access-policy,
+    local.aws_team_group_info.attach_group_policies.privilege-access-policy,
     local.aws_team_group_info.attach_group_policies.readonly-access-policy
   )
 
@@ -81,19 +81,19 @@ resource "aws_organizations_organizational_unit" "team_env" {
   parent_id = aws_organizations_organizational_unit.team[each.value.team].id
 
   tags = {
-    Name = "BYT-${each.value.team}-${each.value.env}"
+    Name = "byt-${each.value.team}-${each.value.env}"
   }
 }
 
 resource "aws_organizations_account" "team_wrkspc_account" {
   for_each  = local.account_map
-  name      = "BYT-${each.key}"
+  name      = "byt-${each.key}"
   email     = lookup(local.group_mappings, each.key).email
   parent_id = aws_organizations_organizational_unit.team_env[each.key].id
   role_name = "OrganizationAccountAccessRole"
 
   tags = {
-    Name        = "BYT-${each.key}",
+    Name        = "byt-${each.key}",
     Team        = each.value.team,
     Environment = each.value.env
   }

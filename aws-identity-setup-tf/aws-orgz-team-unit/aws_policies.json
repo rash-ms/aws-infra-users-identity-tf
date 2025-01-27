@@ -1,6 +1,6 @@
 {
     "policies": {
-        "full-access-policy": {
+        "privilege-access-policy": {
             "Version": "2012-10-17",
             "Statement": [
                 {

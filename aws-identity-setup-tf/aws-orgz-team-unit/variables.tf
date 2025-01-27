@@ -7,5 +7,5 @@ variable "teams" {
 variable "workspace" {
   description = "List of workspaces"
   type        = list(string)
-  default     = ["PROD", "DEV"]
+  default     = ["prod", "dev"]
 }
