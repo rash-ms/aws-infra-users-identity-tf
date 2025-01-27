@@ -65,7 +65,7 @@ init:
 			echo "Running terraform init with backend config for $$module_name"; \
 			cd $$module && terraform init \
 				-backend-config="bucket=byt-infra-user-identity-backend" \
-				-backend-config="key=aws-orgz-team-unit/$(TF_VAR_environment)/$$module_name.tfstate" \
+				-backend-config="key=$(TF_VAR_environment)/$$module_name.tfstate" \
 				-backend-config="region=us-east-1" || exit 1; \
 		cd - > /dev/null; \
 	done
