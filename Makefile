@@ -48,25 +48,25 @@ debug:
 # 		cd - > /dev/null; \
 # 	done
 
+# if [ "$$module_name" = "aws-orgz-team-unit" ] || [ "$$module_name" = "aws-users-identity-creation" ]; then \
+# 	echo "Running terraform init with backend config for $$module_name"; \
+# 	cd $$module && terraform init \
+# 		-backend-config="bucket=byt-infra-user-identity-backend" \
+# 		-backend-config="key=aws-orgz-team-unit/terraform.tfstate" \
+# 		-backend-config="region=us-east-1" || exit 1; \
+
+# else \
+
 init:
 	@echo "Initializing Terraform modules..."
 	@for module in $(MODULES); do \
 		echo "Processing module: $$module"; \
 		module_name=$$(basename $$module); \
-		if [ "$$module_name" = "aws-orgz-team-unit" ] || [ "$$module_name" = "aws-users-identity-creation" ]; then \
-			echo "Running terraform init with backend config for $$module_name"; \
-			cd $$module && terraform init \
-				-backend-config="bucket=byt-infra-user-identity-backend" \
-				-backend-config="key=aws-orgz-team-unit/terraform.tfstate" \
-				-backend-config="region=us-east-1" || exit 1; \
-
-		else \
 			echo "Running terraform init with backend config for $$module_name"; \
 			cd $$module && terraform init \
 				-backend-config="bucket=byt-infra-user-identity-backend" \
 				-backend-config="key=aws-orgz-team-unit/$(TF_VAR_environment)/$$module_name.tfstate" \
 				-backend-config="region=us-east-1" || exit 1; \
-		fi; \
 		cd - > /dev/null; \
 	done
 
