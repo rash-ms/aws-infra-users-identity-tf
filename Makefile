@@ -12,8 +12,8 @@
 python_exec=$(shell command -v python3)
 
 
-# TERRAFORM_DIR = ./aws-identity-setup-tf
-TERRAFORM_DIR = ./aws-identity-deployment-tf
+TERRAFORM_DIR = ./aws-identity-setup-tf
+# TERRAFORM_DIR = ./aws-identity-deployment-tf
 
 MODULES = $(shell find $(TERRAFORM_DIR) -mindepth 1 -maxdepth 1 -type d)
 # MODULES = $(shell grep -hroP 'source\s*=\s*"\K[^"]+' $(TERRAFORM_DIR) | sort | uniq)
@@ -39,36 +39,36 @@ debug:
 # 		(cd $(module) && terraform init -upgrade); \
 # 	)
 
-Terraform Commands for All Modules
-init:
-	@echo "Initializing Terraform modules..."
-	@for module in $(MODULES); do \
-		echo "Running terraform init in $$module"; \
-		cd $$module && terraform init -upgrade || exit 1; \
-		cd - > /dev/null; \
-	done
-
+# Terraform Commands for All Modules
 # init:
 # 	@echo "Initializing Terraform modules..."
 # 	@for module in $(MODULES); do \
-# 		echo "Processing module: $$module"; \
-# 		module_name=$$(basename $$module); \
-# 		if [ "$$module_name" = "aws-orgz-team-unit" ] || [ "$$module_name" = "aws-users-identity-creation" ]; then \
-# 			echo "Running terraform init with backend config for $$module_name"; \
-# 			cd $$module && terraform init \
-# 				-backend-config="bucket=byt-infra-user-identity-backend" \
-# 				-backend-config="key=aws-orgz-team-unit/terraform.tfstate" \
-# 				-backend-config="region=us-east-1" || exit 1; \
-
-# 		else \
-# 			echo "Running terraform init with backend config for $$module_name"; \
-# 			cd $$module && terraform init \
-# 				-backend-config="bucket=byt-infra-user-identity-backend" \
-# 				-backend-config="key=aws-orgz-team-unit/$(TF_VAR_environment)/$$module_name.tfstate" \
-# 				-backend-config="region=us-east-1" || exit 1; \
-# 		fi; \
+# 		echo "Running terraform init in $$module"; \
+# 		cd $$module && terraform init -upgrade || exit 1; \
 # 		cd - > /dev/null; \
 # 	done
+
+init:
+	@echo "Initializing Terraform modules..."
+	@for module in $(MODULES); do \
+		echo "Processing module: $$module"; \
+		module_name=$$(basename $$module); \
+		if [ "$$module_name" = "aws-orgz-team-unit" ] || [ "$$module_name" = "aws-users-identity-creation" ]; then \
+			echo "Running terraform init with backend config for $$module_name"; \
+			cd $$module && terraform init \
+				-backend-config="bucket=byt-infra-user-identity-backend" \
+				-backend-config="key=aws-orgz-team-unit/terraform.tfstate" \
+				-backend-config="region=us-east-1" || exit 1; \
+
+		else \
+			echo "Running terraform init with backend config for $$module_name"; \
+			cd $$module && terraform init \
+				-backend-config="bucket=byt-infra-user-identity-backend" \
+				-backend-config="key=aws-orgz-team-unit/$(TF_VAR_environment)/$$module_name.tfstate" \
+				-backend-config="region=us-east-1" || exit 1; \
+		fi; \
+		cd - > /dev/null; \
+	done
 
 plan:
 	@echo "Planning Terraform modules..."
