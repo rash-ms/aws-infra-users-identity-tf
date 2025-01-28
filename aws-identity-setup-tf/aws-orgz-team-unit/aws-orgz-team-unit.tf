@@ -36,6 +36,7 @@ locals {
       env  = var.environment
     }
   }
+
 }
 
 # Only create the organization once
@@ -123,13 +124,24 @@ resource "aws_ssoadmin_permission_set_inline_policy" "policy_permission_set" {
 }
 
 # Assign permission sets to groups dynamically
+# resource "aws_ssoadmin_account_assignment" "policy_assignment" {
+#   for_each = local.group_mappings
+
+#   instance_arn       = data.aws_ssoadmin_instances.main.arns[0]
+#   permission_set_arn = aws_ssoadmin_permission_set.policy_permission_set[each.key].arn
+#   principal_id       = aws_identitystore_group.team_group[each.key].id
+#   principal_type     = "GROUP"
+#   target_id          = aws_organizations_account.team_wrkspc_account[each.key].id
+#   target_type        = "AWS_ACCOUNT"
+# }
+
 resource "aws_ssoadmin_account_assignment" "policy_assignment" {
   for_each = local.group_mappings
 
   instance_arn       = data.aws_ssoadmin_instances.main.arns[0]
-  permission_set_arn = aws_ssoadmin_permission_set.policy_permission_set[each.key].arn
+  permission_set_arn = aws_ssoadmin_permission_set.policy_permission_set["${split("-", each.key)[0]}-${var.environment}"].arn
   principal_id       = aws_identitystore_group.team_group[each.key].id
   principal_type     = "GROUP"
-  target_id          = aws_organizations_account.team_wrkspc_account[each.key].id
+  target_id          = lookup(aws_organizations_account.team_wrkspc_account, each.key, null).id
   target_type        = "AWS_ACCOUNT"
 }
