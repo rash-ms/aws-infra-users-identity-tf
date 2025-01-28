@@ -9,3 +9,8 @@ variable "workspace" {
   type        = list(string)
   default     = ["prod", "dev"]
 }
+
+# variable "environment" {
+#   description = "Environment to deploy to (dev or prod)"
+#   type        = string
+# }
