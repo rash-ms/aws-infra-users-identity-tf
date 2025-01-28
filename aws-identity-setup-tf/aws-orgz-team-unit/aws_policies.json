@@ -1,180 +1,97 @@
 {
     "policies": {
-        "privilege-access-policy": {
-            "Version": "2012-10-17",
-            "Statement": [
-                {
-                    "Effect": "Allow",
-                    "Action": [
-                        "ec2:Describe*",
-                        "s3:Get*",
-                        "s3:List*",
-                        "s3:PutObject",
-                        "s3:DeleteObject",
-                        "dynamodb:Get*",
-                        "dynamodb:Query",
-                        "dynamodb:Scan",
-                        "dynamodb:List*",
-                        "rds:Describe*",
-                        "rds:StartDBInstance",
-                        "rds:RebootDBInstance",
-                        "rds:StopDBInstance",
-                        "lambda:InvokeFunction",
-                        "lambda:List*",
-                        "logs:Get*",
-                        "logs:Describe*",
-                        "logs:FilterLogEvents",
-                        "logs:CreateLogGroup",
-                        "logs:CreateLogStream",
-                        "logs:PutLogEvents",
-                        "logs:DescribeLogGroups",
-                        "logs:DeleteLogGroup",
-                        "cloudwatch:Get*",
-                        "cloudwatch:List*",
-                        "cloudwatch:Describe*",
-                        "iam:PassRole",
-                        "cloudformation:Describe*",
-                        "cloudformation:List*",
-                        "ecr:BatchCheckLayerAvailability",
-                        "ecr:GetDownloadUrlForLayer",
-                        "ecr:Describe*",
-                        "ecs:Describe*",
-                        "ecs:List*",
-                        "elasticbeanstalk:Describe*",
-                        "elasticbeanstalk:List*",
-                        "codebuild:BatchGetBuilds",
-                        "codebuild:List*",
-                        "codedeploy:BatchGet*",
-                        "codedeploy:Get*",
-                        "codedeploy:List*",
-                        "codepipeline:Get*",
-                        "codepipeline:List*",
-                        "ssm:Get*",
-                        "ssm:List*",
-                        "redshift:Describe*",
-                        "eks:Describe*",
-                        "eks:List*",
-                        "kinesis:Describe*",
-                        "kinesis:Get*",
-                        "kinesis:List*",
-                        "kinesis:DisableEnhancedMonitoring",
-                        "kinesis:DecreaseStreamRetentionPeriod",
-                        "kinesis:StopStreamEncryption",
-                        "secretsmanager:GetSecretValue",
-                        "secretsmanager:List*",
-                        "secretsmanager:Describe*",
-                        "events:Describe*",
-                        "events:List*",
-                        "glue:Get*",
-                        "glue:List*",
-                        "glue:StartJobRun",
-                        "glue:StopJobRun",
-                        "emr:Describe*",
-                        "emr:List*",
-                        "emr:TerminateJobFlows",
-                        "sns:Get*",
-                        "sns:List*",
-                        "sns:CreateTopic",
-                        "sns:DeleteTopic",
-                        "sns:CreateSubscription",
-                        "sns:Subscribe",
-                        "sns:Publish",
-                        "sns:Unsubscribe",
-                        "sns:CreateTopic",
-                        "sns:DeleteTopic",
-                        "sns:CreateSubscription",
-
-                        "iam:GetOpenIDConnectProvider",
-                        "iam:CreateOpenIDConnectProvider",
-                        "iam:UpdateOpenIDConnectProviderThumbprint",
-                        "iam:DeleteOpenIDConnectProvider",
-                        "iam:PassRole",
-                        "iam:AttachRolePolicy",
-                        "iam:CreateRole",
-                        "iam:DeleteRole",
-                        "iam:UpdateAssumeRolePolicy"
-                    ],
-                    "Resource": "*"
-                },
-                {
-                    "Effect": "Deny",
-                    "Action": [
-                        "iam:DeleteUser",
-                        "iam:DeleteRole",
-                        "iam:DeletePolicy",
-                        "iam:CreatePolicyVersion",
-                        "iam:SetDefaultPolicyVersion",
-                        "s3:DeleteBucket",
-                        "eks:DeleteCluster",
-                        "glue:DeleteDatabase",
-                        "glue:DeleteTable",
-                        "glue:DeleteJob",
-                        "glue:DeleteCrawler",
-                        "emr:TerminateCluster",
-                        "emr:DeleteSecurityConfiguration",
-                        "emr:DeleteCluster",
-                        "kinesis:DeleteStream",
-                        "ecs:DeleteCluster",
-                        "ecs:DeleteService",
-                        "ecs:DeregisterTaskDefinition",
-                        "rds:DeleteDBInstance",
-                        "dynamodb:DeleteTable",
-                        "dynamodb:DeleteItem",
-                        "dynamodb:DeleteBackup"
-                    ],
-                    "Resource": "*"
-                }
-            ]
+      "dev": {
+        "data-platform": {
+          "name": "data-platform-privilege",
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": ["ec2:Describe*", "s3:Get*", "s3:List*", "s3:PutObject"],
+              "Resource": "*"
+            }
+          ]
         },
-        "readonly-access-policy": {
-            "Version": "2012-10-17",
-            "Statement": [
-                {
-                    "Effect": "Allow",
-                    "Action": [
-                        "ec2:Describe*",
-                        "s3:Get*",
-                        "s3:List*",
-                        "s3:PutObject",
-                        "rds:Describe*",
-                        "iam:Get*",
-                        "iam:List*",
-                        "cloudwatch:Get*",
-                        "cloudwatch:List*",
-                        "cloudwatch:Describe*",
-                        "sns:Get*",
-                        "sns:List*",
-                        "sns:CreateTopic",
-                        "sns:DeleteTopic",
-                        "sns:CreateSubscription",
-                        "sns:Subscribe",
-                        "sns:Publish",
-                        "sns:Unsubscribe",
-                        "sns:Subscribe",
-                        "sns:Publish",
-                        "sns:Unsubscribe",
-                        "sns:CreateTopic",
-                        "sns:DeleteTopic",
-                        "sns:CreateSubscription",
-                        "logs:CreateLogGroup",
-                        "logs:CreateLogStream",
-                        "logs:PutLogEvents",
-                        "logs:DescribeLogGroups",
-                        "logs:DeleteLogGroup",
-
-                        "iam:GetOpenIDConnectProvider",
-                        "iam:CreateOpenIDConnectProvider",
-                        "iam:UpdateOpenIDConnectProviderThumbprint",
-                        "iam:DeleteOpenIDConnectProvider",
-                        "iam:PassRole",
-                        "iam:AttachRolePolicy",
-                        "iam:CreateRole",
-                        "iam:DeleteRole",
-                        "iam:UpdateAssumeRolePolicy"
-                    ],
-                    "Resource": "*"
-                }
-            ]
+        "data-infra": {
+          "name": "data-infra-privilege",
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": ["cloudwatch:Get*", "cloudwatch:List*", "logs:CreateLogGroup"],
+              "Resource": "*"
+            }
+          ]
+        },
+        "data-eng": {
+          "name": "data-eng-privilege",
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": ["lambda:InvokeFunction", "iam:PassRole"],
+              "Resource": "*"
+            }
+          ]
+        },
+        "data-bi": {
+          "name": "data-bi-privilege",
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": ["sns:Publish", "sns:ListTopics"],
+              "Resource": "*"
+            }
+          ]
         }
+      },
+      "prod": {
+        "data-platform": {
+          "name": "data-platform-readonly",
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": ["s3:Get*", "s3:List*", "ec2:Describe*"],
+              "Resource": "*"
+            }
+          ]
+        },
+        "data-infra": {
+          "name": "data-infra-readonly",
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": ["cloudwatch:Get*", "logs:GetLogEvents"],
+              "Resource": "*"
+            }
+          ]
+        },
+        "data-eng": {
+          "name": "data-eng-readonly",
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": ["iam:GetRole", "lambda:ListFunctions"],
+              "Resource": "*"
+            }
+          ]
+        },
+        "data-bi": {
+          "name": "data-bi-readonly",
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": ["sns:ListTopics"],
+              "Resource": "*"
+            }
+          ]
+        }
+      }
     }
-}
+  }
+  
