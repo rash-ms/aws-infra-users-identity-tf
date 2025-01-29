@@ -1,8 +1,37 @@
-# ✅ Check if AWS Organization Exists
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 4.0"
+    }
+  }
+}
+
+provider "aws" {
+  region = "us-east-1"
+}
+
+# ✅ Fetch existing AWS Organization (if it exists)
 data "aws_organizations_organization" "existing" {}
 
-# ✅ Get AWS SSO Instances (Required for Identity Store and Permission Sets)
+# ✅ Get AWS SSO Instance (needed for Identity Store and Permissions)
 data "aws_ssoadmin_instances" "main" {}
+
+# ✅ Create AWS Organization if it doesn't exist
+resource "aws_organizations_organization" "org" {
+  count = data.aws_organizations_organization.existing.id != "" ? 0 : 1
+
+  aws_service_access_principals = ["cloudtrail.amazonaws.com", "config.amazonaws.com"]
+  enabled_policy_types          = ["SERVICE_CONTROL_POLICY"]
+  lifecycle { prevent_destroy = true }
+}
+
+# ✅ Extract AWS Organization Root ID (Handles Both Existing & New Organizations)
+locals {
+  org_root_id = length(data.aws_organizations_organization.existing.roots) > 0 ? 
+                data.aws_organizations_organization.existing.roots[0].id : 
+                aws_organizations_organization.org[0].roots[0].id
+}
 
 # ✅ Load JSON Data
 locals {
@@ -43,23 +72,6 @@ locals {
   }
 }
 
-# ✅ Create AWS Organization if it doesn't exist
-resource "aws_organizations_organization" "org" {
-  count = length(data.aws_organizations_organization.existing.id) > 0 ? 0 : 1
-
-  aws_service_access_principals = ["cloudtrail.amazonaws.com", "config.amazonaws.com"]
-  enabled_policy_types          = ["SERVICE_CONTROL_POLICY"]
-  lifecycle { prevent_destroy = true }
-}
-
-# ✅ Extract the AWS Organization Root ID (Handles both existing & new orgs)
-locals {
-  org_root_id = coalesce(
-    length(data.aws_organizations_organization.existing.roots) > 0 ? data.aws_organizations_organization.existing.roots[0].id : "",
-    aws_organizations_organization.org[0].roots[0].id
-  )
-}
-
 # ✅ Create Organizational Unit (OU) for each team dynamically
 resource "aws_organizations_organizational_unit" "team_ou" {
   for_each  = toset(var.teams)
@@ -67,7 +79,7 @@ resource "aws_organizations_organizational_unit" "team_ou" {
   parent_id = local.org_root_id
 }
 
-# ✅ Create AWS Accounts Dynamically in the Correct OU
+# ✅ Create AWS Accounts and Assign Them to Their OU
 resource "aws_organizations_account" "accounts" {
   for_each  = local.group_mappings
   name      = each.key
@@ -128,6 +140,4 @@ resource "aws_ssoadmin_account_assignment" "group_assignment" {
   target_id          = aws_organizations_account.accounts[each.key].id
   target_type        = "AWS_ACCOUNT"
 }
-
-
 
