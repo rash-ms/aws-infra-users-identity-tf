@@ -107,6 +107,22 @@ resource "aws_ssoadmin_permission_set_inline_policy" "policy_attachment" {
   inline_policy      = each.value.policy
 }
 
+# # ✅ Assign Permission Sets to Accounts Dynamically
+# resource "aws_ssoadmin_account_assignment" "group_assignment" {
+#   for_each = {
+#     for key, value in local.group_mappings :
+#     "${key}-${value.policy_name}-${var.environment}" => value
+#   }
+
+#   instance_arn       = tolist(data.aws_ssoadmin_instances.main.arns)[0]
+#   permission_set_arn = aws_ssoadmin_permission_set.policy_set["${var.environment}-${each.value.policy_name}"].arn
+#   principal_id       = aws_identitystore_group.groups[each.key].group_id
+#   principal_type     = "GROUP"
+#   target_id          = aws_organizations_account.accounts[each.key].id
+#   target_type        = "AWS_ACCOUNT"
+# }
+
+
 # ✅ Assign Permission Sets to Accounts Dynamically
 resource "aws_ssoadmin_account_assignment" "group_assignment" {
   for_each = {
@@ -115,10 +131,14 @@ resource "aws_ssoadmin_account_assignment" "group_assignment" {
   }
 
   instance_arn       = tolist(data.aws_ssoadmin_instances.main.arns)[0]
-  permission_set_arn = aws_ssoadmin_permission_set.policy_set["${var.environment}-${each.value.policy_name}"].arn
-  principal_id       = aws_identitystore_group.groups[each.key].group_id
+
+  # 🔹 Fix: Ensure policy name matches permission set name
+  permission_set_arn = aws_ssoadmin_permission_set.policy_set["${var.environment}-${replace(each.value.policy_name, "-group", "-access")}"].arn
+
+  # 🔹 Fix: Ensure group name matches the correct lookup key
+  principal_id       = aws_identitystore_group.groups[replace(each.key, "-privilege-group-dev", "-dev")].group_id
+
   principal_type     = "GROUP"
   target_id          = aws_organizations_account.accounts[each.key].id
   target_type        = "AWS_ACCOUNT"
 }
-
