@@ -6,10 +6,10 @@
     },
     "attach_group_policies": {
       "privilege-access-policy": {
-        "data-platform-dev": "privilege-group"
+        "data-platform-dev": "privilege-access"  
       },
       "readonly-access-policy": {
-        "data-platform-prod": "readonly-group"
+        "data-platform-prod": "readonly-access"  
       }
     }
   }

@@ -62,7 +62,7 @@ locals {
 
   permission_sets = {
     for policy_type, policy_details in local.selected_policies :
-    "${var.environment}-${policy_details.name}" => {
+    "${var.environment}-${policy_details.name}" => {  
       name   = policy_details.name,
       policy = jsonencode({
         Version   = policy_details.Version,
@@ -70,6 +70,8 @@ locals {
       })
     }
   }
+
+
 }
 
 # resource "aws_organizations_organizational_unit" "team_ou" {
@@ -114,6 +116,17 @@ resource "aws_ssoadmin_permission_set_inline_policy" "policy_attachment" {
   permission_set_arn = aws_ssoadmin_permission_set.policy_set[each.key].arn
   inline_policy      = each.value.policy
 }
+
+# resource "aws_ssoadmin_account_assignment" "group_assignment" {
+#   for_each = local.group_mappings
+
+#   instance_arn       = tolist(data.aws_ssoadmin_instances.main.arns)[0]
+#   permission_set_arn = aws_ssoadmin_permission_set.policy_set["${var.environment}-${each.value.policy_name}"].arn
+#   principal_id       = aws_identitystore_group.groups[each.key].group_id
+#   principal_type     = "GROUP"
+#   target_id          = aws_organizations_account.accounts[each.key].id
+#   target_type        = "AWS_ACCOUNT"
+# }
 
 resource "aws_ssoadmin_account_assignment" "group_assignment" {
   for_each = local.group_mappings
