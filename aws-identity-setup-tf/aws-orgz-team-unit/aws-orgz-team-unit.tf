@@ -61,11 +61,29 @@ resource "aws_organizations_organizational_unit" "team_ou" {
 }
 
 # ✅ Create AWS accounts inside the Organizational Unit
+# resource "aws_organizations_account" "accounts" {
+#   for_each  = local.group_mappings
+#   name      = each.key
+#   email     = each.value.email
+#   parent_id = aws_organizations_organizational_unit.team_ou[split("-", each.key)[0]].id
+#   role_name = "OrganizationAccountAccessRole"
+
+#   lifecycle {
+#     precondition {
+#       condition     = can(regex("^[^@]+@[^@]+\\.[^@]+$", each.value.email))
+#       error_message = "Invalid email format for ${each.key}"
+#     }
+#   }
+# }
+
 resource "aws_organizations_account" "accounts" {
   for_each  = local.group_mappings
   name      = each.key
   email     = each.value.email
-  parent_id = aws_organizations_organizational_unit.team_ou[split("-", each.key)[0]].id
+
+  # Extract correct team name before referencing `team_ou`
+  parent_id = aws_organizations_organizational_unit.team_ou[replace(each.key, "-dev", "")].id
+
   role_name = "OrganizationAccountAccessRole"
 
   lifecycle {
@@ -75,6 +93,8 @@ resource "aws_organizations_account" "accounts" {
     }
   }
 }
+
+
 
 # ✅ Create Identity Store Groups dynamically
 resource "aws_identitystore_group" "groups" {
