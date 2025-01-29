@@ -77,17 +77,32 @@ resource "aws_ssoadmin_permission_set_inline_policy" "policy_attachment" {
 }
 
 # ✅ Assign permission sets to groups dynamically
+# resource "aws_ssoadmin_account_assignment" "group_assignment" {
+#   for_each = local.group_mappings
+
+#   instance_arn       = tolist(data.aws_ssoadmin_instances.main.arns)[0]
+#   permission_set_arn = try(aws_ssoadmin_permission_set.policy_set["${var.environment}-${each.value.policy_name}"].arn, null)
+
+#   principal_id       = aws_identitystore_group.groups[each.key].group_id
+#   principal_type     = "GROUP"
+#   target_id          = aws_organizations_account.accounts[each.key].id
+#   target_type        = "AWS_ACCOUNT"
+# }
+
 resource "aws_ssoadmin_account_assignment" "group_assignment" {
-  for_each = local.group_mappings
+  for_each = {
+    for key, value in local.group_mappings :
+    key => value if contains(keys(local.permission_sets), "${var.environment}-${value.policy_name}")
+  }
 
   instance_arn       = tolist(data.aws_ssoadmin_instances.main.arns)[0]
-  permission_set_arn = try(aws_ssoadmin_permission_set.policy_set["${var.environment}-${each.value.policy_name}"].arn, null)
-
+  permission_set_arn = aws_ssoadmin_permission_set.policy_set["${var.environment}-${each.value.policy_name}"].arn
   principal_id       = aws_identitystore_group.groups[each.key].group_id
   principal_type     = "GROUP"
   target_id          = aws_organizations_account.accounts[each.key].id
   target_type        = "AWS_ACCOUNT"
 }
+
 
 # ✅ Create Identity Store Groups dynamically
 resource "aws_identitystore_group" "groups" {
