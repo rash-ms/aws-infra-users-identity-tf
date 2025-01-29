@@ -1,16 +1,3 @@
-terraform {
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 4.0"
-    }
-  }
-}
-
-provider "aws" {
-  region = "us-east-1"
-}
-
 # ✅ Check if AWS Organization Exists
 data "aws_organizations_organization" "existing" {}
 
