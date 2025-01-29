@@ -8,6 +8,10 @@ on:
     paths:
       - 'aws-identity-setup-tf/**'   # Monitor Terraform directory
       - '.github/workflows/ci_cd_deployment.yaml'  # Monitor changes to workflow
+      - '**/Makefile'   
+      - '**/*.tf'
+      - '**/*.yaml'
+      - '**/*.yml'
 
 env:
   AWS_REGION: us-east-1
@@ -60,6 +64,9 @@ jobs:
           sudo apt-get install -y build-essential
           make install_python_deps
     
+      - name: Run Terraform Debugging
+        run: make debug
+
       - name: Run Terraform Init
         run: make init
   

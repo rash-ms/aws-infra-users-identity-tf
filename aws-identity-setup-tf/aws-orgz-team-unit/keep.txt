@@ -1,0 +1,14 @@
+"data-infra-dev":  "byt-infra-dev@bagitek.com",
+"data-infra-prod":  "byt-infra-prod@bagitek.com",
+"data-eng-dev":  "byt-eng-dev@bagitek.com",
+"data-eng-prod":  "byt-eng-prod@bagitek.com",
+"data-bi-prod":  "byt-bi-prod@bagitek.com",
+"data-bi-dev":  "byt-bi-dev@bagitek.com"
+
+"data-eng-dev":  "byt-eng-privilege-group",
+"data-infra-dev":  "byt-infra-privilege-group",
+"data-bi-dev":  "byt-bi-privilege-group"
+
+"data-eng-prod":  "byt-eng-privilege-group",
+"data-infra-prod":  "byt-infra-privilege-group",
+"data-bi-prod":  "byt-bi-privilege-group"

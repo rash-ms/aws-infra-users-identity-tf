@@ -1,16 +1,16 @@
 {
   "team_group_details": {
     "emails": {
-        "data-org-DEV": "aws-byt-dataorg-dev@bagitek.com",
-        "data-org-PROD":  "aws-byt-dataorg-prod@bagitek.com"
+      "data-platform-dev": "byt-dataplatform-dev@bagitek.com",
+      "data-platform-prod": "byt-dataplatform-prod@bagitek.com"
+    },
+    "attach_group_policies": {
+      "privilege-access-policy": {
+        "data-platform-dev": "privilege-access"  
       },
-    "attach_group_policies":{
-        "full-access-policy":{
-            "data-org-DEV":  "byt-data-org-FullAccess-group"
-        },
-        "readonly-access-policy" :{
-            "data-org-PROD":"byt-data-org-readonly-group"
-        }
+      "readonly-access-policy": {
+        "data-platform-prod": "readonly-access"  
+      }
     }
   }
 }

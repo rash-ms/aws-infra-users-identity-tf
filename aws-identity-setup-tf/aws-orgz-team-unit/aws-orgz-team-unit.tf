@@ -1,153 +1,246 @@
-locals {
-  aws_team_group_info = jsondecode(file("${path.module}/aws_team_group_info.json")).team_group_details
-  aws_policies        = jsondecode(file("${path.module}/aws_policies.json")).policies
+# data "aws_organizations_organization" "existing" {}
 
-  emails = local.aws_team_group_info.emails
+# data "aws_ssoadmin_instances" "main" {}
 
-  group_policies = merge(
-    local.aws_team_group_info.attach_group_policies.full-access-policy,
-    local.aws_team_group_info.attach_group_policies.readonly-access-policy
-  )
 
-  group_mappings = {
-    for key, group in local.group_policies :
-    key => {
-      group = group,
-      email = local.emails[key]
-    }
-  }
 
-  reverse_group_mappings = {
-    for k, v in local.group_mappings : v.group => k
-  }
 
-  # Dynamically generate permission set based on policies
-  flat_policies = flatten([
-      for policy_name, policy_details in local.aws_team_group_info.attach_group_policies : [
-        for key, value in policy_details : {
-          policy_name = policy_name,
-          key         = key,
-          policy      = local.aws_policies[policy_name]
-        }
-      ]
-    ])
-
-  permission_sets = {
-    for policy in local.flat_policies :
-    "${policy.policy_name}-${policy.key}" => {
-      name   = "byt-${policy.policy_name}",
-      policy = jsonencode(policy.policy)
-    }
-  }
-
-  team_env_pairs = flatten([
-    for team in var.teams : [
-      for env in var.workspace : {
-        team = team,
-        env  = env
-      }
-    ]
-  ])
-
-  account_map = {
-    for pair in local.team_env_pairs :
-    "${pair.team}-${pair.env}" => pair
-  }
-}
-
-data "aws_organizations_organization" "existing" {}
-
+# # ✅ Create AWS Organization if it doesn't exist
 # resource "aws_organizations_organization" "org" {
-#   aws_service_access_principals = [
-#     "cloudtrail.amazonaws.com",
-#     "config.amazonaws.com",
-#   ]
+#   count = data.aws_organizations_organization.existing.accounts == null ? 1 : 0
 
-#   enabled_policy_types = [
-#     "SERVICE_CONTROL_POLICY"
-#   ]
+#   aws_service_access_principals = ["cloudtrail.amazonaws.com", "config.amazonaws.com"]
+#   enabled_policy_types          = ["SERVICE_CONTROL_POLICY"]
+#   lifecycle { prevent_destroy = true }
 # }
 
-resource "aws_organizations_organizational_unit" "team" {
-  for_each = toset(var.teams)
-  name     = each.key
-  parent_id = data.aws_organizations_organization.existing.roots[0].id
-  # parent_id = aws_organizations_organization.org.roots[0].id
-}
+# # ✅ Get Organization Root ID safely
+# locals {
+#   org_root_id = try(
+#     aws_organizations_organization.org[0].roots[0].id,
+#     data.aws_organizations_organization.existing.roots[0].id
+#   )
+# }
 
-resource "aws_organizations_organizational_unit" "team_env" {
-  for_each  = local.account_map
-  name      = each.value.env
-  parent_id = aws_organizations_organizational_unit.team[each.value.team].id
-
-  tags = {
-    Name = "BYT-${each.value.team}-${each.value.env}"
-  }
-}
-
-resource "aws_organizations_account" "team_wrkspc_account" {
-  for_each  = local.account_map
-  name      = "BYT-${each.key}"
-  email     = lookup(local.group_mappings, each.key).email
-  parent_id = aws_organizations_organizational_unit.team_env[each.key].id
-  role_name = "OrganizationAccountAccessRole"
-
-  tags = {
-    Name        = "BYT-${each.key}",
-    Team        = each.value.team,
-    Environment = each.value.env
-  }
-}
+# # ✅ Create Organizational Unit (OU) for each team
+# resource "aws_organizations_organizational_unit" "team_ou" {
+#   for_each  = toset(var.teams)
+#   name      = each.key
+#   parent_id = local.org_root_id  # Use the safe local reference
+# }
 
 
+# locals {
+#   aws_policies        = jsondecode(file(var.aws_policies_file)).policies
+#   aws_team_group_info = jsondecode(file(var.team_group_info_file)).team_group_details
+
+#   env_policy_types = {
+#     for env, policies in local.aws_policies :
+#     env => keys(policies)
+#   }
+
+#   group_policies = merge([
+#     for policy_type in local.env_policy_types[var.environment] :
+#     lookup(local.aws_team_group_info.attach_group_policies, policy_type, {})
+#   ]...)
+
+#   group_mappings = {
+#     for group_key, policy_name in local.group_policies :
+#     group_key => {
+#       policy_name = policy_name,
+#       email       = lookup(local.aws_team_group_info.emails, group_key, null)
+#     } if lookup(local.aws_team_group_info.emails, group_key, null) != null
+#   }
+
+#   selected_policies = local.aws_policies[var.environment]
+
+#   permission_sets = {
+#     for policy_type, policy_details in local.selected_policies :
+#     "${var.environment}-${policy_details.name}" => {  
+#       name   = policy_details.name,
+#       policy = jsonencode({
+#         Version   = policy_details.Version,
+#         Statement = policy_details.Statement
+#       })
+#     }
+#   }
+
+
+# }
+
+# resource "aws_organizations_account" "accounts" {
+#   for_each  = local.group_mappings
+#   name      = each.key
+#   email     = each.value.email
+#   parent_id = aws_organizations_organizational_unit.team_ou[replace(each.key, "-${var.environment}", "")].id
+#   role_name = "OrganizationAccountAccessRole"
+
+#   lifecycle {
+#     precondition {
+#       condition     = can(regex("^[^@]+@[^@]+\\.[^@]+$", each.value.email))
+#       error_message = "Invalid email format for ${each.key}"
+#     }
+#   }
+# }
+
+# resource "aws_identitystore_group" "groups" {
+#   for_each          = local.group_mappings
+#   identity_store_id = tolist(data.aws_ssoadmin_instances.main.identity_store_ids)[0]
+#   display_name      = "${each.key}-group"
+#   description       = "Access group for ${each.key}"
+# }
+
+# resource "aws_ssoadmin_permission_set" "policy_set" {
+#   for_each         = local.permission_sets
+#   instance_arn     = tolist(data.aws_ssoadmin_instances.main.arns)[0]
+#   name             = each.value.name
+#   description      = "${each.value.name} permissions for ${var.environment}"
+#   session_duration = "PT1H"
+# }
+
+# resource "aws_ssoadmin_permission_set_inline_policy" "policy_attachment" {
+#   for_each           = local.permission_sets
+#   instance_arn       = tolist(data.aws_ssoadmin_instances.main.arns)[0]
+#   permission_set_arn = aws_ssoadmin_permission_set.policy_set[each.key].arn
+#   inline_policy      = each.value.policy
+# }
+
+# resource "aws_ssoadmin_account_assignment" "group_assignment" {
+#   for_each = local.group_mappings
+
+#   instance_arn       = tolist(data.aws_ssoadmin_instances.main.arns)[0]
+#   permission_set_arn = aws_ssoadmin_permission_set.policy_set["${var.environment}-${each.value.policy_name}"].arn
+#   principal_id       = aws_identitystore_group.groups[each.key].group_id
+#   principal_type     = "GROUP"
+#   target_id          = aws_organizations_account.accounts[each.key].id
+#   target_type        = "AWS_ACCOUNT"
+# }
+
+
+data "aws_organizations_organization" "existing" {}
 data "aws_ssoadmin_instances" "main" {}
 
-resource "aws_identitystore_group" "team_group" {
-  for_each = local.group_mappings
-  identity_store_id = tolist(data.aws_ssoadmin_instances.main.identity_store_ids)[0]
-  display_name      = "${each.value.group}"
+resource "aws_organizations_organization" "org" {
+  count = data.aws_organizations_organization.existing.accounts == null ? 1 : 0
+
+  aws_service_access_principals = ["cloudtrail.amazonaws.com", "config.amazonaws.com"]
+  enabled_policy_types          = ["SERVICE_CONTROL_POLICY"]
+  lifecycle { prevent_destroy = true }
 }
-
-resource "aws_ssoadmin_permission_set" "policy_permission_set" {
-  for_each = local.permission_sets
-
-  instance_arn = data.aws_ssoadmin_instances.main.arns[0]
-  name         = each.value.name
-  description  = "${each.key} access"
-  session_duration = "PT1H"
-  relay_state  = "https://console.aws.amazon.com/"
-
-  tags = {
-    Name = each.value.name
-  }
-}
-
-resource "aws_ssoadmin_permission_set_inline_policy" "policy_permission_set" {
-  for_each             = aws_ssoadmin_permission_set.policy_permission_set
-  instance_arn         = data.aws_ssoadmin_instances.main.arns[0]
-  permission_set_arn   = each.value.arn
-  inline_policy        = local.permission_sets[each.key].policy
-}
-
 
 locals {
-  group_ids = {
-    for group_name, original_key in local.reverse_group_mappings :
-    group_name => split("/", aws_identitystore_group.team_group[original_key].id)[1]
+  org_root_id = try(
+    aws_organizations_organization.org[0].roots[0].id,
+    data.aws_organizations_organization.existing.roots[0].id
+  )
+
+  # Load configuration files
+  aws_policies        = jsondecode(file(var.aws_policies_file)).policies
+  aws_team_group_info = jsondecode(file(var.team_group_info_file)).team_group_details
+
+  # Existing account handling
+  existing_account_map = {
+    for acc in data.aws_organizations_organization.existing.accounts :
+    acc.email => acc
+  }
+
+  # Group mappings with team names
+  group_mappings = {
+    for group_key, policy_name in merge([
+      for policy_type in keys(local.aws_policies[var.environment]) :
+      local.aws_team_group_info.attach_group_policies[policy_type]
+    ]...) :
+    group_key => {
+      policy_name = policy_name,
+      email       = local.aws_team_group_info.emails[group_key],
+      team_name   = split("-", group_key)[0]
+    } if lookup(local.aws_team_group_info.emails, group_key, null) != null
+  }
+
+  # Account management
+  accounts_to_create = {
+    for k, v in local.group_mappings :
+    k => v if !contains(keys(local.existing_account_map), v.email)
+  }
+
+  # Combined account reference
+  all_accounts = merge(
+    local.existing_account_map,
+    { for k, v in aws_organizations_account.accounts : k => v }
+  )
+
+  # Permission sets
+  permission_sets = {
+    for policy_type, policy_details in local.aws_policies[var.environment] :
+    "${var.environment}-${policy_details.name}" => {
+      name   = policy_details.name,
+      policy = jsonencode(policy_details)
+    }
   }
 }
 
-resource "aws_ssoadmin_account_assignment" "policy_assignment" {
-  for_each           = local.group_mappings
-  instance_arn       = data.aws_ssoadmin_instances.main.arns[0]
+# Organizational Units
+resource "aws_organizations_organizational_unit" "team_ou" {
+  for_each  = toset([for k, v in local.group_mappings : v.team_name])
+  name      = each.key
+  parent_id = local.org_root_id
+}
 
-  # Reference the permission set ARN using the correct key
-  permission_set_arn = aws_ssoadmin_permission_set.policy_permission_set[
-    "${lookup({for p in local.flat_policies : p.key => p.policy_name}, each.key)}-${each.key}"
-  ].arn
+# Account creation (only for new accounts)
+resource "aws_organizations_account" "accounts" {
+  for_each  = local.accounts_to_create
 
-  principal_id       = local.group_ids[each.value.group]
+  name      = each.key
+  email     = each.value.email
+  parent_id = aws_organizations_organizational_unit.team_ou[each.value.team_name].id
+  role_name = "OrganizationAccountAccessRole"
+
+  lifecycle {
+    ignore_changes = [role_name]
+    precondition {
+      condition     = can(regex("^[^@]+@[^@]+\\.[^@]+$", each.value.email))
+      error_message = "Invalid email format for ${each.key}"
+    }
+  }
+}
+
+# SSO Groups
+resource "aws_identitystore_group" "groups" {
+  for_each          = local.group_mappings
+  identity_store_id = tolist(data.aws_ssoadmin_instances.main.identity_store_ids)[0]
+  display_name      = "${each.key}-group"
+  description       = "Access group for ${each.key}"
+}
+
+# Permission Sets
+resource "aws_ssoadmin_permission_set" "policy_set" {
+  for_each         = local.permission_sets
+  instance_arn     = tolist(data.aws_ssoadmin_instances.main.arns)[0]
+  name             = each.value.name
+  description      = "${each.value.name} permissions for ${var.environment}"
+  session_duration = "PT8H"
+}
+
+# Policy Attachments
+resource "aws_ssoadmin_permission_set_inline_policy" "policy_attachment" {
+  for_each           = aws_ssoadmin_permission_set.policy_set
+  instance_arn       = tolist(data.aws_ssoadmin_instances.main.arns)[0]
+  permission_set_arn = each.value.arn
+  inline_policy      = local.permission_sets[each.key].policy
+}
+
+# Account Assignments
+resource "aws_ssoadmin_account_assignment" "group_assignment" {
+  for_each = local.group_mappings
+
+  instance_arn       = tolist(data.aws_ssoadmin_instances.main.arns)[0]
+  permission_set_arn = aws_ssoadmin_permission_set.policy_set["${var.environment}-${each.value.policy_name}"].arn
+  principal_id       = aws_identitystore_group.groups[each.key].group_id
   principal_type     = "GROUP"
-  target_id          = aws_organizations_account.team_wrkspc_account[each.key].id
+  target_id          = local.all_accounts[each.value.email].id
   target_type        = "AWS_ACCOUNT"
+
+  depends_on = [
+    aws_ssoadmin_permission_set_inline_policy.policy_attachment
+  ]
 }

@@ -1,15 +1,23 @@
 # Data Infra MakeFile
 
 # <Special Targets>
-# Reference: https://www.gnu.org/software/make/manual/html_node/Special-Targets.html
 .EXPORT_ALL_VARIABLES:
 .ONESHELL:
 # </Special Targets>
 
-python_exec=$(shell command -v python3)
-# <Recipes>
+# Mark targets as phony
+.PHONY: init plan apply destroy init_remove auth set_env tf_lint_with_write tf_lint_without_write install_python_deps
 
-TERRAFORM_DIR = ./aws-identity-deployment-tf
+# Python executable
+python_exec=$(shell command -v python3)
+
+
+TERRAFORM_DIR = ./aws-identity-setup-tf
+# TERRAFORM_DIR = ./aws-identity-deployment-tf
+
+MODULES = $(shell find $(TERRAFORM_DIR) -mindepth 1 -maxdepth 1 -type d)
+# MODULES = $(shell grep -hroP 'source\s*=\s*"\K[^"]+' $(TERRAFORM_DIR) | sort | uniq)
+
 
 auth:
 		saml2aws login
@@ -17,34 +25,87 @@ auth:
 set_env:
 		@echo execute eval $(saml2aws script)
 
+# Debugging target to print modules
+debug:
+	@echo "Modules: $(MODULES)"
+	@$(foreach module, $(MODULES), echo "Found module: $(module)";)
+	@echo "Environment detected: $(TF_VAR_environment)"
+
+# Terraform Commands for All Modules
+# init:
+# 	@echo "Initializing Terraform modules..."
+# 	@$(foreach module, $(MODULES), \
+# 		echo "Running terraform init in $(module)"; \
+# 		(cd $(module) && terraform init -upgrade); \
+# 	)
+
+# Terraform Commands for All Modules
+# init:
+# 	@echo "Initializing Terraform modules..."
+# 	@for module in $(MODULES); do \
+# 		echo "Running terraform init in $$module"; \
+# 		cd $$module && terraform init -upgrade || exit 1; \
+# 		cd - > /dev/null; \
+# 	done
+
+# if [ "$$module_name" = "aws-orgz-team-unit" ] || [ "$$module_name" = "aws-users-identity-creation" ]; then \
+# 	echo "Running terraform init with backend config for $$module_name"; \
+# 	cd $$module && terraform init \
+# 		-backend-config="bucket=byt-infra-user-identity-backend" \
+# 		-backend-config="key=aws-orgz-team-unit/terraform.tfstate" \
+# 		-backend-config="region=us-east-1" || exit 1; \
+
+# else \
+
 init:
-		cd $(TERRAFORM_DIR) && terraform init -upgrade
-		
+	@echo "Initializing Terraform modules..."
+	@for module in $(MODULES); do \
+		echo "Processing module: $$module"; \
+		module_name=$$(basename $$module); \
+			echo "Running terraform init with backend config for $$module_name"; \
+			cd $$module && terraform init \
+				-backend-config="bucket=byt-infra-user-identity-backend" \
+				-backend-config="key=$(TF_VAR_environment)/$$module_name.tfstate" \
+				-backend-config="region=us-east-1" || exit 1; \
+		cd - > /dev/null; \
+	done
+
 plan:
-		cd $(TERRAFORM_DIR) && terraform plan
+	@echo "Planning Terraform modules..."
+	@$(foreach module, $(MODULES), \
+		echo "Running terraform plan in $(module)"; \
+		(cd $(module) && terraform plan); \
+	)
 
 apply:
-		cd $(TERRAFORM_DIR) && terraform apply -auto-approve
-
-init_remove:
-		cd $(TERRAFORM_DIR) && rm -rf ./.terraform
-
-destroy:
-		cd $(TERRAFORM_DIR) && terraform destroy -auto-approve
-
-init_remove:
-		cd $(TERRAFORM_DIR) && rm -dfr ./.terraform
+	@echo "Applying Terraform modules..."
+	@$(foreach module, $(MODULES), \
+		echo "Running terraform apply in $(module)"; \
+		(cd $(module) && terraform apply -auto-approve); \
+	)
 
 destroy:
-		cd $(TERRAFORM_DIR) && terraform destroy
+	@echo "Destroying Terraform modules..."
+	@$(foreach module, $(MODULES), \
+		echo "Running terraform destroy in $(module)"; \
+		(cd $(module) && terraform destroy -auto-approve); \
+	)
 
-tf_lint_with_write:		
-		terraform fmt -recursive -diff=true -write=true ./aws-identity-setup-tf
+init_remove:
+	@echo "Removing .terraform directories..."
+	@$(foreach module, $(MODULES), \
+		echo "Removing .terraform in $(module)"; \
+		(cd $(module) && rm -rf .terraform); \
+	)
+
+# Terraform Linting
+tf_lint_with_write:
+	terraform fmt -recursive -diff=true -write=true $(TERRAFORM_DIR)
 
 tf_lint_without_write:
-		terraform fmt -recursive -diff=true -write=false ./aws-identity-setup-tf
+	terraform fmt -recursive -diff=true -write=false $(TERRAFORM_DIR)
 
+# Install Python Dependencies
 install_python_deps:
-		${python_exec} -m pip install --upgrade pip
-		pip install -r ./scripts/temp_install_scripts/requirements.txt
-
+	$(python_exec) -m pip install --upgrade pip
+	pip install -r ./scripts/temp_install_scripts/requirements.txt
