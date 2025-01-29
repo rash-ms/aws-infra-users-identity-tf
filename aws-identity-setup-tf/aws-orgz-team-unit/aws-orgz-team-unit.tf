@@ -8,6 +8,9 @@ resource "aws_organizations_organization" "org" {
   aws_service_access_principals = ["cloudtrail.amazonaws.com", "config.amazonaws.com"]
   enabled_policy_types          = ["SERVICE_CONTROL_POLICY"]
   lifecycle { prevent_destroy = true }
+  depends_on = [
+    data.aws_organizations_organization.existing
+    ]
 }
 
 # ✅ Create Organizational Unit (OU) for each team if it doesn't exist
