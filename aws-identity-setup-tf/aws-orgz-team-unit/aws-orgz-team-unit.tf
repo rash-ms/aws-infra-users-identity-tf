@@ -1,6 +1,8 @@
 # ✅ Data Source: Check if AWS Organization Exists
 data "aws_organizations_organization" "existing" {}
 
+data "aws_ssoadmin_instances" "main" {}
+
 # ✅ Create AWS Organization if it doesn't exist
 resource "aws_organizations_organization" "org" {
   count = length(data.aws_organizations_organization.existing.id) > 0 ? 0 : 1
