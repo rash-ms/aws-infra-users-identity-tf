@@ -236,7 +236,7 @@ resource "aws_ssoadmin_permission_set_inline_policy" "policy_attachment" {
   inline_policy      = local.permission_sets[each.key].policy  
 }
 
-# Account Assignments
+
 # resource "aws_ssoadmin_account_assignment" "group_assignment" {
 #   for_each = local.group_mappings
 
@@ -249,7 +249,7 @@ resource "aws_ssoadmin_permission_set_inline_policy" "policy_attachment" {
 
 #   depends_on = [
 #     aws_organizations_account.accounts,
-#     aws_ssoadmin_permission_set_inline_policy.policy_attachment
+#     aws_ssoadmin_permission_set_inline_policy.policy_attachment  
 #   ]
 # }
 
@@ -260,12 +260,12 @@ resource "aws_ssoadmin_account_assignment" "group_assignment" {
   permission_set_arn = aws_ssoadmin_permission_set.policy_set["${var.environment}-${each.value.policy_name}"].arn
   principal_id       = aws_identitystore_group.groups[each.key].group_id
   principal_type     = "GROUP"
-  target_id          = lookup(local.existing_accounts, each.value.email, aws_organizations_account.accounts[each.key].id)
+  target_id          = try(local.existing_accounts[each.value.email].id, aws_organizations_account.accounts[each.key].id)
   target_type        = "AWS_ACCOUNT"
 
   depends_on = [
     aws_organizations_account.accounts,
-    aws_ssoadmin_permission_set_inline_policy.policy_attachment  # Correct dependency
+    aws_ssoadmin_permission_set_inline_policy.policy_attachment
   ]
 }
 
