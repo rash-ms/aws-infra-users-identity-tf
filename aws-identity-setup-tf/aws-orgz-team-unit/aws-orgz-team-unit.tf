@@ -74,24 +74,49 @@ resource "aws_organizations_account" "accounts" {
   }
 }
 
-# ✅ Create Identity Store Groups dynamically for each team
+# # ✅ Create Identity Store Groups dynamically for each team
+# resource "aws_identitystore_group" "groups" {
+#   for_each          = local.group_mappings
+#   identity_store_id = tolist(data.aws_ssoadmin_instances.main.identity_store_ids)[0]
+#   display_name      = "${each.key}-${var.environment}"
+#   description       = "Access group for ${each.key}"
+# }
+
+# ✅ Create Identity Store Groups with Unique Names
 resource "aws_identitystore_group" "groups" {
   for_each          = local.group_mappings
   identity_store_id = tolist(data.aws_ssoadmin_instances.main.identity_store_ids)[0]
-  display_name      = "${each.key}-${var.environment}"
-  description       = "Access group for ${each.key}"
+  display_name      = "${each.key}-${var.environment}-group"
+  description       = "Access group for ${each.key} in ${var.environment}"
 }
 
-# ✅ Create permission sets dynamically for each team
+# # ✅ Create permission sets dynamically for each team
+# resource "aws_ssoadmin_permission_set" "policy_set" {
+#   for_each         = local.permission_sets
+#   instance_arn     = tolist(data.aws_ssoadmin_instances.main.arns)[0]
+#   name             = each.value.name
+#   description      = "${each.value.name} permissions for ${var.environment}"
+#   session_duration = "PT1H"
+# }
+
+# ✅ Create Permission Sets with Unique Names
 resource "aws_ssoadmin_permission_set" "policy_set" {
   for_each         = local.permission_sets
   instance_arn     = tolist(data.aws_ssoadmin_instances.main.arns)[0]
-  name             = each.value.name
-  description      = "${each.value.name} permissions for ${var.environment}"
+  name             = "${each.value.name}-${var.environment}"
+  description      = "Permission set for ${each.value.name} in ${var.environment}"
   session_duration = "PT1H"
 }
 
-# ✅ Attach inline policies to permission sets dynamically
+# # ✅ Attach inline policies to permission sets dynamically
+# resource "aws_ssoadmin_permission_set_inline_policy" "policy_attachment" {
+#   for_each           = local.permission_sets
+#   instance_arn       = tolist(data.aws_ssoadmin_instances.main.arns)[0]
+#   permission_set_arn = aws_ssoadmin_permission_set.policy_set[each.key].arn
+#   inline_policy      = each.value.policy
+# }
+
+# ✅ Attach Inline Policies to Permission Sets
 resource "aws_ssoadmin_permission_set_inline_policy" "policy_attachment" {
   for_each           = local.permission_sets
   instance_arn       = tolist(data.aws_ssoadmin_instances.main.arns)[0]
@@ -132,19 +157,12 @@ resource "aws_ssoadmin_permission_set" "policy_set" {
   session_duration = "PT1H"
 }
 
-# ✅ Attach inline policies to permission sets
-resource "aws_ssoadmin_permission_set_inline_policy" "policy_attachment" {
-  for_each           = local.permission_sets
-  instance_arn       = tolist(data.aws_ssoadmin_instances.main.arns)[0]
-  permission_set_arn = aws_ssoadmin_permission_set.policy_set[each.key].arn
-  inline_policy      = each.value.policy
-}
 
-# ✅ Assign permission sets to groups dynamically
+# ✅ Assign Permission Sets to Accounts
 resource "aws_ssoadmin_account_assignment" "group_assignment" {
   for_each = {
     for key, value in local.group_mappings :
-    key => value if contains(keys(local.permission_sets), "${var.environment}-${value.policy_name}")
+    "${key}-${value.policy_name}-${var.environment}" => value
   }
 
   instance_arn       = tolist(data.aws_ssoadmin_instances.main.arns)[0]
@@ -154,6 +172,22 @@ resource "aws_ssoadmin_account_assignment" "group_assignment" {
   target_id          = aws_organizations_account.accounts[each.key].id
   target_type        = "AWS_ACCOUNT"
 }
+
+
+# # ✅ Assign permission sets to groups dynamically
+# resource "aws_ssoadmin_account_assignment" "group_assignment" {
+#   for_each = {
+#     for key, value in local.group_mappings :
+#     key => value if contains(keys(local.permission_sets), "${var.environment}-${value.policy_name}")
+#   }
+
+#   instance_arn       = tolist(data.aws_ssoadmin_instances.main.arns)[0]
+#   permission_set_arn = aws_ssoadmin_permission_set.policy_set["${var.environment}-${each.value.policy_name}"].arn
+#   principal_id       = aws_identitystore_group.groups[each.key].group_id
+#   principal_type     = "GROUP"
+#   target_id          = aws_organizations_account.accounts[each.key].id
+#   target_type        = "AWS_ACCOUNT"
+# }
 
 
 
