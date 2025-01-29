@@ -1,10 +1,7 @@
-# ✅ Check if AWS Organization Exists
 data "aws_organizations_organization" "existing" {}
 
-# ✅ Get AWS SSO Instances (Needed for Identity Store and Permission Sets)
 data "aws_ssoadmin_instances" "main" {}
 
-# ✅ Create AWS Organization if it doesn't exist
 resource "aws_organizations_organization" "org" {
   count = data.aws_organizations_organization.existing.id != "" ? 0 : 1
 
@@ -13,10 +10,6 @@ resource "aws_organizations_organization" "org" {
   lifecycle { prevent_destroy = true }
 }
 
-# ✅ Fetch AWS Organization Root ID
-data "aws_organizations_organization" "org_info" {}
-
-# ✅ Load JSON Data
 locals {
   aws_policies        = jsondecode(file(var.aws_policies_file)).policies
   aws_team_group_info = jsondecode(file(var.team_group_info_file)).team_group_details
@@ -42,7 +35,7 @@ locals {
   selected_policies = local.aws_policies[var.environment]
 
   permission_sets = {
-    for policy_key, policy_details in local.selected_policies :
+    for policy_type, policy_details in local.selected_policies :
     "${var.environment}-${policy_details.name}" => {
       name   = policy_details.name,
       policy = jsonencode({
@@ -53,25 +46,17 @@ locals {
   }
 }
 
-# ✅ Create Organizational Unit (OU) for each team dynamically
 resource "aws_organizations_organizational_unit" "team_ou" {
   for_each  = toset(var.teams)
   name      = each.key
-  parent_id = data.aws_organizations_organization.org_info.roots[0].id
+  parent_id = aws_organizations_organization.org[0].roots[0].id
 }
 
-# ✅ Create AWS Accounts and Assign Them to Their OU
 resource "aws_organizations_account" "accounts" {
   for_each  = local.group_mappings
   name      = each.key
   email     = each.value.email
-
-  parent_id = lookup(
-    aws_organizations_organizational_unit.team_ou,
-    replace(replace(each.key, "-dev", ""), "-prod", ""),
-    data.aws_organizations_organization.org_info.roots[0].id
-  ).id
-
+  parent_id = aws_organizations_organizational_unit.team_ou[replace(each.key, "-${var.environment}", "")].id
   role_name = "OrganizationAccountAccessRole"
 
   lifecycle {
@@ -82,24 +67,21 @@ resource "aws_organizations_account" "accounts" {
   }
 }
 
-# ✅ Create Identity Store Groups with Unique Names
 resource "aws_identitystore_group" "groups" {
   for_each          = local.group_mappings
   identity_store_id = tolist(data.aws_ssoadmin_instances.main.identity_store_ids)[0]
-  display_name      = "${each.key}-${var.environment}-group"
-  description       = "Access group for ${each.key} in ${var.environment}"
+  display_name      = "${each.key}-group"
+  description       = "Access group for ${each.key}"
 }
 
-# ✅ Create Permission Sets with Unique Names
 resource "aws_ssoadmin_permission_set" "policy_set" {
   for_each         = local.permission_sets
   instance_arn     = tolist(data.aws_ssoadmin_instances.main.arns)[0]
-  name             = "${each.value.name}-${var.environment}"
-  description      = "Permission set for ${each.value.name} in ${var.environment}"
+  name             = each.value.name
+  description      = "${each.value.name} permissions for ${var.environment}"
   session_duration = "PT1H"
 }
 
-# ✅ Attach Inline Policies to Permission Sets
 resource "aws_ssoadmin_permission_set_inline_policy" "policy_attachment" {
   for_each           = local.permission_sets
   instance_arn       = tolist(data.aws_ssoadmin_instances.main.arns)[0]
@@ -107,37 +89,12 @@ resource "aws_ssoadmin_permission_set_inline_policy" "policy_attachment" {
   inline_policy      = each.value.policy
 }
 
-# # ✅ Assign Permission Sets to Accounts Dynamically
-# resource "aws_ssoadmin_account_assignment" "group_assignment" {
-#   for_each = {
-#     for key, value in local.group_mappings :
-#     "${key}-${value.policy_name}-${var.environment}" => value
-#   }
-
-#   instance_arn       = tolist(data.aws_ssoadmin_instances.main.arns)[0]
-#   permission_set_arn = aws_ssoadmin_permission_set.policy_set["${var.environment}-${each.value.policy_name}"].arn
-#   principal_id       = aws_identitystore_group.groups[each.key].group_id
-#   principal_type     = "GROUP"
-#   target_id          = aws_organizations_account.accounts[each.key].id
-#   target_type        = "AWS_ACCOUNT"
-# }
-
-
-# ✅ Assign Permission Sets to Accounts Dynamically
 resource "aws_ssoadmin_account_assignment" "group_assignment" {
-  for_each = {
-    for key, value in local.group_mappings :
-    "${key}-${value.policy_name}-${var.environment}" => value
-  }
+  for_each = local.group_mappings
 
   instance_arn       = tolist(data.aws_ssoadmin_instances.main.arns)[0]
-
-  # 🔹 Fix: Ensure policy name matches permission set name
-  permission_set_arn = aws_ssoadmin_permission_set.policy_set["${var.environment}-${replace(each.value.policy_name, "-group", "-access")}"].arn
-
-  # 🔹 Fix: Ensure group name matches the correct lookup key
-  principal_id       = aws_identitystore_group.groups[replace(each.key, "-privilege-group-dev", "-dev")].group_id
-
+  permission_set_arn = aws_ssoadmin_permission_set.policy_set["${var.environment}-${each.value.policy_name}"].arn
+  principal_id       = aws_identitystore_group.groups[each.key].group_id
   principal_type     = "GROUP"
   target_id          = aws_organizations_account.accounts[each.key].id
   target_type        = "AWS_ACCOUNT"
