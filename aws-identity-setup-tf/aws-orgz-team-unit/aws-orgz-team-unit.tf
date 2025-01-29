@@ -2,13 +2,39 @@ data "aws_organizations_organization" "existing" {}
 
 data "aws_ssoadmin_instances" "main" {}
 
+# resource "aws_organizations_organization" "org" {
+#   count = data.aws_organizations_organization.existing.id != "" ? 0 : 1
+
+#   aws_service_access_principals = ["cloudtrail.amazonaws.com", "config.amazonaws.com"]
+#   enabled_policy_types          = ["SERVICE_CONTROL_POLICY"]
+#   lifecycle { prevent_destroy = true }
+# }
+
+
+# ✅ Create AWS Organization if it doesn't exist
 resource "aws_organizations_organization" "org" {
-  count = data.aws_organizations_organization.existing.id != "" ? 0 : 1
+  count = data.aws_organizations_organization.existing.accounts == null ? 1 : 0
 
   aws_service_access_principals = ["cloudtrail.amazonaws.com", "config.amazonaws.com"]
   enabled_policy_types          = ["SERVICE_CONTROL_POLICY"]
   lifecycle { prevent_destroy = true }
 }
+
+# ✅ Get Organization Root ID safely
+locals {
+  org_root_id = try(
+    aws_organizations_organization.org[0].roots[0].id,
+    data.aws_organizations_organization.existing.roots[0].id
+  )
+}
+
+# ✅ Create Organizational Unit (OU) for each team
+resource "aws_organizations_organizational_unit" "team_ou" {
+  for_each  = toset(var.teams)
+  name      = each.key
+  parent_id = local.org_root_id  # Use the safe local reference
+}
+
 
 locals {
   aws_policies        = jsondecode(file(var.aws_policies_file)).policies
@@ -46,11 +72,11 @@ locals {
   }
 }
 
-resource "aws_organizations_organizational_unit" "team_ou" {
-  for_each  = toset(var.teams)
-  name      = each.key
-  parent_id = aws_organizations_organization.org[0].roots[0].id
-}
+# resource "aws_organizations_organizational_unit" "team_ou" {
+#   for_each  = toset(var.teams)
+#   name      = each.key
+#   parent_id = aws_organizations_organization.org[0].roots[0].id
+# }
 
 resource "aws_organizations_account" "accounts" {
   for_each  = local.group_mappings
