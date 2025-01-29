@@ -86,7 +86,8 @@ resource "aws_ssoadmin_account_assignment" "group_assignment" {
 resource "aws_identitystore_group" "groups" {
   for_each          = local.group_mappings
   identity_store_id = tolist(data.aws_ssoadmin_instances.main.identity_store_ids)[0]
-  display_name      = "${each.key}-${var.environment}"
+  # display_name      = "${each.key}-${var.environment}"
+  display_name      = "${each.key}"
   description       = "Access group for ${each.key}"
 }
 
