@@ -1,20 +1,7 @@
-terraform {
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 4.0"
-    }
-  }
-}
-
-provider "aws" {
-  region = "us-east-1"
-}
-
-# ✅ Fetch existing AWS Organization (if it exists)
+# ✅ Check if AWS Organization Exists
 data "aws_organizations_organization" "existing" {}
 
-# ✅ Get AWS SSO Instance (needed for Identity Store and Permissions)
+# ✅ Get AWS SSO Instances (Needed for Identity Store and Permission Sets)
 data "aws_ssoadmin_instances" "main" {}
 
 # ✅ Create AWS Organization if it doesn't exist
@@ -26,19 +13,13 @@ resource "aws_organizations_organization" "org" {
   lifecycle { prevent_destroy = true }
 }
 
-# ✅ Extract AWS Organization Root ID (Handles Both Existing & New Organizations)
-locals {
-  org_root_id = length(data.aws_organizations_organization.existing.roots) > 0 ? 
-                data.aws_organizations_organization.existing.roots[0].id : 
-                aws_organizations_organization.org[0].roots[0].id
-}
+# ✅ Fetch AWS Organization Root ID
+data "aws_organizations_organization" "org_info" {}
 
 # ✅ Load JSON Data
 locals {
   aws_policies        = jsondecode(file(var.aws_policies_file)).policies
   aws_team_group_info = jsondecode(file(var.team_group_info_file)).team_group_details
-
-  environments = keys(local.aws_policies)
 
   env_policy_types = {
     for env, policies in local.aws_policies :
@@ -76,7 +57,7 @@ locals {
 resource "aws_organizations_organizational_unit" "team_ou" {
   for_each  = toset(var.teams)
   name      = each.key
-  parent_id = local.org_root_id
+  parent_id = data.aws_organizations_organization.org_info.roots[0].id
 }
 
 # ✅ Create AWS Accounts and Assign Them to Their OU
@@ -88,7 +69,7 @@ resource "aws_organizations_account" "accounts" {
   parent_id = lookup(
     aws_organizations_organizational_unit.team_ou,
     replace(replace(each.key, "-dev", ""), "-prod", ""),
-    local.org_root_id
+    data.aws_organizations_organization.org_info.roots[0].id
   ).id
 
   role_name = "OrganizationAccountAccessRole"
