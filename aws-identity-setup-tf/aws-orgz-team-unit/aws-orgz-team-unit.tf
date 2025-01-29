@@ -169,14 +169,27 @@ locals {
     { for k, v in aws_organizations_account.accounts : k => v }
   )
 
-  # Permission sets
+  # # Permission sets
+  # permission_sets = {
+  #   for policy_type, policy_details in local.aws_policies[var.environment] :
+  #   "${var.environment}-${policy_details.name}" => {
+  #     name   = policy_details.name,
+  #     policy = jsonencode(policy_details)
+  #   }
+  # }
+
   permission_sets = {
     for policy_type, policy_details in local.aws_policies[var.environment] :
     "${var.environment}-${policy_details.name}" => {
       name   = policy_details.name,
-      policy = jsonencode(policy_details)
+      # Create policy document without the "name" field
+      policy = jsonencode({
+        Version   = policy_details.Version
+        Statement = policy_details.Statement
+      })
     }
   }
+
 }
 
 # Organizational Units
@@ -222,22 +235,23 @@ resource "aws_ssoadmin_permission_set" "policy_set" {
 }
 
 # Policy Attachments
-# resource "aws_ssoadmin_permission_set_inline_policy" "policy_attachment" {
-#   for_each           = aws_ssoadmin_permission_set.policy_set
-#   instance_arn       = tolist(data.aws_ssoadmin_instances.main.arns)[0]
-#   permission_set_arn = each.value.arn
-#   inline_policy      = local.permission_sets[each.key].policy
-# }
-
 resource "aws_ssoadmin_permission_set_inline_policy" "policy_attachment" {
   for_each           = aws_ssoadmin_permission_set.policy_set
   instance_arn       = tolist(data.aws_ssoadmin_instances.main.arns)[0]
   permission_set_arn = each.value.arn
-  inline_policy      = jsonencode({
-    Version   = jsondecode(local.permission_sets[each.key].policy).Version
-    Statement = jsondecode(local.permission_sets[each.key].policy).Statement
-  })
+  inline_policy      = local.permission_sets[each.key].policy
 }
+
+
+# resource "aws_ssoadmin_permission_set_inline_policy" "policy_attachment" {
+#   for_each           = aws_ssoadmin_permission_set.policy_set
+#   instance_arn       = tolist(data.aws_ssoadmin_instances.main.arns)[0]
+#   permission_set_arn = each.value.arn
+#   inline_policy      = jsonencode({
+#     Version   = jsondecode(local.permission_sets[each.key].policy).Version
+#     Statement = jsondecode(local.permission_sets[each.key].policy).Statement
+#   })
+# }
 
 # Account Assignments
 resource "aws_ssoadmin_account_assignment" "group_assignment" {
