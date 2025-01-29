@@ -1,16 +1,3 @@
-# variable "teams" {
-#   description = "List of teams"
-#   type        = list(string)
-#   default     = ["data-platform"]
-# }
-
-# variable "workspace" {
-#   description = "List of workspaces"
-#   type        = list(string)
-#   default     = ["prod", "dev"]
-# }
-
-
 # Variable Definitions
 variable "environment" {
   description = "Environment to provision resources for (e.g., dev, prod)"
@@ -24,7 +11,8 @@ variable "environment" {
 variable "teams" {
   description = "List of team names"
   type        = list(string)
-  default     = ["data-platform", "data-infra", "data-eng", "data-bi"]
+  default     = ["data-platform"]
+  # default     = ["data-platform", "data-infra", "data-eng", "data-bi"]
 }
 
 variable "aws_policies_file" {
@@ -65,5 +53,3 @@ variable "team_group_info_file" {
 #   type        = string
 #   default     = "aws_team_group_info.json"
 # }
-
-# default     = ["data-platform"]
