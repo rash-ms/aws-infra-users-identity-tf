@@ -1,11 +1,29 @@
-# ✅ Load JSON Data for Policies and Groups
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 4.0"
+    }
+  }
+}
+
+provider "aws" {
+  region = "us-east-1"
+}
+
+# ✅ Check if AWS Organization Exists
+data "aws_organizations_organization" "existing" {}
+
+# ✅ Get AWS SSO Instances (Required for Identity Store and Permission Sets)
+data "aws_ssoadmin_instances" "main" {}
+
+# ✅ Load JSON Data
 locals {
   aws_policies        = jsondecode(file(var.aws_policies_file)).policies
   aws_team_group_info = jsondecode(file(var.team_group_info_file)).team_group_details
 
   environments = keys(local.aws_policies)
 
-  # Extract policy types dynamically from JSON (supports unlimited policies)
   env_policy_types = {
     for env, policies in local.aws_policies :
     env => keys(policies)
@@ -38,9 +56,7 @@ locals {
   }
 }
 
-# ✅ Check if AWS Organization Exists
-data "aws_organizations_organization" "existing" {}
-
+# ✅ Create AWS Organization if it doesn't exist
 resource "aws_organizations_organization" "org" {
   count = length(data.aws_organizations_organization.existing.id) > 0 ? 0 : 1
 
@@ -49,14 +65,19 @@ resource "aws_organizations_organization" "org" {
   lifecycle { prevent_destroy = true }
 }
 
-# ✅ Get AWS SSO Instances (Required for Identity Store and Permission Sets)
-data "aws_ssoadmin_instances" "main" {}
+# ✅ Extract the AWS Organization Root ID (Handles both existing & new orgs)
+locals {
+  org_root_id = coalesce(
+    length(data.aws_organizations_organization.existing.roots) > 0 ? data.aws_organizations_organization.existing.roots[0].id : "",
+    aws_organizations_organization.org[0].roots[0].id
+  )
+}
 
 # ✅ Create Organizational Unit (OU) for each team dynamically
 resource "aws_organizations_organizational_unit" "team_ou" {
   for_each  = toset(var.teams)
   name      = each.key
-  parent_id = data.aws_organizations_organization.existing.roots[0].id
+  parent_id = local.org_root_id
 }
 
 # ✅ Create AWS Accounts Dynamically in the Correct OU
@@ -68,7 +89,7 @@ resource "aws_organizations_account" "accounts" {
   parent_id = lookup(
     aws_organizations_organizational_unit.team_ou,
     replace(replace(each.key, "-dev", ""), "-prod", ""),
-    aws_organizations_organization.org[0].roots[0].id
+    local.org_root_id
   ).id
 
   role_name = "OrganizationAccountAccessRole"
@@ -120,3 +141,6 @@ resource "aws_ssoadmin_account_assignment" "group_assignment" {
   target_id          = aws_organizations_account.accounts[each.key].id
   target_type        = "AWS_ACCOUNT"
 }
+
+
+
