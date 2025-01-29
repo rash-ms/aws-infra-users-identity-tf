@@ -120,7 +120,6 @@
 data "aws_organizations_organization" "existing" {}
 data "aws_ssoadmin_instances" "main" {}
 
-# Create organization if not exists
 resource "aws_organizations_organization" "org" {
   count = data.aws_organizations_organization.existing.accounts == null ? 1 : 0
 
@@ -130,7 +129,6 @@ resource "aws_organizations_organization" "org" {
 }
 
 locals {
-  # Organization root ID handling
   org_root_id = try(
     aws_organizations_organization.org[0].roots[0].id,
     data.aws_organizations_organization.existing.roots[0].id
@@ -140,38 +138,40 @@ locals {
   aws_policies        = jsondecode(file(var.aws_policies_file)).policies
   aws_team_group_info = jsondecode(file(var.team_group_info_file)).team_group_details
 
-  # Dynamic policy type handling
-  env_policy_types = {
-    for env, policies in local.aws_policies :
-    env => keys(policies)
+  # Existing account handling
+  existing_account_map = {
+    for acc in data.aws_organizations_organization.existing.accounts :
+    acc.email => acc
   }
 
-  # Merge group policies from all policy types
-  group_policies = merge([
-    for policy_type in local.env_policy_types[var.environment] :
-    lookup(local.aws_team_group_info.attach_group_policies, policy_type, {})
-  ]...)
-
-  # Create group mappings with validation
+  # Group mappings with team names
   group_mappings = {
-    for group_key, policy_name in local.group_policies :
+    for group_key, policy_name in merge([
+      for policy_type in keys(local.aws_policies[var.environment]) :
+      local.aws_team_group_info.attach_group_policies[policy_type]
+    ]...) :
     group_key => {
       policy_name = policy_name,
-      email       = lookup(local.aws_team_group_info.emails, group_key, null),
+      email       = local.aws_team_group_info.emails[group_key],
       team_name   = split("-", group_key)[0]
     } if lookup(local.aws_team_group_info.emails, group_key, null) != null
   }
 
   # Account management
-  existing_accounts = {
-    for acc in data.aws_organizations_organization.existing.accounts :
-    acc.email => acc
+  accounts_to_create = {
+    for k, v in local.group_mappings :
+    k => v if !contains(keys(local.existing_account_map), v.email)
   }
 
-  # Permission set configuration
-  selected_policies = local.aws_policies[var.environment]
+  # Combined account reference
+  all_accounts = merge(
+    local.existing_account_map,
+    { for k, v in aws_organizations_account.accounts : k => v }
+  )
+
+  # Permission sets
   permission_sets = {
-    for policy_type, policy_details in local.selected_policies :
+    for policy_type, policy_details in local.aws_policies[var.environment] :
     "${var.environment}-${policy_details.name}" => {
       name   = policy_details.name,
       policy = jsonencode(policy_details)
@@ -186,9 +186,10 @@ resource "aws_organizations_organizational_unit" "team_ou" {
   parent_id = local.org_root_id
 }
 
-# Account management (create or use existing)
+# Account creation (only for new accounts)
 resource "aws_organizations_account" "accounts" {
-  for_each  = local.group_mappings
+  for_each  = local.accounts_to_create
+
   name      = each.key
   email     = each.value.email
   parent_id = aws_organizations_organizational_unit.team_ou[each.value.team_name].id
@@ -203,7 +204,7 @@ resource "aws_organizations_account" "accounts" {
   }
 }
 
-# Identity Store Groups
+# SSO Groups
 resource "aws_identitystore_group" "groups" {
   for_each          = local.group_mappings
   identity_store_id = tolist(data.aws_ssoadmin_instances.main.identity_store_ids)[0]
@@ -220,39 +221,15 @@ resource "aws_ssoadmin_permission_set" "policy_set" {
   session_duration = "PT8H"
 }
 
-# # Policy Attachments
-# resource "aws_ssoadmin_permission_set_inline_policy" "policy_attachment" {
-#   for_each           = aws_ssoadmin_permission_set.policy_set
-#   instance_arn       = tolist(data.aws_ssoadmin_instances.main.arns)[0]
-#   permission_set_arn = each.value.arn
-#   inline_policy      = each.value.policy
-# }
-
-
+# Policy Attachments
 resource "aws_ssoadmin_permission_set_inline_policy" "policy_attachment" {
   for_each           = aws_ssoadmin_permission_set.policy_set
   instance_arn       = tolist(data.aws_ssoadmin_instances.main.arns)[0]
   permission_set_arn = each.value.arn
-  inline_policy      = local.permission_sets[each.key].policy  
+  inline_policy      = local.permission_sets[each.key].policy
 }
 
-
-# resource "aws_ssoadmin_account_assignment" "group_assignment" {
-#   for_each = local.group_mappings
-
-#   instance_arn       = tolist(data.aws_ssoadmin_instances.main.arns)[0]
-#   permission_set_arn = aws_ssoadmin_permission_set.policy_set["${var.environment}-${each.value.policy_name}"].arn
-#   principal_id       = aws_identitystore_group.groups[each.key].group_id
-#   principal_type     = "GROUP"
-#   target_id          = lookup(local.existing_accounts, each.value.email, aws_organizations_account.accounts[each.key].id)
-#   target_type        = "AWS_ACCOUNT"
-
-#   depends_on = [
-#     aws_organizations_account.accounts,
-#     aws_ssoadmin_permission_set_inline_policy.policy_attachment  
-#   ]
-# }
-
+# Account Assignments
 resource "aws_ssoadmin_account_assignment" "group_assignment" {
   for_each = local.group_mappings
 
@@ -260,12 +237,10 @@ resource "aws_ssoadmin_account_assignment" "group_assignment" {
   permission_set_arn = aws_ssoadmin_permission_set.policy_set["${var.environment}-${each.value.policy_name}"].arn
   principal_id       = aws_identitystore_group.groups[each.key].group_id
   principal_type     = "GROUP"
-  target_id          = try(local.existing_accounts[each.value.email].id, aws_organizations_account.accounts[each.key].id)
+  target_id          = local.all_accounts[each.value.email].id
   target_type        = "AWS_ACCOUNT"
 
   depends_on = [
-    aws_organizations_account.accounts,
     aws_ssoadmin_permission_set_inline_policy.policy_attachment
   ]
 }
-
