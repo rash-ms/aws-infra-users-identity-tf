@@ -4,7 +4,7 @@ locals {
 
   env_policy_types = {
     "dev"  = ["privilege-access-policy"]
-    "prod" = ["readonly-access-policy", "audit-access-policy"]
+    "prod" = ["readonly-access-policy"]
   }
 
   # Map groups to policies dynamically based on environment
@@ -53,10 +53,35 @@ resource "aws_organizations_organization" "org" {
   depends_on = [data.aws_organizations_organization.existing]
 }
 
-# ✅ Create Organizational Unit (OU) for teams
+# ✅ Create Organizational Unit (OU) for each team
 resource "aws_organizations_organizational_unit" "team_ou" {
-  name      = "${var.environment}-teams"
+  for_each  = toset(var.teams)
+  name      = "${var.environment}-${each.key}-team"
   parent_id = aws_organizations_organization.org.roots[0].id
+}
+
+# ✅ Create AWS accounts inside the Organizational Unit
+resource "aws_organizations_account" "accounts" {
+  for_each  = local.group_mappings
+  name      = each.key
+  email     = each.value.email
+  parent_id = aws_organizations_organizational_unit.team_ou[split("-", each.key)[0]].id
+  role_name = "OrganizationAccountAccessRole"
+
+  lifecycle {
+    precondition {
+      condition     = can(regex("^[^@]+@[^@]+\\.[^@]+$", each.value.email))
+      error_message = "Invalid email format for ${each.key}"
+    }
+  }
+}
+
+# ✅ Create Identity Store Groups dynamically
+resource "aws_identitystore_group" "groups" {
+  for_each          = local.group_mappings
+  identity_store_id = tolist(data.aws_ssoadmin_instances.main.identity_store_ids)[0]
+  display_name      = "${each.key}-${var.environment}"
+  description       = "Access group for ${each.key}"
 }
 
 # ✅ Create permission sets dynamically
@@ -77,18 +102,6 @@ resource "aws_ssoadmin_permission_set_inline_policy" "policy_attachment" {
 }
 
 # ✅ Assign permission sets to groups dynamically
-# resource "aws_ssoadmin_account_assignment" "group_assignment" {
-#   for_each = local.group_mappings
-
-#   instance_arn       = tolist(data.aws_ssoadmin_instances.main.arns)[0]
-#   permission_set_arn = try(aws_ssoadmin_permission_set.policy_set["${var.environment}-${each.value.policy_name}"].arn, null)
-
-#   principal_id       = aws_identitystore_group.groups[each.key].group_id
-#   principal_type     = "GROUP"
-#   target_id          = aws_organizations_account.accounts[each.key].id
-#   target_type        = "AWS_ACCOUNT"
-# }
-
 resource "aws_ssoadmin_account_assignment" "group_assignment" {
   for_each = {
     for key, value in local.group_mappings :
@@ -104,29 +117,7 @@ resource "aws_ssoadmin_account_assignment" "group_assignment" {
 }
 
 
-# ✅ Create Identity Store Groups dynamically
-resource "aws_identitystore_group" "groups" {
-  for_each          = local.group_mappings
-  identity_store_id = tolist(data.aws_ssoadmin_instances.main.identity_store_ids)[0]
-  display_name      = "${each.key}-${var.environment}"
-  description       = "Access group for ${each.key}"
-}
 
-# ✅ Create AWS Organization accounts dynamically and place them in the correct OU
-resource "aws_organizations_account" "accounts" {
-  for_each  = local.group_mappings
-  name      = each.key
-  email     = each.value.email
-  parent_id = aws_organizations_organizational_unit.team_ou.id
-  role_name = "OrganizationAccountAccessRole"
-
-  lifecycle {
-    precondition {
-      condition     = can(regex("^[^@]+@[^@]+\\.[^@]+$", each.value.email))
-      error_message = "Invalid email format for ${each.key}"
-    }
-  }
-}
 
 
 
