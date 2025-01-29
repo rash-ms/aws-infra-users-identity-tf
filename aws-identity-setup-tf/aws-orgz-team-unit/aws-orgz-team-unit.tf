@@ -60,12 +60,34 @@ locals {
   }
 }
 
-# ✅ Create AWS accounts inside the respective Organizational Unit (OU) only if they don't exist
+# # ✅ Create AWS accounts inside the respective Organizational Unit (OU) only if they don't exist
+# resource "aws_organizations_account" "accounts" {
+#   for_each  = local.group_mappings
+#   name      = each.key
+#   email     = each.value.email
+#   parent_id = aws_organizations_organizational_unit.team_ou[split("-", each.key)[0]].id
+#   role_name = "OrganizationAccountAccessRole"
+
+#   lifecycle {
+#     precondition {
+#       condition     = can(regex("^[^@]+@[^@]+\\.[^@]+$", each.value.email))
+#       error_message = "Invalid email format for ${each.key}"
+#     }
+#   }
+# }
+
 resource "aws_organizations_account" "accounts" {
   for_each  = local.group_mappings
   name      = each.key
   email     = each.value.email
-  parent_id = aws_organizations_organizational_unit.team_ou[split("-", each.key)[0]].id
+
+  # ✅ Dynamically find the correct Organizational Unit (OU)
+  parent_id = lookup(
+    aws_organizations_organizational_unit.team_ou,
+    replace(replace(each.key, "-dev", ""), "-prod", ""),
+    aws_organizations_organization.org.roots[0].id
+  ).id
+
   role_name = "OrganizationAccountAccessRole"
 
   lifecycle {
