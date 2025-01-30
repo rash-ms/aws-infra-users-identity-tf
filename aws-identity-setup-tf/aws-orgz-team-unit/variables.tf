@@ -1,4 +1,3 @@
-# Variable Definitions
 variable "environment" {
   description = "Environment to provision resources for (e.g., dev, prod)"
   type        = string
