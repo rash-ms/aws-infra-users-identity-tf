@@ -7,11 +7,11 @@ locals {
   users_config  = yamldecode(file(var.users_yaml_path))
   groups_config = yamldecode(file(var.groups_yaml_path))
 
-  # ✅ Filter groups dynamically for the selected environment
+  # ✅ Dynamically filter groups for the selected environment (no hardcoding)
   filtered_groups = {
     for group_name, users in local.groups_config.groups :
     group_name => users
-    if contains(split("-", group_name), var.environment)  # Detects `dev` or `prod`
+    if contains(split("-", group_name), var.environment)  # Only groups containing 'dev' or 'prod'
   }
 
   # ✅ Flatten users into a list (only for the selected environment)
@@ -22,7 +22,7 @@ locals {
   users_map = { for user in local.filtered_users : user => user }
 }
 
-# ✅ Fetch Existing Users from AWS Identity Store
+# ✅ Fetch Existing Users from AWS Identity Store (Check Across `dev` & `prod`)
 data "aws_identitystore_user" "existing_users" {
   for_each          = local.users_map
   identity_store_id = local.identity_store_id
@@ -35,7 +35,7 @@ data "aws_identitystore_user" "existing_users" {
 # ✅ Create Users Only If They Do NOT Already Exist
 resource "aws_identitystore_user" "users" {
   for_each = { for user in local.users_map : user => user
-    if lookup(data.aws_identitystore_user.existing_users, user, null) == null  # Skip if exists
+    if lookup(data.aws_identitystore_user.existing_users, user, null) == null  # Skip if user exists
   }
 
   identity_store_id = local.identity_store_id
@@ -63,12 +63,15 @@ data "aws_identitystore_group" "existing_groups" {
   }
 }
 
-# ✅ Extract User IDs for Assignments
+# ✅ Extract User IDs for Assignments (Handles Users Created in `dev`)
 locals {
-  user_ids = { for k, v in aws_identitystore_user.users : k => split("/", v.id)[1] }
+  user_ids = merge(
+    { for k, v in aws_identitystore_user.users : k => split("/", v.id)[1] },
+    { for k, v in data.aws_identitystore_user.existing_users : k => split("/", v.id)[1] }  # Merge users from `dev`
+  )
 }
 
-# ✅ Attach Users to Groups (Filtered for Dev/Prod)
+# ✅ Attach Users to Groups (Filtered for Dev/Prod, Skip If User Exists)
 resource "aws_identitystore_group_membership" "memberships" {
   for_each = {
     for user_group in flatten([
@@ -80,10 +83,10 @@ resource "aws_identitystore_group_membership" "memberships" {
       ]
     ]) :
     "${user_group.group}-${user_group.user}" => user_group
-    if lookup(data.aws_identitystore_user.existing_users, user_group.user, null) != null  # Only attach existing users
+    if lookup(local.user_ids, user_group.user, null) != null  # Only attach existing users
   }
 
   identity_store_id = local.identity_store_id
   group_id          = data.aws_identitystore_group.existing_groups[each.value.group].id
-  member_id         = data.aws_identitystore_user.existing_users[each.value.user].id
+  member_id         = local.user_ids[each.value.user]
 }
