@@ -1,4 +1,3 @@
-# main.tf
 data "aws_ssoadmin_instances" "main" {}
 
 locals {
@@ -23,31 +22,9 @@ locals {
 # ----------------------------
 # User Management
 # ----------------------------
-# Check existing users (with error suppression)
-data "aws_identitystore_user" "existing_users" {
+# Create all users specified in filtered_users
+resource "aws_identitystore_user" "users" {
   for_each = toset(local.filtered_users)
-
-  identity_store_id = local.identity_store_id
-  filter {
-    attribute_path  = "UserName"
-    attribute_value = each.value
-  }
-
-  lifecycle {
-    postcondition {
-      condition     = length(self.id) > 0
-      error_message = "User ${each.value} not found. It will be created."
-    }
-  }
-}
-
-# Create missing users
-resource "aws_identitystore_user" "new_users" {
-  for_each = {
-    for user in local.filtered_users :
-    user => user
-    if !can(data.aws_identitystore_user.existing_users[user].id)
-  }
 
   identity_store_id = local.identity_store_id
   user_name         = each.value
@@ -66,25 +43,18 @@ resource "aws_identitystore_user" "new_users" {
 # ----------------------------
 # Group Management
 # ----------------------------
-# Get existing groups
-data "aws_identitystore_group" "existing_groups" {
+# Create groups specified in filtered_groups
+resource "aws_identitystore_group" "groups" {
   for_each = local.filtered_groups
 
   identity_store_id = local.identity_store_id
-  filter {
-    attribute_path  = "DisplayName"
-    attribute_value = each.key
-  }
+  display_name      = each.key
+  description       = "Managed by Terraform"
 }
 
-# Combine user IDs from existing and new users
-locals {
-  user_ids = merge(
-    { for u in local.filtered_users : u => data.aws_identitystore_user.existing_users[u].id if can(data.aws_identitystore_user.existing_users[u].id) },
-    { for k, v in aws_identitystore_user.new_users : k => v.id }
-  )
-}
-
+# ----------------------------
+# Group Membership Management
+# ----------------------------
 # Add users to groups
 resource "aws_identitystore_group_membership" "group_memberships" {
   for_each = {
@@ -99,9 +69,6 @@ resource "aws_identitystore_group_membership" "group_memberships" {
   }
 
   identity_store_id = local.identity_store_id
-  group_id          = data.aws_identitystore_group.existing_groups[each.value.group].id
-  member_id         = local.user_ids[each.value.user]
-
-  # Only create membership if user exists
-  depends_on = [aws_identitystore_user.new_users]
+  group_id          = aws_identitystore_group.groups[each.value.group].id
+  member_id         = aws_identitystore_user.users[each.value.user].id
 }
