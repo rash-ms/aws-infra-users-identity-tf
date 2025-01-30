@@ -9,3 +9,12 @@ variable "groups_yaml_path" {
   type        = string
   default     = "./base_conf/groups.yaml"
 }
+
+variable "environment" {
+  description = "Environment to provision resources for (e.g., dev, prod)"
+  type        = string
+  validation {
+    condition     = contains(["dev", "prod"], var.environment)
+    error_message = "Environment must be 'dev' or 'prod'."
+  }
+}
