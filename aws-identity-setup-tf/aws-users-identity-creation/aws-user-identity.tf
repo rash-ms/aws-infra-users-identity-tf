@@ -1,58 +1,46 @@
-# ✅ Get AWS Identity Center Instance
 data "aws_ssoadmin_instances" "main" {}
 
 locals {
-  identity_store_id = data.aws_ssoadmin_instances.main.identity_store_ids[0]
+  identity_store_id = tolist(data.aws_ssoadmin_instances.main.identity_store_ids)[0]
+  config            = yamldecode(file(var.sso-config_path))
 
-  users_config  = yamldecode(file(var.users_yaml_path))
-  groups_config = yamldecode(file(var.groups_yaml_path))
+  # Extract users/groups from YAML
+  all_users  = toset(local.config.users)
+  all_groups = local.config.groups
 
-  # ✅ Filter groups dynamically for the selected environment
+  # Filter groups by environment (e.g., "dev")
   filtered_groups = {
-    for group_name, users in local.groups_config.groups :
+    for group_name, users in local.all_groups :
     group_name => users
-    if contains(split("-", group_name), var.environment)  # Detects `dev` or `prod`
+    if contains(split("-", group_name), var.environment)
   }
 
-  # ✅ Flatten users into a list (only for the selected environment)
-  filtered_users = distinct(flatten([
-    for users in values(local.filtered_groups) : users
-  ]))
-
-  users_map = { for user in local.filtered_users : user => user }
+  filtered_users = distinct(flatten([for users in values(local.filtered_groups) : users]))
 }
 
-# ✅ Fetch Existing Users from AWS Identity Store
-data "aws_identitystore_user" "existing_users" {
-  for_each          = local.users_map
-  identity_store_id = local.identity_store_id
-  filter {
-    attribute_path  = "UserName"
-    attribute_value = each.value
-  }
-}
-
-# ✅ Create Users Only If They Do NOT Already Exist
+# ----------------------------
+# User Management
+# ----------------------------
 resource "aws_identitystore_user" "users" {
-  for_each = { for user in local.users_map : user => user
-    if lookup(data.aws_identitystore_user.existing_users, user, null) == null  # Skip if exists
-  }
+  for_each = toset(local.filtered_users)
 
   identity_store_id = local.identity_store_id
-  user_name         = each.value
+  user_name         = each.value  # Must match YAML email exactly
   display_name      = each.value
   name {
-    family_name = split("@", each.value)[0]
     given_name  = split("@", each.value)[0]
+    family_name = split("@", each.value)[0]
   }
   emails {
-    primary = true
-    type    = "work"
     value   = each.value
+    type    = "work"
+    primary = true
   }
 }
 
-# ✅ Fetch Existing Groups (Dynamically Detects New Groups)
+# ----------------------------
+# Existing Group Data Sources
+# ----------------------------
 data "aws_identitystore_group" "existing_groups" {
   for_each = local.filtered_groups
 
@@ -63,27 +51,22 @@ data "aws_identitystore_group" "existing_groups" {
   }
 }
 
-# ✅ Extract User IDs for Assignments
-locals {
-  user_ids = { for k, v in aws_identitystore_user.users : k => split("/", v.id)[1] }
-}
-
-# ✅ Attach Users to Groups (Filtered for Dev/Prod)
+# ----------------------------
+# Group Memberships (Fixed)
+# ----------------------------
 resource "aws_identitystore_group_membership" "memberships" {
   for_each = {
-    for user_group in flatten([
+    for pair in flatten([
       for group_name, users in local.filtered_groups : [
         for user in users : {
           group = group_name
           user  = user
         }
       ]
-    ]) :
-    "${user_group.group}-${user_group.user}" => user_group
-    if lookup(data.aws_identitystore_user.existing_users, user_group.user, null) != null  # Only attach existing users
+    ]) : "${pair.group}-${pair.user}" => pair
   }
 
   identity_store_id = local.identity_store_id
   group_id          = data.aws_identitystore_group.existing_groups[each.value.group].id
-  member_id         = data.aws_identitystore_user.existing_users[each.value.user].id
+  member_id         = aws_identitystore_user.users[each.value.user].user_id  # ← Critical fix
 }
