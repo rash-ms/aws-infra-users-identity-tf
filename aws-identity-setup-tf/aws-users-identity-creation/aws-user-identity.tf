@@ -93,32 +93,35 @@ locals {
 }
 
 # ----------------------------
-# Get ALL existing users (single API call)
+# Check for existing users (error-safe)
 # ----------------------------
-data "aws_identitystore_users" "all_existing" {
+locals {
+  existing_user_ids = {
+    for user in local.filtered_users :
+    user => try(
+      data.aws_identitystore_user.existing[user].user_id,
+      null
+    )
+  }
+}
+
+data "aws_identitystore_user" "existing" {
+  for_each = toset(local.filtered_users)
+
   identity_store_id = local.identity_store_id
-  
   filter {
     attribute_path  = "UserName"
-    attribute_value = "*"  # Wildcard to get all users
-  }
-}
-
-# Create map of existing users { "email@domain.com" = "user-id" }
-locals {
-  existing_user_map = {
-    for user in data.aws_identitystore_users.all_existing.users :
-    user.user_name => user.user_id
+    attribute_value = each.value
   }
 }
 
 # ----------------------------
-# User Management (only create missing users)
+# Create missing users
 # ----------------------------
 resource "aws_identitystore_user" "new_users" {
   for_each = toset([
     for user in local.filtered_users :
-    user if !contains(keys(local.existing_user_map), user)
+    user if local.existing_user_ids[user] == null
   ])
 
   identity_store_id = local.identity_store_id
@@ -136,7 +139,17 @@ resource "aws_identitystore_user" "new_users" {
 }
 
 # ----------------------------
-# Existing Groups Data Sources
+# Combine user IDs
+# ----------------------------
+locals {
+  all_user_ids = merge(
+    { for u, id in local.existing_user_ids : u => id if id != null },
+    { for k, v in aws_identitystore_user.new_users : k => v.user_id }
+  )
+}
+
+# ----------------------------
+# Group Management
 # ----------------------------
 data "aws_identitystore_group" "existing_groups" {
   for_each = local.filtered_groups
@@ -148,19 +161,6 @@ data "aws_identitystore_group" "existing_groups" {
   }
 }
 
-# ----------------------------
-# Combine all user IDs
-# ----------------------------
-locals {
-  all_user_ids = merge(
-    local.existing_user_map,
-    { for k, v in aws_identitystore_user.new_users : k => v.user_id }
-  )
-}
-
-# ----------------------------
-# Group Memberships
-# ----------------------------
 resource "aws_identitystore_group_membership" "memberships" {
   for_each = {
     for pair in flatten([
