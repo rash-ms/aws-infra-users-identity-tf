@@ -93,33 +93,13 @@ locals {
 }
 
 # ----------------------------
-# Check for existing users (error suppressed)
+# User Management (error-handled)
 # ----------------------------
-data "aws_identitystore_user" "existing" {
-  for_each = local.filtered_users
-
-  identity_store_id = local.identity_store_id
-  filter {
-    attribute_path  = "UserName"
-    attribute_value = each.value
-  }
-
-  lifecycle {
-    postcondition {
-      condition     = length(self.id) > 0 || !contains(local.filtered_users, each.value)
-      error_message = "User ${each.value} not found. It will be created."
-    }
-  }
-}
-
-# ----------------------------
-# Create missing users
-# ----------------------------
-resource "aws_identitystore_user" "new" {
+resource "aws_identitystore_user" "users" {
   for_each = {
     for user in local.filtered_users :
     user => user
-    if !can(data.aws_identitystore_user.existing[user].user_id)
+    if !contains(local.existing_user_ids, user)
   }
 
   identity_store_id = local.identity_store_id
@@ -137,13 +117,34 @@ resource "aws_identitystore_user" "new" {
 }
 
 # ----------------------------
-# Combine user IDs
+# Get existing user IDs (error-suppressed)
 # ----------------------------
+data "aws_identitystore_user" "existing" {
+  for_each = {
+    for user in local.filtered_users :
+    user => user
+    if can(regex("@", user)) # Basic email format validation
+  }
+
+  identity_store_id = local.identity_store_id
+  filter {
+    attribute_path  = "UserName"
+    attribute_value = each.value
+  }
+
+  lifecycle {
+    postcondition {
+      condition     = length(self.id) > 0 || !contains(local.filtered_users, each.value)
+      error_message = "User ${each.value} not found. It will be created."
+    }
+  }
+}
+
 locals {
-  user_ids = merge(
-    { for u in local.filtered_users : u => data.aws_identitystore_user.existing[u].user_id if can(data.aws_identitystore_user.existing[u].user_id) },
-    { for k, v in aws_identitystore_user.new : k => v.user_id }
-  )
+  existing_user_ids = {
+    for user in local.filtered_users :
+    user => can(data.aws_identitystore_user.existing[user].user_id) ? data.aws_identitystore_user.existing[user].user_id : null
+  }
 }
 
 # ----------------------------
@@ -159,6 +160,9 @@ data "aws_identitystore_group" "existing_groups" {
   }
 }
 
+# ----------------------------
+# Group Memberships
+# ----------------------------
 resource "aws_identitystore_group_membership" "memberships" {
   for_each = {
     for pair in flatten([
@@ -173,5 +177,5 @@ resource "aws_identitystore_group_membership" "memberships" {
 
   identity_store_id = local.identity_store_id
   group_id          = data.aws_identitystore_group.existing_groups[each.value.group].id
-  member_id         = local.user_ids[each.value.user]
+  member_id         = try(aws_identitystore_user.users[each.value.user].user_id, local.existing_user_ids[each.value.user])
 }
