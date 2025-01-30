@@ -22,21 +22,28 @@ locals {
   users_map = { for user in local.filtered_users : user => user }
 }
 
-# ✅ Fetch Existing Users from AWS Identity Store (Check Across `dev` & `prod`)
+# ✅ Fetch Existing Users from AWS Identity Store (Handle Missing Users)
 data "aws_identitystore_user" "existing_users" {
-  for_each = local.users_map
+  for_each = { for user in local.users_map : user => user }
 
   identity_store_id = local.identity_store_id
   filter {
     attribute_path  = "UserName"
     attribute_value = each.value
   }
+
+  lifecycle {
+    postcondition {
+      condition     = try(self.id != "", false)  # Ensures Terraform does not fail if the user is missing
+      error_message = "User ${each.value} does not exist in Identity Center."
+    }
+  }
 }
 
 # ✅ Create Users Only If They Do NOT Already Exist
 resource "aws_identitystore_user" "users" {
   for_each = { for user in local.users_map : user => user
-    if try(data.aws_identitystore_user.existing_users[user].id, null) == null  # Skip if user exists
+    if !contains(keys(data.aws_identitystore_user.existing_users), user)  # Skip if user exists
   }
 
   identity_store_id = local.identity_store_id
@@ -84,7 +91,7 @@ resource "aws_identitystore_group_membership" "memberships" {
       ]
     ]) :
     "${user_group.group}-${user_group.user}" => user_group
-    if try(local.user_ids[user_group.user], null) != null  # Only attach existing users
+    if lookup(local.user_ids, user_group.user, null) != null  # Only attach existing users
   }
 
   identity_store_id = local.identity_store_id
