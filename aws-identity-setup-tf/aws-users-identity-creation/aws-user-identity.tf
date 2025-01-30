@@ -109,7 +109,7 @@ data "aws_identitystore_user" "existing" {
 }
 
 # ------------------------------------
-# Create Users If They Don't Exist
+# Create Users Only If They Don't Exist
 # ------------------------------------
 resource "aws_identitystore_user" "users" {
   for_each = {
@@ -135,20 +135,7 @@ resource "aws_identitystore_user" "users" {
 }
 
 # ------------------------------------
-# Fetch Existing Groups from AWS SSO
-# ------------------------------------
-data "aws_identitystore_group" "existing_groups" {
-  for_each = local.filtered_groups
-
-  identity_store_id = local.identity_store_id
-  filter {
-    attribute_path  = "DisplayName"
-    attribute_value = each.key
-  }
-}
-
-# ------------------------------------
-# Combine Existing & New User IDs
+# Combine Existing & New User IDs (Prevents Errors)
 # ------------------------------------
 locals {
   user_ids = merge(
@@ -170,7 +157,7 @@ resource "aws_identitystore_group_membership" "memberships" {
         }
       ]
     ]) : "${pair.group}-${pair.user}" => pair
-    if can(local.user_ids[pair.user])  # Ensures the user exists before adding to the group
+    if can(local.user_ids[pair.user])  # Ensures user exists before adding to the group
   }
 
   identity_store_id = local.identity_store_id
