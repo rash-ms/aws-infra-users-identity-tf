@@ -17,12 +17,7 @@ locals {
   }
 
   # Get unique users from filtered groups
-  # filtered_users = distinct(flatten([for users in values(local.filtered_groups) : users]))
-
-  filtered_users = toset(distinct(flatten([
-    for users in values(local.config.groups) : 
-    contains(split("-", each.key), var.environment) ? users : []
-  ])))
+  filtered_users = distinct(flatten([for users in values(local.filtered_groups) : users]))
 
 }
 
