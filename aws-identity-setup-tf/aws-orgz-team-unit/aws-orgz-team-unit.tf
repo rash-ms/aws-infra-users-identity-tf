@@ -76,7 +76,7 @@ resource "aws_organizations_organizational_unit" "team_ou" {
 resource "aws_organizations_account" "accounts" {
   for_each  = local.accounts_to_create
 
-  name      = each.key
+  name      = "byt-${each.key}"
   email     = each.value.email
   parent_id = aws_organizations_organizational_unit.team_ou[each.value.team_name].id
   role_name = "OrganizationAccountAccessRole"
