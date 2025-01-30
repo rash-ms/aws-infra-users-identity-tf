@@ -93,7 +93,27 @@ locals {
 }
 
 # ----------------------------
-# Check for existing users (error-suppressed)
+# Existing Groups Data Source (ADD THIS BLOCK)
+# ----------------------------
+data "aws_identitystore_group" "existing_groups" {
+  for_each = local.filtered_groups
+
+  identity_store_id = local.identity_store_id
+  filter {
+    attribute_path  = "DisplayName"
+    attribute_value = each.key
+  }
+
+  lifecycle {
+    postcondition {
+      condition     = length(self.id) > 0
+      error_message = "Group '${each.key}' not found. Create it manually first or check the name."
+    }
+  }
+}
+
+# ----------------------------
+# Existing Users Data Source
 # ----------------------------
 data "aws_identitystore_user" "existing" {
   for_each = local.filtered_users
@@ -104,7 +124,6 @@ data "aws_identitystore_user" "existing" {
     attribute_value = each.value
   }
 
-  # Suppress "not found" errors
   lifecycle {
     postcondition {
       condition     = length(self.id) > 0 || !contains(local.filtered_users, each.value)
@@ -114,7 +133,7 @@ data "aws_identitystore_user" "existing" {
 }
 
 # ----------------------------
-# Create missing users
+# Create Missing Users
 # ----------------------------
 resource "aws_identitystore_user" "new" {
   for_each = {
@@ -138,7 +157,7 @@ resource "aws_identitystore_user" "new" {
 }
 
 # ----------------------------
-# Combine existing and new user IDs
+# Combine User IDs
 # ----------------------------
 locals {
   user_ids = merge(
