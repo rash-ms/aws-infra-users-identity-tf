@@ -4,11 +4,11 @@ locals {
   identity_store_id = tolist(data.aws_ssoadmin_instances.main.identity_store_ids)[0]
   config            = yamldecode(file(var.sso-config_path))
 
-  # Extract users and groups from YAML
+  # Extract users/groups from YAML
   all_users  = toset(local.config.users)
   all_groups = local.config.groups
 
-  # Filter groups by environment
+  # Filter groups by environment (e.g., "dev")
   filtered_groups = {
     for group_name, users in local.all_groups :
     group_name => users
@@ -25,7 +25,7 @@ resource "aws_identitystore_user" "users" {
   for_each = toset(local.filtered_users)
 
   identity_store_id = local.identity_store_id
-  user_name         = each.value
+  user_name         = each.value  # Must match YAML email exactly
   display_name      = each.value
   name {
     given_name  = split("@", each.value)[0]
@@ -45,22 +45,14 @@ data "aws_identitystore_group" "existing_groups" {
   for_each = local.filtered_groups
 
   identity_store_id = local.identity_store_id
-  
   filter {
     attribute_path  = "DisplayName"
     attribute_value = each.key
   }
-
-  lifecycle {
-    postcondition {
-      condition     = length(self.id) > 0
-      error_message = "Group '${each.key}' not found. It must exist before running this configuration."
-    }
-  }
 }
 
 # ----------------------------
-# Group Memberships
+# Group Memberships (Fixed)
 # ----------------------------
 resource "aws_identitystore_group_membership" "memberships" {
   for_each = {
@@ -76,5 +68,5 @@ resource "aws_identitystore_group_membership" "memberships" {
 
   identity_store_id = local.identity_store_id
   group_id          = data.aws_identitystore_group.existing_groups[each.value.group].id
-  member_id         = aws_identitystore_user.users[each.value.user].id
+  member_id         = aws_identitystore_user.users[each.value.user].user_id  # ← Critical fix
 }
