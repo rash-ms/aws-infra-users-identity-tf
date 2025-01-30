@@ -93,27 +93,33 @@ locals {
 }
 
 # ----------------------------
-# Check for existing users
+# Get ALL existing users (single API call)
 # ----------------------------
-data "aws_identitystore_user" "existing_users" {
-  for_each = toset(local.filtered_users)
-
+data "aws_identitystore_users" "all_existing" {
   identity_store_id = local.identity_store_id
+  
   filter {
     attribute_path  = "UserName"
-    attribute_value = each.value
+    attribute_value = "*"  # Wildcard to get all users
+  }
+}
+
+# Create map of existing users { "email@domain.com" = "user-id" }
+locals {
+  existing_user_map = {
+    for user in data.aws_identitystore_users.all_existing.users :
+    user.user_name => user.user_id
   }
 }
 
 # ----------------------------
-# Create only new users
+# User Management (only create missing users)
 # ----------------------------
 resource "aws_identitystore_user" "new_users" {
-  for_each = {
+  for_each = toset([
     for user in local.filtered_users :
-    user => user
-    if !can(data.aws_identitystore_user.existing_users[user].user_id)
-  }
+    user if !contains(keys(local.existing_user_map), user)
+  ])
 
   identity_store_id = local.identity_store_id
   user_name         = each.value
@@ -130,7 +136,7 @@ resource "aws_identitystore_user" "new_users" {
 }
 
 # ----------------------------
-# Get existing groups
+# Existing Groups Data Sources
 # ----------------------------
 data "aws_identitystore_group" "existing_groups" {
   for_each = local.filtered_groups
@@ -143,11 +149,11 @@ data "aws_identitystore_group" "existing_groups" {
 }
 
 # ----------------------------
-# Combine user IDs from existing and new users
+# Combine all user IDs
 # ----------------------------
 locals {
-  user_ids = merge(
-    { for u in local.filtered_users : u => data.aws_identitystore_user.existing_users[u].user_id if can(data.aws_identitystore_user.existing_users[u].user_id) },
+  all_user_ids = merge(
+    local.existing_user_map,
     { for k, v in aws_identitystore_user.new_users : k => v.user_id }
   )
 }
@@ -169,5 +175,5 @@ resource "aws_identitystore_group_membership" "memberships" {
 
   identity_store_id = local.identity_store_id
   group_id          = data.aws_identitystore_group.existing_groups[each.value.group].id
-  member_id         = local.user_ids[each.value.user]
+  member_id         = local.all_user_ids[each.value.user]
 }
