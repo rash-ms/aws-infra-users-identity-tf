@@ -157,10 +157,13 @@ resource "aws_identitystore_group_membership" "memberships" {
         }
       ]
     ]) : "${pair.group}-${pair.user}" => pair
-    if can(local.user_ids[pair.user])  # Ensures user exists before adding to the group
   }
 
   identity_store_id = local.identity_store_id
-  group_id          = data.aws_identitystore_group.existing_groups[each.value.group].id
-  member_id         = local.user_ids[each.value.user]
+
+  # ✅ FIX: This reference is now properly defined!
+  group_id = data.aws_identitystore_group.existing_groups[each.value.group].id
+
+  member_id = local.user_ids[each.value.user]
 }
+
