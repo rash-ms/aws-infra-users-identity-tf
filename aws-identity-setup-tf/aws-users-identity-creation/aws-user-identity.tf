@@ -1,4 +1,4 @@
-# ✅ Get AWS Identity Center Instance
+## Get AWS Identity Center Instance
 data "aws_ssoadmin_instances" "main" {}
 
 locals {
@@ -7,14 +7,14 @@ locals {
   users_config  = yamldecode(file(var.users_yaml_path))
   groups_config = yamldecode(file(var.groups_yaml_path))
 
-  # ✅ Dynamically filter groups for the selected environment (no hardcoding)
+  ## Dynamically filter groups for the selected environment (no hardcoding)
   filtered_groups = {
     for group_name, users in local.groups_config.groups :
     group_name => users
     if contains(split("-", group_name), var.environment)  # Only groups containing 'dev' or 'prod'
   }
 
-  # ✅ Flatten users and groups into a list of maps (filtered by environment)
+  ## Flatten users and groups into a list of maps (filtered by environment)
   filtered_user_groups = flatten([
     for group_name, users in local.filtered_groups : [
       for user in users : {
@@ -24,7 +24,7 @@ locals {
     ]
   ])
 
-  # ✅ Extract all unique users related to the selected environment
+  ## Extract all unique users related to the selected environment
   filtered_users = distinct(flatten([
     for users in values(local.filtered_groups) : users
   ]))
@@ -32,7 +32,7 @@ locals {
   users_map = { for user in local.filtered_users : user => user }
 }
 
-# ✅ Create Users (Only for the Selected Environment)
+## Create Users (Only for the Selected Environment)
 resource "aws_identitystore_user" "users" {
   for_each = local.users_map
 
@@ -50,7 +50,7 @@ resource "aws_identitystore_user" "users" {
   }
 }
 
-# ✅ Fetch Existing Groups (Dynamically Detects New Groups)
+## Fetch Existing Groups (Dynamically Detects New Groups)
 data "aws_identitystore_group" "existing_groups" {
   for_each = local.filtered_groups
 
@@ -61,12 +61,12 @@ data "aws_identitystore_group" "existing_groups" {
   }
 }
 
-# ✅ Extract User IDs for Assignments
+## Extract User IDs for Assignments
 locals {
   user_ids = { for k, v in aws_identitystore_user.users : k => split("/", v.id)[1] }
 }
 
-# ✅ Attach Users to Groups (Filtered for Dev/Prod)
+## Attach Users to Groups (Filtered for Dev/Prod)
 resource "aws_identitystore_group_membership" "memberships" {
   for_each = {
     for user_group in local.filtered_user_groups :
