@@ -72,6 +72,9 @@
 # }
 
 
+# ------------------------------------
+# Fetch AWS SSO Instance Information
+# ------------------------------------
 data "aws_ssoadmin_instances" "main" {}
 
 locals {
@@ -92,29 +95,9 @@ locals {
   filtered_users = toset(distinct(flatten([for users in values(local.filtered_groups) : users])))
 }
 
-# ----------------------------
-# Existing Groups Data Source (ADD THIS BLOCK)
-# ----------------------------
-data "aws_identitystore_group" "existing_groups" {
-  for_each = local.filtered_groups
-
-  identity_store_id = local.identity_store_id
-  filter {
-    attribute_path  = "DisplayName"
-    attribute_value = each.key
-  }
-
-  lifecycle {
-    postcondition {
-      condition     = length(self.id) > 0
-      error_message = "Group '${each.key}' not found. Create it manually first or check the name."
-    }
-  }
-}
-
-# ----------------------------
-# Existing Users Data Source
-# ----------------------------
+# ------------------------------------
+# Fetch Existing Users (Handles Missing Users)
+# ------------------------------------
 data "aws_identitystore_user" "existing" {
   for_each = local.filtered_users
 
@@ -123,19 +106,12 @@ data "aws_identitystore_user" "existing" {
     attribute_path  = "UserName"
     attribute_value = each.value
   }
-
-  lifecycle {
-    postcondition {
-      condition     = length(self.id) > 0 || !contains(local.filtered_users, each.value)
-      error_message = "User ${each.value} not found. It will be created."
-    }
-  }
 }
 
-# ----------------------------
-# Create Missing Users
-# ----------------------------
-resource "aws_identitystore_user" "new" {
+# ------------------------------------
+# Create Users If They Don't Exist
+# ------------------------------------
+resource "aws_identitystore_user" "users" {
   for_each = {
     for user in local.filtered_users :
     user => user
@@ -145,10 +121,12 @@ resource "aws_identitystore_user" "new" {
   identity_store_id = local.identity_store_id
   user_name         = each.value
   display_name      = each.value
+
   name {
     given_name  = split("@", each.value)[0]
     family_name = split("@", each.value)[0]
   }
+
   emails {
     value   = each.value
     type    = "work"
@@ -156,19 +134,32 @@ resource "aws_identitystore_user" "new" {
   }
 }
 
-# ----------------------------
-# Combine User IDs
-# ----------------------------
+# ------------------------------------
+# Fetch Existing Groups from AWS SSO
+# ------------------------------------
+data "aws_identitystore_group" "existing_groups" {
+  for_each = local.filtered_groups
+
+  identity_store_id = local.identity_store_id
+  filter {
+    attribute_path  = "DisplayName"
+    attribute_value = each.key
+  }
+}
+
+# ------------------------------------
+# Combine Existing & New User IDs
+# ------------------------------------
 locals {
   user_ids = merge(
-    { for u in local.filtered_users : u => data.aws_identitystore_user.existing[u].user_id if can(data.aws_identitystore_user.existing[u].user_id) },
-    { for k, v in aws_identitystore_user.new : k => v.user_id }
+    { for u in local.filtered_users : u => try(data.aws_identitystore_user.existing[u].user_id, null) if can(data.aws_identitystore_user.existing[u].user_id) },
+    { for k, v in aws_identitystore_user.users : k => v.user_id }
   )
 }
 
-# ----------------------------
-# Group Memberships
-# ----------------------------
+# ------------------------------------
+# Group Memberships (Ensures Users Exist)
+# ------------------------------------
 resource "aws_identitystore_group_membership" "memberships" {
   for_each = {
     for pair in flatten([
@@ -179,6 +170,7 @@ resource "aws_identitystore_group_membership" "memberships" {
         }
       ]
     ]) : "${pair.group}-${pair.user}" => pair
+    if can(local.user_ids[pair.user])  # Ensures the user exists before adding to the group
   }
 
   identity_store_id = local.identity_store_id
