@@ -17,24 +17,47 @@ locals {
   }
 
   # Get unique users from filtered groups
-  filtered_users = distinct(flatten([for users in values(local.filtered_groups) : users]))
+  # filtered_users = distinct(flatten([for users in values(local.filtered_groups) : users]))
+
+  filtered_users = toset(distinct(flatten([
+    for users in values(local.config.groups) : 
+    contains(split("-", each.key), var.environment) ? users : []
+  ])))
+
 }
 
 # ----------------------------
 # User Management
 # ----------------------------
+# resource "aws_identitystore_user" "users" {
+#   for_each = local.filtered_users
+
+#   identity_store_id = local.identity_store_id
+#   user_name         = each.value
+#   display_name      = each.value
+
+#   name {
+#     given_name  = split("@", each.value)[0]
+#     family_name = split("@", each.value)[0]
+#   }
+
+#   emails {
+#     value   = each.value
+#     type    = "work"
+#     primary = true
+#   }
+# }
+
 resource "aws_identitystore_user" "users" {
-  for_each = local.filtered_users
+  for_each = toset(local.filtered_users)  # Convert list to set
 
   identity_store_id = local.identity_store_id
   user_name         = each.value
   display_name      = each.value
-
   name {
     given_name  = split("@", each.value)[0]
     family_name = split("@", each.value)[0]
   }
-
   emails {
     value   = each.value
     type    = "work"
