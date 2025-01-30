@@ -11,7 +11,7 @@ locals {
   filtered_groups = {
     for group_name, users in local.groups_config.groups :
     group_name => users
-    if contains(split("-", group_name), var.environment)  # Only groups containing 'dev' or 'prod'
+    if contains(split("-", group_name), var.environment)  # Only groups containing the environment
   }
 
   # ✅ Extract unique users for the selected environment
@@ -22,28 +22,23 @@ locals {
   users_map = { for user in local.filtered_users : user => user }
 }
 
-# ✅ Fetch Existing Users from AWS Identity Store (Handle Missing Users)
-data "aws_identitystore_user" "existing_users" {
-  for_each = { for user in local.users_map : user => user }
-
+# ✅ Fetch ALL Existing Users from AWS Identity Store
+data "aws_identitystore_users" "all_existing_users" {
   identity_store_id = local.identity_store_id
-  filter {
-    attribute_path  = "UserName"
-    attribute_value = each.value
-  }
+}
 
-  lifecycle {
-    postcondition {
-      condition     = try(self.id != "", false)  # Ensures Terraform does not fail if the user is missing
-      error_message = "User ${each.value} does not exist in Identity Center."
-    }
+locals {
+  # Map existing UserNames to their IDs
+  existing_users_map = {
+    for user in data.aws_identitystore_users.all_existing_users.users :
+    user.user_name => user.user_id
   }
 }
 
 # ✅ Create Users Only If They Do NOT Already Exist
 resource "aws_identitystore_user" "users" {
   for_each = { for user in local.users_map : user => user
-    if !contains(keys(data.aws_identitystore_user.existing_users), user)  # Skip if user exists
+    if !contains(keys(local.existing_users_map), user)
   }
 
   identity_store_id = local.identity_store_id
@@ -71,15 +66,15 @@ data "aws_identitystore_group" "existing_groups" {
   }
 }
 
-# ✅ Extract User IDs for Assignments (Handles Users Created in `dev`)
+# ✅ Combine existing and new User IDs
 locals {
   user_ids = merge(
-    { for k, v in aws_identitystore_user.users : k => split("/", v.id)[1] },
-    { for k, v in data.aws_identitystore_user.existing_users : k => try(split("/", v.id)[1], null) }  # Use try() to prevent errors
+    local.existing_users_map,
+    { for k, v in aws_identitystore_user.users : k => v.id }
   )
 }
 
-# ✅ Attach Users to Groups (Filtered for Dev/Prod, Skip If User Doesn't Exist)
+# ✅ Attach Users to Groups (Filtered for Environment, Skip If User Doesn't Exist)
 resource "aws_identitystore_group_membership" "memberships" {
   for_each = {
     for user_group in flatten([
