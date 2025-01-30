@@ -2,7 +2,8 @@ data "aws_ssoadmin_instances" "main" {}
 
 locals {
   identity_store_id = tolist(data.aws_ssoadmin_instances.main.identity_store_ids)[0]
-  config            = yamldecode(file("${path.module}/sso-config.yaml"))
+  # config            = yamldecode(file("${path.module}/sso-config.yaml"))
+  config            = yamldecode(file(var.sso-config_path))
 
   # Extract users and groups from YAML
   all_users = toset(local.config.users)
