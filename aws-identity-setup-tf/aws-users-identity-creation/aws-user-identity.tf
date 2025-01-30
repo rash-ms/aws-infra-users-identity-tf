@@ -19,7 +19,7 @@ locals {
 }
 
 # ----------------------------
-# Check for Existing Users
+# Check for existing users
 # ----------------------------
 data "aws_identitystore_user" "existing_users" {
   for_each = local.filtered_users
@@ -32,7 +32,7 @@ data "aws_identitystore_user" "existing_users" {
 }
 
 # ----------------------------
-# Create Only New Users
+# Create only new users
 # ----------------------------
 resource "aws_identitystore_user" "new_users" {
   for_each = {
@@ -56,7 +56,7 @@ resource "aws_identitystore_user" "new_users" {
 }
 
 # ----------------------------
-# Get Existing Groups
+# Get existing groups
 # ----------------------------
 data "aws_identitystore_group" "existing_groups" {
   for_each = local.filtered_groups
@@ -66,10 +66,17 @@ data "aws_identitystore_group" "existing_groups" {
     attribute_path  = "DisplayName"
     attribute_value = each.key
   }
+
+  lifecycle {
+    postcondition {
+      condition     = length(self.id) > 0
+      error_message = "Group '${each.key}' not found. It must exist before running this configuration."
+    }
+  }
 }
 
 # ----------------------------
-# Combine User IDs
+# Combine user IDs from existing and new users
 # ----------------------------
 locals {
   user_ids = merge(
