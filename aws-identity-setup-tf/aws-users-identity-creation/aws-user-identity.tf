@@ -145,6 +145,20 @@ locals {
 }
 
 # ------------------------------------
+# Fetch Existing Groups from AWS SSO
+# ------------------------------------
+data "aws_identitystore_group" "existing_groups" {
+  for_each = local.filtered_groups
+
+  identity_store_id = local.identity_store_id
+  filter {
+    attribute_path  = "DisplayName"
+    attribute_value = each.key
+  }
+}
+
+
+# ------------------------------------
 # Group Memberships (Ensures Users Exist)
 # ------------------------------------
 resource "aws_identitystore_group_membership" "memberships" {
