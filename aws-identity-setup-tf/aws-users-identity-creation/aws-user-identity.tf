@@ -8,7 +8,7 @@ locals {
   all_users  = toset(local.config.users)
   all_groups = local.config.groups
 
-  # Filter groups by environment
+  # Filter groups by environment (e.g., "dev")
   filtered_groups = {
     for group_name, users in local.all_groups :
     group_name => users
@@ -19,30 +19,13 @@ locals {
 }
 
 # ----------------------------
-# Check Existing Users
+# User Management
 # ----------------------------
-data "aws_identitystore_user" "existing_users" {
-  for_each = local.filtered_users
+resource "aws_identitystore_user" "users" {
+  for_each = toset(local.filtered_users)
 
   identity_store_id = local.identity_store_id
-  filter {
-    attribute_path  = "UserName"
-    attribute_value = each.value
-  }
-}
-
-# ----------------------------
-# Create Only New Users
-# ----------------------------
-resource "aws_identitystore_user" "new_users" {
-  for_each = {
-    for user in local.filtered_users :
-    user => user
-    if !can(data.aws_identitystore_user.existing_users[user].user_id)
-  }
-
-  identity_store_id = local.identity_store_id
-  user_name         = each.value
+  user_name         = each.value  # Must match YAML email exactly
   display_name      = each.value
   name {
     given_name  = split("@", each.value)[0]
@@ -56,17 +39,20 @@ resource "aws_identitystore_user" "new_users" {
 }
 
 # ----------------------------
-# Combine User IDs
+# Existing Group Data Sources
 # ----------------------------
-locals {
-  user_ids = merge(
-    { for u in local.filtered_users : u => data.aws_identitystore_user.existing_users[u].user_id },
-    { for k, v in aws_identitystore_user.new_users : k => v.user_id }
-  )
+data "aws_identitystore_group" "existing_groups" {
+  for_each = local.filtered_groups
+
+  identity_store_id = local.identity_store_id
+  filter {
+    attribute_path  = "DisplayName"
+    attribute_value = each.key
+  }
 }
 
 # ----------------------------
-# Group Memberships (Updated)
+# Group Memberships (Fixed)
 # ----------------------------
 resource "aws_identitystore_group_membership" "memberships" {
   for_each = {
@@ -82,5 +68,5 @@ resource "aws_identitystore_group_membership" "memberships" {
 
   identity_store_id = local.identity_store_id
   group_id          = data.aws_identitystore_group.existing_groups[each.value.group].id
-  member_id         = local.user_ids[each.value.user]
+  member_id         = aws_identitystore_user.users[each.value.user].user_id  # ← Critical fix
 }
