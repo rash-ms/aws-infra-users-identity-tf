@@ -102,7 +102,7 @@ locals {
 # 🚀 Step 2: Create Users in Dev, Fetch in Prod
 # ------------------------------------
 resource "aws_identitystore_user" "users" {
-  for_each = var.environment == "dev" ? local.filtered_users : toset([])  # ✅ FIX: Ensures consistent type (empty set)
+  for_each = var.environment == "dev" ? local.filtered_users : toset([])  # ✅ Ensures consistent type (empty set)
 
   identity_store_id = local.identity_store_id
   user_name         = each.value
@@ -124,7 +124,7 @@ resource "aws_identitystore_user" "users" {
 # Step 3: Fetch Existing Users in Prod
 # ------------------------------------
 data "aws_identitystore_user" "existing" {
-  for_each = var.environment == "prod" ? local.filtered_users : toset([])  # ✅ FIX: Ensures consistent type (empty set)
+  for_each = var.environment == "prod" ? local.filtered_users : toset([])  # ✅ Ensures consistent type (empty set)
 
   identity_store_id = local.identity_store_id
   filter {
@@ -157,7 +157,7 @@ data "aws_identitystore_group" "existing_groups" {
 }
 
 # ------------------------------------
-# Step 6: Assign Users to Groups
+# 🚀 Step 6: Assign Users to Groups (Fixing for_each Issue)
 # ------------------------------------
 resource "aws_identitystore_group_membership" "memberships" {
   for_each = {
@@ -169,10 +169,12 @@ resource "aws_identitystore_group_membership" "memberships" {
         }
       ]
     ]) : "${pair.group}-${pair.user}" => pair
-    if can(local.user_ids[pair.user])  # ✅ Ensures user exists before adding to the group
+    if can(try(local.user_ids[pair.user], null))  # ✅ FIX: Ensures Terraform doesn't fail during planning
   }
 
   identity_store_id = local.identity_store_id
   group_id          = data.aws_identitystore_group.existing_groups[each.value.group].id
   member_id         = local.user_ids[each.value.user]
+
+  depends_on = [aws_identitystore_user.users]  # ✅ FIX: Ensure users exist before assigning them to groups
 }
