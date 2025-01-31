@@ -38,18 +38,18 @@
 #   }
 # }
 
-# ----------------------------
-# Existing Group Data Sources
-# ----------------------------
-data "aws_identitystore_group" "existing_groups" {
-  for_each = local.filtered_groups
+# # ----------------------------
+# # Existing Group Data Sources
+# # ----------------------------
+# data "aws_identitystore_group" "existing_groups" {
+#   for_each = local.filtered_groups
 
-  identity_store_id = local.identity_store_id
-  filter {
-    attribute_path  = "DisplayName"
-    attribute_value = each.key
-  }
-}
+#   identity_store_id = local.identity_store_id
+#   filter {
+#     attribute_path  = "DisplayName"
+#     attribute_value = each.key
+#   }
+# }
 
 # # ----------------------------
 # # Group Memberships (Fixed)
@@ -96,27 +96,10 @@ locals {
 }
 
 # ------------------------------------
-# Fetch Existing Users (Handles Missing Users)
-# ------------------------------------
-data "aws_identitystore_user" "existing" {
-  for_each = local.filtered_users
-
-  identity_store_id = local.identity_store_id
-  filter {
-    attribute_path  = "UserName"
-    attribute_value = each.value
-  }
-}
-
-# ------------------------------------
-# Create Users If They Don't Exist
+# 🚀 Step 1: Create Users in Dev, Fetch in Prod
 # ------------------------------------
 resource "aws_identitystore_user" "users" {
-  for_each = {
-    for user in local.filtered_users :
-    user => user
-    if !can(data.aws_identitystore_user.existing[user].user_id)
-  }
+  for_each = var.environment == "dev" ? local.filtered_users : {}
 
   identity_store_id = local.identity_store_id
   user_name         = each.value
@@ -135,18 +118,43 @@ resource "aws_identitystore_user" "users" {
 }
 
 # ------------------------------------
-# Merge Existing & New User IDs (Ensures Users Exist)
+# Step 2: Fetch Existing Users in Prod
+# ------------------------------------
+data "aws_identitystore_user" "existing" {
+  for_each = var.environment == "prod" ? local.filtered_users : {}
+
+  identity_store_id = local.identity_store_id
+  filter {
+    attribute_path  = "UserName"
+    attribute_value = each.value
+  }
+}
+
+# ------------------------------------
+# Step 3: Merge Existing & Created Users
 # ------------------------------------
 locals {
   user_ids = merge(
-    # ✅ Ensures missing users do not cause failures
-    { for u in local.filtered_users : u => try(data.aws_identitystore_user.existing[u].user_id, null) if can(data.aws_identitystore_user.existing[u].user_id) },
-    { for k, v in aws_identitystore_user.users : k => v.user_id }
+    { for u in local.filtered_users : u => try(data.aws_identitystore_user.existing[u].user_id, null) if var.environment == "prod" },
+    { for k, v in aws_identitystore_user.users : k => v.user_id if var.environment == "dev" }
   )
 }
 
 # ------------------------------------
-# Group Memberships (Ensures Users Exist)
+# Step 4: Fetch Existing Groups
+# ------------------------------------
+data "aws_identitystore_group" "existing_groups" {
+  for_each = local.filtered_groups
+
+  identity_store_id = local.identity_store_id
+  filter {
+    attribute_path  = "DisplayName"
+    attribute_value = each.key
+  }
+}
+
+# ------------------------------------
+# Step 5: Assign Users to Groups
 # ------------------------------------
 resource "aws_identitystore_group_membership" "memberships" {
   for_each = {
