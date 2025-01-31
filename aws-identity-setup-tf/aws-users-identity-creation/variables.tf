@@ -10,7 +10,7 @@ variable "groups_yaml_path" {
   default     = "./base_conf/groups.yaml"
 }
 
-variable "sso-config_path" {
+variable "sso_config_path" {
   description = "Path to the groups YAML configuration file"
   type        = string
   default     = "./base_conf/sso-config.yaml"
