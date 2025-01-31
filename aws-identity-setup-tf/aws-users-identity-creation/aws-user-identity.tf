@@ -73,33 +73,36 @@
 
 
 # ------------------------------------
-# Fetch AWS SSO Instance Information
+# 🚀 Step 1: Load Configuration from YAML
 # ------------------------------------
 data "aws_ssoadmin_instances" "main" {}
 
 locals {
   identity_store_id = tolist(data.aws_ssoadmin_instances.main.identity_store_ids)[0]
-  config            = yamldecode(file(var.sso-config_path))
 
-  # Extract users/groups from YAML
+  # Load users & groups from YAML
+  config = yamldecode(file(var.sso-config_path))
+
   all_users  = toset(local.config.users)
   all_groups = local.config.groups
 
-  # Filter groups by environment
+  # ✅ Filter groups & users based on environment
   filtered_groups = {
     for group_name, users in local.all_groups :
     group_name => users
     if contains(split("-", group_name), var.environment)
   }
 
-  filtered_users = toset(distinct(flatten([for users in values(local.filtered_groups) : users])))
+  filtered_users = toset(distinct(flatten([
+    for users in values(local.filtered_groups) : users
+  ])))
 }
 
 # ------------------------------------
-# 🚀 Step 1: Create Users in Dev, Fetch in Prod
+# 🚀 Step 2: Create Users in Dev, Fetch in Prod
 # ------------------------------------
 resource "aws_identitystore_user" "users" {
-  for_each = var.environment == "dev" ? local.filtered_users : {}
+  for_each = var.environment == "dev" ? local.filtered_users : tomap({})  # ✅ Ensures consistent type
 
   identity_store_id = local.identity_store_id
   user_name         = each.value
@@ -118,10 +121,10 @@ resource "aws_identitystore_user" "users" {
 }
 
 # ------------------------------------
-# Step 2: Fetch Existing Users in Prod
+# Step 3: Fetch Existing Users in Prod
 # ------------------------------------
 data "aws_identitystore_user" "existing" {
-  for_each = var.environment == "prod" ? local.filtered_users : {}
+  for_each = var.environment == "prod" ? local.filtered_users : tomap({})  # ✅ Fix: Ensures consistent type
 
   identity_store_id = local.identity_store_id
   filter {
@@ -131,7 +134,7 @@ data "aws_identitystore_user" "existing" {
 }
 
 # ------------------------------------
-# Step 3: Merge Existing & Created Users
+# Step 4: Merge Existing & New User IDs
 # ------------------------------------
 locals {
   user_ids = merge(
@@ -141,7 +144,7 @@ locals {
 }
 
 # ------------------------------------
-# Step 4: Fetch Existing Groups
+# Step 5: Fetch Existing Groups
 # ------------------------------------
 data "aws_identitystore_group" "existing_groups" {
   for_each = local.filtered_groups
@@ -154,7 +157,7 @@ data "aws_identitystore_group" "existing_groups" {
 }
 
 # ------------------------------------
-# Step 5: Assign Users to Groups
+# Step 6: Assign Users to Groups
 # ------------------------------------
 resource "aws_identitystore_group_membership" "memberships" {
   for_each = {
