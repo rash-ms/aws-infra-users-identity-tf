@@ -102,7 +102,7 @@ locals {
 # 🚀 Step 2: Create Users in Dev, Fetch in Prod
 # ------------------------------------
 resource "aws_identitystore_user" "users" {
-  for_each = var.environment == "dev" ? local.filtered_users : tomap({})  # ✅ Ensures consistent type
+  for_each = var.environment == "dev" ? local.filtered_users : toset([])  # ✅ FIX: Ensures consistent type (empty set)
 
   identity_store_id = local.identity_store_id
   user_name         = each.value
@@ -124,7 +124,7 @@ resource "aws_identitystore_user" "users" {
 # Step 3: Fetch Existing Users in Prod
 # ------------------------------------
 data "aws_identitystore_user" "existing" {
-  for_each = var.environment == "prod" ? local.filtered_users : tomap({})  # ✅ Fix: Ensures consistent type
+  for_each = var.environment == "prod" ? local.filtered_users : toset([])  # ✅ FIX: Ensures consistent type (empty set)
 
   identity_store_id = local.identity_store_id
   filter {
