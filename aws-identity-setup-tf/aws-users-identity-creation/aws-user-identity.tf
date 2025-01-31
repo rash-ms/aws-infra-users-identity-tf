@@ -73,18 +73,18 @@
 
 
 # ------------------------------------
-# 🚀 Step 1: Load Configuration from YAML
+# 🚀 Step 1: Load YAML Configuration
 # ------------------------------------
 data "aws_ssoadmin_instances" "main" {}
 
 locals {
   identity_store_id = tolist(data.aws_ssoadmin_instances.main.identity_store_ids)[0]
 
-  # Load users & groups from YAML
-  config = yamldecode(file(var.sso-config_path))
+  # ✅ Load users & groups from YAML (Fixing any issues with parsing)
+  config = yamldecode(file(var.sso_config_path))
 
-  all_users  = toset(local.config.users)
-  all_groups = local.config.groups
+  all_users  = toset(lookup(local.config, "users", []))   # ✅ Ensure it always returns a list
+  all_groups = lookup(local.config, "groups", {})         # ✅ Ensure it always returns a map
 
   # ✅ Filter groups & users based on environment
   filtered_groups = {
