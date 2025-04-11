@@ -47,9 +47,23 @@ locals {
   selected_usernames = lookup(local.iam_user_config, var.environment, {})["users"]
 }
 
-resource "aws_iam_user" "users" {
-  provider = var.environment == "dev" ? aws.dev : aws.prod
-  for_each = toset(local.selected_usernames)
+# resource "aws_iam_user" "users" {
+#   provider = var.environment == "dev" ? aws.dev : aws.prod
+#   for_each = toset(local.selected_usernames)
 
-  name = each.value
+#   name = each.value
+# }
+
+resource "aws_iam_user" "dev_users" {
+  provider = aws.dev
+  count    = var.environment == "dev" ? length(local.selected_usernames) : 0
+
+  name = local.selected_usernames[count.index]
+}
+
+resource "aws_iam_user" "prod_users" {
+  provider = aws.prod
+  count    = var.environment == "prod" ? length(local.selected_usernames) : 0
+
+  name = local.selected_usernames[count.index]
 }
