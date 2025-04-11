@@ -6,8 +6,8 @@ users:
 groups:
   data-platform-dev-group:    # Dev environment group
     - admin@bagitek.com
-    - adenijimujeeb3969@gmail.com
+    # - adenijimujeeb3969@gmail.com
 
   data-platform-prod-group:   # Prod environment group
     - admin@bagitek.com
-    - adenijimujeeb3969@gmail.com
+    # - adenijimujeeb3969@gmail.com
