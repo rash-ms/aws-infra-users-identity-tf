@@ -1,19 +1,13 @@
-variable "users_yaml_path" {
+variable "users_path" {
   description = "Path to the users YAML configuration file"
   type        = string
   default     = "./base_conf/users.yaml"
 }
 
-variable "groups_yaml_path" {
+variable "groups_path" {
   description = "Path to the groups YAML configuration file"
   type        = string
   default     = "./base_conf/groups.yaml"
-}
-
-variable "sso_config_path" {
-  description = "Path to the groups YAML configuration file"
-  type        = string
-  default     = "./base_conf/sso-config.yaml"
 }
 
 variable "environment" {
