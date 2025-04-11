@@ -1,12 +1,12 @@
 [
     {
-      "account_id": "022499035350",
+      "account_id": "273354624134",
       "region": "us-east-1",
       "repo_sub": "repo:rash-ms/*",
       "environment": "dev"
     },
     {
-      "account_id": "022499035568",
+      "account_id": "277707114319",
       "region": "us-east-1",
       "repo_sub": "repo:rash-ms/*",
       "environment": "prod"

@@ -17,10 +17,7 @@ locals {
   }
 }
 
-variable "environment" {
-  description = "Environment to deploy to (dev or prod)"
-  type        = string
-}
+
 
 # # OIDC provider resource
 # resource "aws_iam_openid_connect_provider" "github_oidc" {
