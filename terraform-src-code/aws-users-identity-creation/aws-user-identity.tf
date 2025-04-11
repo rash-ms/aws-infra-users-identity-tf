@@ -78,62 +78,58 @@ locals {
   valid_user_ids = { for u, uid in local.user_ids : u => uid if uid != null }
 }
 
-# # ------------------------------------
-# # Step 5: Lookup Existing Groups in the Identity Store
-# # ------------------------------------
-# data "aws_identitystore_group" "existing_groups" {
-#   for_each = local.filtered_groups
+# # xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
-#   identity_store_id = local.identity_store_id
-#   filter {
-#     attribute_path  = "DisplayName"
-#     attribute_value = each.key
-#   }
-# }
+# ------------------------------------
+# Step 5: Lookup Existing Groups in the Identity Store
+# ------------------------------------
+data "aws_identitystore_group" "existing_groups" {
+  for_each = local.filtered_groups
 
-# # ------------------------------------
-# # Step 6: Build Valid Group–User Pairs
-# # ------------------------------------
-# locals {
-#   group_user_pairs = flatten([
-#     for group_name, users in local.filtered_groups : [
-#       for user in users : {
-#         group   = group_name
-#         user    = user
-#         user_id = lookup(local.valid_user_ids, user, null)
-#       }
-#     ]
-#   ])
+  identity_store_id = local.identity_store_id
+  filter {
+    attribute_path  = "DisplayName"
+    attribute_value = each.key
+  }
+}
 
-#   # Only include pairs where the user_id is not null
-#   valid_group_memberships = {
-#     for pair in local.group_user_pairs : "${pair.group}-${pair.user}" => pair
-#     if pair.user_id != null
-#   }
-# }
+# ------------------------------------
+# Step 6: Build Valid Group–User Pairs
+# ------------------------------------
+locals {
+  group_user_pairs = flatten([
+    for group_name, users in local.filtered_groups : [
+      for user in users : {
+        group   = group_name
+        user    = user
+        user_id = lookup(local.valid_user_ids, user, null)
+      }
+    ]
+  ])
 
-# # ------------------------------------
-# # Step 7: Assign Users to Their Respective Groups
-# # ------------------------------------
-# resource "aws_identitystore_group_membership" "memberships" {
-#   for_each = local.valid_group_memberships
+  # Only include pairs where the user_id is not null
+  valid_group_memberships = {
+    for pair in local.group_user_pairs : "${pair.group}-${pair.user}" => pair
+    if pair.user_id != null
+  }
+}
 
-#   identity_store_id = local.identity_store_id
-#   group_id          = data.aws_identitystore_group.existing_groups[each.value.group].id
-#   member_id         = each.value.user_id
+# ------------------------------------
+# Step 7: Assign Users to Their Respective Groups
+# ------------------------------------
+resource "aws_identitystore_group_membership" "memberships" {
+  for_each = local.valid_group_memberships
 
-#   depends_on = [
-#     aws_identitystore_user.users
-#   ]
-# }
+  identity_store_id = local.identity_store_id
+  group_id          = data.aws_identitystore_group.existing_groups[each.value.group].id
+  member_id         = each.value.user_id
 
-
+  depends_on = [
+    aws_identitystore_user.users
+  ]
+}
 
 # xxxxxxxxxxxxxxxxxxxxxx
-
-
-
-
 
 # # ------------------------------------
 # # 🚀 Step 1: Load YAML Configuration
