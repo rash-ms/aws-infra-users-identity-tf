@@ -30,7 +30,7 @@ locals {
   # Flatten all users across the filtered groups into a unique set and add in the users from the users file
   filtered_users = toset(distinct(
     concat(
-      users_from_file,
+      local.users_from_file, # <-- Note the use of local.users_from_file
       flatten([
         for users in values(local.filtered_groups) : users
       ])
@@ -137,6 +137,9 @@ resource "aws_identitystore_group_membership" "memberships" {
     aws_identitystore_user.users
   ]
 }
+
+
+
 
 
 
