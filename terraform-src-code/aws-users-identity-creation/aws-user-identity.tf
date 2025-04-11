@@ -127,24 +127,3 @@ resource "aws_identitystore_group_membership" "memberships" {
   group_id          = data.aws_identitystore_group.existing_groups[values(local.valid_group_memberships)[count.index].group].id
   member_id         = values(local.valid_group_memberships)[count.index].user_id
 }
-
-
-# resource "null_resource" "user_sync_barrier" {
-#   depends_on = [aws_identitystore_user.users]
-
-#   triggers = {
-#     user_sync_complete = uuid() # Forces this to always run after user creation
-#   }
-# }
-
-# resource "aws_identitystore_group_membership" "memberships" {
-#   for_each = local.valid_group_memberships
-
-#   identity_store_id = local.identity_store_id
-#   group_id          = data.aws_identitystore_group.existing_groups[each.value.group].id
-#   member_id         = each.value.user_id
-
-#   depends_on = [
-#     null_resource.user_sync_barrier
-#   ]
-# }
