@@ -16,8 +16,6 @@ variable "sso_config_path" {
   default     = "./base_conf/sso-config.yaml"
 }
 
-
-
 variable "environment" {
   description = "Environment to provision resources for (e.g., dev, prod)"
   type        = string
