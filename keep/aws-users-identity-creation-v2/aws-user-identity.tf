@@ -126,24 +126,16 @@ locals {
 # ------------------------------------
 # Step 7: Assign Users to Their Respective Groups
 # ------------------------------------
-# resource "aws_identitystore_group_membership" "memberships" {
-#   for_each = local.valid_group_memberships
-
-#   identity_store_id = local.identity_store_id
-#   group_id          = data.aws_identitystore_group.existing_groups[each.value.group].id
-#   member_id         = each.value.user_id
-
-#   depends_on = [
-#     aws_identitystore_user.users
-#   ]
-# }
-
 resource "aws_identitystore_group_membership" "memberships" {
-  count = var.create_group_memberships ? length(keys(local.valid_group_memberships)) : 0
+  for_each = local.valid_group_memberships
 
   identity_store_id = local.identity_store_id
-  group_id          = data.aws_identitystore_group.existing_groups[values(local.valid_group_memberships)[count.index].group].id
-  member_id         = values(local.valid_group_memberships)[count.index].user_id
+  group_id          = data.aws_identitystore_group.existing_groups[each.value.group].id
+  member_id         = each.value.user_id
+
+  depends_on = [
+    aws_identitystore_user.users
+  ]
 }
 
 

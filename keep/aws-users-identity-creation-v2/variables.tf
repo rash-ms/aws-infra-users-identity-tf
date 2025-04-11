@@ -24,8 +24,3 @@ variable "environment" {
     error_message = "Environment must be 'dev' or 'prod'."
   }
 }
-
-variable "create_group_memberships" {
-  type    = bool
-  default = false
-}
