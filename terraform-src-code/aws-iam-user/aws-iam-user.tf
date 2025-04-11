@@ -18,11 +18,6 @@
 #   name = each.value
 # }
 
-variable "environment" {
-  description = "The environment to deploy (dev or prod)"
-  type        = string
-}
-
 locals {
   dev_usernames  = ["byt-test-cicd-iam-user-dev", "byt-test-s3-iam-user-dev"]
   prod_usernames = ["byt-test-cicd-iam-user-prod", "byt-test-s3-iam-user-prod"]
