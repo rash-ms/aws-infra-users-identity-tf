@@ -1,9 +1,7 @@
 dev:
   users:
-    - byt-test-cicd-iam-user-dev
-    - byt-test-s3-iam-user-dev
+    - byt-deployer-dev-ci
 
 prod:
   users:
-    - byt-test-cicd-iam-user-prod
-    - byt-test-s3-iam-user-prod
+    - byt-deployer-prod-ci
