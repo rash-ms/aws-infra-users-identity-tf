@@ -49,12 +49,25 @@ plan:
 		(cd $(module) && terraform plan); \
 	)
 
+# apply:
+# 	@echo "Applying Terraform modules..."
+# 	@$(foreach module, $(MODULES), \
+# 		echo "Running terraform apply in $(module)"; \
+# 		(cd $(module) && terraform apply -auto-approve); \
+# 	)
+
 apply:
 	@echo "Applying Terraform modules..."
-	@$(foreach module, $(MODULES), \
-		echo "Running terraform apply in $(module)"; \
-		(cd $(module) && terraform apply -auto-approve); \
-	)
+	@for module in $(MODULES); do \
+		echo "Running terraform apply in $$module"; \
+		if [ "$$module" = "./terraform-src-code/aws-users-identity-creation" ]; then \
+			echo "💡 Detected user identity module – applying in two steps..."; \
+			(cd $$module && terraform apply -auto-approve -var="create_group_memberships=false"); \
+			(cd $$module && terraform apply -auto-approve -var="create_group_memberships=true"); \
+		else \
+			(cd $$module && terraform apply -auto-approve); \
+		fi \
+	done
 
 destroy:
 	@echo "Destroying Terraform modules..."
