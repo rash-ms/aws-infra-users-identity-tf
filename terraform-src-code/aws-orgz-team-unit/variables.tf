@@ -10,8 +10,7 @@ variable "environment" {
 variable "teams" {
   description = "List of team names"
   type        = list(string)
-  default     = ["data-platform"]
-  # default     = ["data-platform", "data-infra", "data-eng", "data-bi"]
+  default     = ["data-platform"] # "data-infra", "data-eng", "data-bi"
 }
 
 variable "aws_policies_file" {

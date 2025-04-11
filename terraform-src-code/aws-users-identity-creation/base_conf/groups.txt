@@ -1,0 +1,8 @@
+groups:
+  data-platform-dev-group:                          # Data Engineering Team
+    - admin@bagitek.com
+    # - naimatoyewale@gmail.com
+
+  data-platform-prod-group:
+    - admin@bagitek.com
+    # - naimatoyewale@gmail.com

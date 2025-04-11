@@ -1,0 +1,3 @@
+users:
+  - admin@bagitek.com
+  # - naimatoyewale@gmail.com

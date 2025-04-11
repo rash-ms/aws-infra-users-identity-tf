@@ -1,0 +1,11 @@
+# sso-config.yaml
+users:
+  - admin@bagitek.com
+  # - naimatoyewale@gmail.com  # Uncomment when needed
+
+groups:
+  data-platform-dev-group:    # Dev environment group
+    - admin@bagitek.com
+
+  data-platform-prod-group:   # Prod environment group
+    - admin@bagitek.com
