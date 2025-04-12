@@ -1,0 +1,7 @@
+{
+    "role_arn": "arn:aws:iam::277707114319:role/byt-prod-CrossAccountAdminRole",
+    "users": [
+      "byt-deployer-prod-ci"
+    ]
+  }
+  
