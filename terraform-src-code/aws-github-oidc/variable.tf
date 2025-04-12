@@ -1,5 +1,9 @@
-variable "env" {
-  description = "The environment (e.g., dev or prod)"
+variable "environment" {
+  description = "The environment to deploy (dev or prod)"
   type        = string
-  default     = "dev"
+
+  validation {
+    condition     = contains(["dev", "prod"], var.environment)
+    error_message = "Environment must be 'dev' or 'prod'."
+  }
 }
