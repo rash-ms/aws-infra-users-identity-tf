@@ -1,5 +1,5 @@
 locals {
-  config_path = "./base_conf/${var.env}.json"
+  config_path = "./base_conf/${var.environment}.json"
   config      = jsondecode(file(local.config_path))
 }
 
@@ -16,7 +16,7 @@ resource "aws_iam_openid_connect_provider" "github" {
   provider = aws.target
 
   # Strict: deploy only in matching environment
-  count = var.env == "dev" || var.env == "prod" ? 1 : 0
+  count = var.environment == "dev" || var.environment == "prod" ? 1 : 0
 
   url             = "https://token.actions.githubusercontent.com"
   client_id_list  = ["sts.amazonaws.com"]
@@ -25,7 +25,7 @@ resource "aws_iam_openid_connect_provider" "github" {
 
 resource "aws_iam_role" "cicd_role" {
   provider = aws.target
-  count    = var.env == "dev" || var.env == "prod" ? 1 : 0
+  count    = var.environment == "dev" || var.environment == "prod" ? 1 : 0
 
   name = local.config.role_name
 
@@ -53,7 +53,7 @@ resource "aws_iam_role" "cicd_role" {
 
 resource "aws_iam_role_policy" "deployment_policy" {
   provider = aws.target
-  count    = var.env == "dev" || var.env == "prod" ? 1 : 0
+  count    = var.environment == "dev" || var.environment == "prod" ? 1 : 0
 
   name = "${local.config.role_name}-policy"
   role = aws_iam_role.cicd_role[0].name
