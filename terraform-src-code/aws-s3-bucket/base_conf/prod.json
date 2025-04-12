@@ -1,0 +1,6 @@
+{
+    "region": "us-east-1",
+    "bucket_name": "byt-infra-resources-tfbackend-prod-277707114319",
+    "role_arn": "arn:aws:iam::277707114319:role/byt-prod-CrossAccountAdminRole"
+  }
+  
