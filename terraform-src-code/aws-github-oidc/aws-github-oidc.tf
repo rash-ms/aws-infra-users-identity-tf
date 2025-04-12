@@ -14,7 +14,7 @@ provider "aws" {
 
 resource "aws_iam_openid_connect_provider" "github" {
   provider = aws.target
-  count    = local.config.env == var.env ? 1 : 0
+  count    = 1
 
   url             = "https://token.actions.githubusercontent.com"
   client_id_list  = ["sts.amazonaws.com"]
@@ -23,7 +23,7 @@ resource "aws_iam_openid_connect_provider" "github" {
 
 resource "aws_iam_role" "cicd_role" {
   provider = aws.target
-  count    = local.config.env == var.env ? 1 : 0
+  count    = 1
 
   name = local.config.role_name
 
@@ -51,7 +51,7 @@ resource "aws_iam_role" "cicd_role" {
 
 resource "aws_iam_role_policy" "deployment_policy" {
   provider = aws.target
-  count    = local.config.env == var.env ? 1 : 0
+  count    = 1
 
   name = "${local.config.role_name}-policy"
   role = aws_iam_role.cicd_role[0].name
