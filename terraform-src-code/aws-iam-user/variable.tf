@@ -8,7 +8,6 @@ variable "environment" {
   }
 }
 
-
 variable "iam_users_yaml_path" {
   description = "Path to IAM users YAML file"
   type        = string
