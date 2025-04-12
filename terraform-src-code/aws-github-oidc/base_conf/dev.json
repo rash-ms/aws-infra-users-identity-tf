@@ -1,0 +1,8 @@
+{
+    "target_account_id": "273354624134",
+    "github_org": "rash-ms",
+    "branch": "dev",
+    "role_name": "byt-oidc-deployer-dev-role",
+    "target_role_arn": "arn:aws:iam::273354624134:role/byt-dev-CrossAccountAdminRole"
+  }
+  
