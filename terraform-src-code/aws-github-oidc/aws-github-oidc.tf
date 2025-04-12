@@ -1,69 +1,77 @@
 provider "aws" {
-  alias   = "assumed"
-  region  = "us-east-1"
-  profile = "shared-services"
+  alias  = "assume"
+  region = var.region
+
   assume_role {
-    role_arn     = "arn:aws:iam::${lookup(local.account_mapping, var.environment)}:role/terraform-role"
-    session_name = "terraform-session"
+    role_arn = var.byt_admin_role_arn
   }
 }
 
-# Local variables for account mapping
-locals {
-  env = var.environment
-  account_mapping = {
-    dev  = "022499035350" # AWS Account Dev
-    prod = "022499035568" # AWS Account Prod
+provider "aws" {
+  alias  = "target"
+  region = var.region
+
+  assume_role {
+    role_arn = "arn:aws:iam::${var.target_account_id}:role/OrganizationAccountAccessRole"
+
   }
 }
 
+resource "aws_iam_openid_connect_provider" "github" {
+  provider = aws.target
 
+  url = "https://token.actions.githubusercontent.com"
 
-# # OIDC provider resource
-# resource "aws_iam_openid_connect_provider" "github_oidc" {
-#   provider        = aws.assumed
-#   url             = "https://token.actions.githubusercontent.com"
-#   client_id_list  = ["sts.amazonaws.com"]
-#   thumbprint_list = ["6938fd4d98bab03faadb97b34396831e3780aea1"]
+  client_id_list = [
+    "sts.amazonaws.com"
+  ]
 
-#   tags = {
-#     Name        = "github-oidc-${local.env}" # Add environment to the name tag
-#     Environment = local.env                  # Environment-specific tag
-#   }
+  thumbprint_list = [
+    "6938fd4d98bab03faadb97b34396831e3780aea1" # GitHub Actions thumbprint
+  ]
+}
 
-# }
+resource "aws_iam_role" "cicd_role" {
+  provider = aws.target
 
-# # IAM role for GitHub Actions
-# resource "aws_iam_role" "github_role" {
-#   provider = aws.assumed
-#   name     = "GitHubActionsRole-${local.env}"
+  name = var.role_name
 
-#   assume_role_policy = jsonencode({
-#     Version = "2012-10-17",
-#     Statement = [
-#       {
-#         Effect = "Allow",
-#         Principal = {
-#           Federated = aws_iam_openid_connect_provider.github_oidc.arn
-#         },
-#         Action = "sts:AssumeRoleWithWebIdentity",
-#         Condition = {
-#           StringEquals = {
-#             "token.actions.githubusercontent.com:aud" : "sts.amazonaws.com"
-#           },
-#           StringLike = {
-#             "token.actions.githubusercontent.com:sub" : "repo:rash-ms/*"
-#           }
-#         }
-#       }
-#     ]
-#   })
-# }
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Principal = {
+          Federated = aws_iam_openid_connect_provider.github.arn
+        },
+        Action = "sts:AssumeRoleWithWebIdentity",
+        Condition = {
+          StringLike = {
+            "token.actions.githubusercontent.com:sub" = "repo:${var.github_org}/*"
+          },
+          StringEquals = {
+            "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
+          }
+        }
+      }
+    ]
+  })
+}
 
-# # Attach AdministratorAccess policy to the IAM role
-# resource "aws_iam_role_policy_attachment" "attach_admin_policy" {
-#   provider   = aws.assumed
-#   role       = aws_iam_role.github_role.name
-#   policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
-# }
+resource "aws_iam_role_policy" "deployment_policy" {
+  provider = aws.target
 
+  name = "${var.role_name}-policy"
+  role = aws_iam_role.cicd_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect   = "Allow",
+        Action   = "*",
+        Resource = "*"
+      }
+    ]
+  })
+}
