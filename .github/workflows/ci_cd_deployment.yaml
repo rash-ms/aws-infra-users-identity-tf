@@ -75,4 +75,3 @@ jobs:
   
       - name: Run Terraform Apply
         run: make apply
-
