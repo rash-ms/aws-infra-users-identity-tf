@@ -14,7 +14,7 @@
                 "aws-portal:ViewBilling",
                 "aws-portal:ViewUsage",
                 "pricing:GetProducts",
-                
+
                 "ec2:Describe*",
                 "s3:Get*",
                 "s3:List*",
@@ -116,6 +116,13 @@
             {
               "Effect": "Allow",
               "Action": [
+                "ce:*",
+                "cur:*",
+                "budgets:ViewBudget",
+                "aws-portal:ViewBilling",
+                "aws-portal:ViewUsage",
+                "pricing:GetProducts",
+                
                 "ec2:Describe*",
                 "s3:Get*",
                 "s3:List*",
